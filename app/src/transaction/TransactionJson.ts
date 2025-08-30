@@ -1,7 +1,5 @@
 import {TransactionTypeEnum} from "./TransactionType";
 import {TransactionItemJson} from "../transaction-item/TransactionItemJson";
-import {UnitTypeEnum, unitTypeFromString} from "../product-variant/UnitType";
-import {ProductVariantJson} from "../product-variant/ProductVariantJson";
 
 export class TransactionJson {
     private readonly id: number;
