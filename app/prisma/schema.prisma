@@ -1,0 +1,182 @@
+// ===========================
+// Prisma Schema - MySQL
+// ===========================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------
+// Enums
+// ---------------------------
+
+enum AccountType {
+  debit
+  credit
+  cash
+}
+
+enum TransactionType {
+  expense
+  income
+  credit_payment
+  refund
+}
+
+enum UnitType {
+  L
+  mL
+  kg
+  g
+  piece
+  pack
+}
+
+// ---------------------------
+// Core Reference Tables
+// ---------------------------
+
+model Account {
+  id             Int         @id @default(autoincrement())
+  name           String
+  type           AccountType
+  openingBalance Decimal     @default(0.00) @db.Decimal(10, 2)
+  currentBalance Decimal     @default(0.00) @db.Decimal(10, 2)
+
+  payTransactions          Transaction[] @relation("PayAccountTransactions")
+  counterpartyTransactions Transaction[] @relation("CounterpartyAccountTransactions")
+
+  @@index([type])
+}
+
+model Store {
+  id   Int     @id @default(autoincrement())
+  name String
+  url  String?
+
+  transactions Transaction[]
+
+  @@unique([name]) // if "name" is enough to identify a store in your dataset
+}
+
+model Person {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  transactions Transaction[]
+}
+
+model Category {
+  id               Int        @id @default(autoincrement())
+  name             String
+  parentCategoryId Int?
+  parent           Category?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  children         Category[] @relation("CategoryHierarchy")
+
+  products         Product[]
+  transactionItems TransactionItem[]
+}
+
+model Product {
+  id         Int     @id @default(autoincrement())
+  name       String
+  categoryId Int
+  brand      String?
+  unit       String?
+
+  category Category         @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[]
+
+  @@index([categoryId])
+}
+
+model ProductVariant {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  unitSize    Decimal  @db.Decimal(10, 2)
+  unitType    UnitType
+  description String?
+
+  product Product           @relation(fields: [productId], references: [id])
+  items   TransactionItem[]
+
+  // One product cannot have two identical size/unit variants
+  @@unique([productId, unitSize, unitType])
+  @@index([productId])
+}
+
+// ---------------------------
+// Transactions & Items
+// ---------------------------
+
+model Transaction {
+  id   Int             @id @default(autoincrement())
+  date DateTime
+  type TransactionType
+
+  // Accounts
+  payAccountId Int
+  payAccount   Account @relation("PayAccountTransactions", fields: [payAccountId], references: [id])
+
+  // Only used for credit_payment (Bank -> Credit). NULL otherwise.
+  counterpartyAccountId Int?
+  counterpartyAccount   Account? @relation("CounterpartyAccountTransactions", fields: [counterpartyAccountId], references: [id])
+
+  // Context
+  storeId Int?
+  store   Store? @relation(fields: [storeId], references: [id])
+
+  personId Int?
+  person   Person? @relation(fields: [personId], references: [id])
+
+  // Totals for EXPENSE (required when type = expense)
+  subtotal   Decimal? @default(0.00) @db.Decimal(10, 2)
+  taxTotal   Decimal? @default(0.00) @db.Decimal(10, 2)
+  grandTotal Decimal? @default(0.00) @db.Decimal(10, 2)
+
+  // Simple amount for INCOME / CREDIT_PAYMENT / REFUND (required in those cases)
+  amount Decimal? @default(0.00) @db.Decimal(10, 2)
+
+  notes String?
+
+  // Optional link: refunds referencing original expense
+  refundOfId Int?
+  refundOf   Transaction?  @relation("RefundRelation", fields: [refundOfId], references: [id])
+  refunds    Transaction[] @relation("RefundRelation")
+
+  items TransactionItem[]
+
+  @@index([type, date])
+  @@index([storeId, date])
+  @@index([personId, date])
+  @@index([payAccountId, date])
+  @@index([counterpartyAccountId])
+}
+
+model TransactionItem {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  freeTextName String?
+
+  variantId Int?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Pricing & quantities (minor units for money)
+  quantity  Decimal @db.Decimal(10, 2) // supports weights (e.g., 0.5 kg)
+  unitPrice Decimal @default(0.00) @db.Decimal(10, 2)
+  lineTotal Decimal @default(0.00) @db.Decimal(10, 2)
+
+  @@index([transactionId])
+  @@index([variantId])
+  @@index([categoryId])
+}
