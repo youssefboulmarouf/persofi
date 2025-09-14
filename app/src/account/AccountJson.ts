@@ -35,7 +35,7 @@ export class AccountJson {
             Number(body.id),
             body.name,
             accountTypeFromString(body.accountType),
-            body.currentBalance,
+            Number(body.currentBalance),
         )
     }
 }

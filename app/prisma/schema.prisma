@@ -26,11 +26,12 @@ enum TransactionType {
   Income
   Credit_Payment
   Refund
+  Saving
 }
 
 enum UnitType {
   L
-  kg
+  Kg
   Piece
   Pack
 }
@@ -42,13 +43,13 @@ enum UnitType {
 model Account {
   id             Int         @id @default(autoincrement())
   name           String
-  type           AccountType
+  accountType    AccountType
   currentBalance Decimal     @default(0.00) @db.Decimal(10, 2)
 
   payTransactions          Transaction[] @relation("PayAccountTransactions")
   counterpartyTransactions Transaction[] @relation("CounterpartyAccountTransactions")
 
-  @@index([type])
+  @@index([accountType])
 }
 
 model Store {
@@ -81,10 +82,9 @@ model Category {
 }
 
 model Product {
-  id         Int     @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   name       String
   categoryId Int
-  brand      String?
 
   category Category         @relation(fields: [categoryId], references: [id])
   variants ProductVariant[]
@@ -102,9 +102,31 @@ model ProductVariant {
   product Product           @relation(fields: [productId], references: [id])
   items   TransactionItem[]
 
-  // One product cannot have two identical size/unit variants
+  brands ProductVariantBrand[]
+
   @@unique([productId, unitSize, unitType])
   @@index([productId])
+}
+
+model Brand {
+  id       Int                   @id @default(autoincrement())
+  name     String
+  url      String?
+  items    TransactionItem[]
+  variants ProductVariantBrand[]
+
+  @@unique([name])
+}
+
+model ProductVariantBrand {
+  variantId Int
+  brandId   Int
+
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  brand   Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, brandId])
+  @@index([brandId])
 }
 
 // ---------------------------
@@ -167,6 +189,9 @@ model TransactionItem {
 
   categoryId Int?
   category   Category? @relation(fields: [categoryId], references: [id])
+
+  brandId Int?
+  brand   Brand? @relation(fields: [brandId], references: [id])
 
   // Pricing & quantities (minor units for money)
   quantity  Decimal @db.Decimal(10, 2) // supports weights (e.g., 0.5 kg)

@@ -1,12 +1,12 @@
 export class CategoryJson {
     private readonly id: number;
     private readonly name: string;
-    private readonly parentCategory: number | null;
+    private readonly parentCategoryId: number | null;
 
-    constructor(id: number, name: string, parentCategory: number | null) {
+    constructor(id: number, name: string, parentCategoryId: number | null) {
         this.id = id;
         this.name = name;
-        this.parentCategory = parentCategory;
+        this.parentCategoryId = parentCategoryId;
     }
 
     public getId(): number {
@@ -18,14 +18,14 @@ export class CategoryJson {
     }
 
     public getParentCategory(): number | null {
-        return this.parentCategory;
+        return this.parentCategoryId;
     }
 
     public static from(body: any): CategoryJson {
         return new CategoryJson(
             Number(body.id),
             body.name,
-            body.parentCategory
+            body.parentCategoryId != null ? Number(body.parentCategoryId) : null,
         )
     }
 

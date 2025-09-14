@@ -1,6 +1,7 @@
 import {BaseService} from "../utilities/BaseService";
 import {ProductVariantJson} from "./ProductVariantJson";
-import {UnitTypeEnum} from "./UnitType";
+import NotFoundError from "../utilities/errors/NotFoundError";
+import BadRequestError from "../utilities/errors/BadRequestError";
 
 export class ProductVariantService extends BaseService {
     constructor() {
@@ -8,24 +9,63 @@ export class ProductVariantService extends BaseService {
     }
 
     async get(): Promise<ProductVariantJson[]> {
-        return [];
+        this.logger.log(`Get all product variants`);
+        return (await this.prisma.productVariant.findMany()).map(ProductVariantJson.from);
     }
 
-    async getByProductId(productId: number): Promise<ProductVariantJson[]> {
-        return [];
-    }
+    async getById(id: number): Promise<ProductVariantJson> {
+        this.logger.log(`Get product variant by [id:${id}]`);
 
-    async getById(variantId: number): Promise<ProductVariantJson> {
-        return new ProductVariantJson(0,"", 0, UnitTypeEnum.KG, 0);
+        const data = await this.prisma.productVariant.findUnique({
+            where: { id }
+        });
+
+        NotFoundError.throwIf(!data, `Product variant with [id:${id}] not found`);
+
+        return ProductVariantJson.from(data);
     }
 
     async create(variant: ProductVariantJson): Promise<ProductVariantJson> {
-        return variant;
+        this.logger.log(`Create new product variant`, variant);
+        return ProductVariantJson.from(
+            await this.prisma.productVariant.create({
+                data: {
+                    description: variant.getDescription(),
+                    unitSize: variant.getUnitSize(),
+                    unitType: variant.getUnitType(),
+                    productId: variant.getProductId()
+                }
+            })
+        );
     }
 
-    async update(variantId: number, variant: ProductVariantJson): Promise<ProductVariantJson> {
-        return variant;
+    async update(id: number, variant: ProductVariantJson): Promise<ProductVariantJson> {
+        this.logger.log(`Update product variant with [id=${id}]`);
+
+        BadRequestError.throwIf(id != variant.getId(), `Product variant id mismatch`);
+
+        const existingVariant = await this.getById(id);
+
+        this.logger.log(`Update existing product variant`, existingVariant);
+        this.logger.log(`Product variant updated data`, variant);
+
+        return ProductVariantJson.from(
+            await this.prisma.productVariant.update({
+                where: { id },
+                data: {
+                    description: variant.getDescription(),
+                    unitSize: variant.getUnitSize(),
+                    unitType: variant.getUnitType(),
+                    productId: variant.getProductId()
+                }
+            })
+        );
     }
 
-    async delete(variantId: number): Promise<void> {}
+    async delete(id: number): Promise<void> {
+        this.logger.log(`Delete product variant with [id=${id}]`);
+        await this.prisma.productVariant.delete({
+            where: { id }
+        });
+    }
 }

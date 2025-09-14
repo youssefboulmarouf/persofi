@@ -1,13 +1,11 @@
 export class ProductJson {
     private readonly id: number;
     private readonly name: string;
-    private readonly brand: string;
     private readonly categoryId: number;
 
-    constructor(id: number, name: string, brand: string, categoryId: number) {
+    constructor(id: number, name: string, categoryId: number) {
         this.id = id;
         this.name = name;
-        this.brand = brand;
         this.categoryId = categoryId;
     }
 
@@ -19,10 +17,6 @@ export class ProductJson {
         return this.name;
     }
 
-    public getBrand(): string {
-        return this.brand;
-    }
-
     public getCategoryId(): number {
         return this.categoryId;
     }
@@ -31,7 +25,6 @@ export class ProductJson {
         return new ProductJson(
             Number(body.id),
             body.name,
-            body.brand,
             body.categoryId,
         )
     }

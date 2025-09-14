@@ -44,5 +44,4 @@ export class ProductVariantJson {
             Number(body.productId),
         )
     }
-
 }
