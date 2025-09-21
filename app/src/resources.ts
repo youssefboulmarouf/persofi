@@ -8,6 +8,7 @@ import StoreResource from "./store/StoreResource";
 import TransactionResource from "./transaction/TransactionResource";
 import TransactionItemResource from "./transaction-item/TransactionItemResource";
 import BrandResource from "./brand/BrandResource";
+import BalanceResource from "./balance/BalanceResource";
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 router.use("/account", AccountResource);
+router.use("/balance", BalanceResource);
 router.use("/brand", BrandResource);
 router.use("/category", CategoryResource);
 router.use("/person", PersonResource);
