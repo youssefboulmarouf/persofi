@@ -4,6 +4,7 @@ export enum AccountTypeEnum {
     DEBIT = "Debit",
     CREDIT = "Credit",
     CASH = "Cash",
+    SAVING = "Saving",
 }
 
 export function accountTypeFromString(type: string): AccountTypeEnum {
