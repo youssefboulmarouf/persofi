@@ -6,50 +6,13 @@ export class TransactionItemService extends BaseService {
         super(TransactionItemService.name);
     }
 
-    async get(): Promise<TransactionItemJson[]> {
-        return [];
-    }
-
-    async getById(transactionItemId: number): Promise<TransactionItemJson> {
-        return new TransactionItemJson(
-            0,
-            0,
-            "",
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        );
-    }
-
-    async getByTransactionId(transactionId: number): Promise<TransactionItemJson[]> {
-        return [];
-    }
-
-    async create(transactionItem: TransactionItemJson): Promise<TransactionItemJson> {
-        this.prisma.transactionItem.create({
-            data: {
-                transactionId: transactionItem.getTransactionId(),
-                description: transactionItem.getDescription(),
-                variantId: transactionItem.getProductVariantId(),
-                categoryId: transactionItem.getCategoryId(),
-                brandId: transactionItem.getBrandId(),
-                quantity: transactionItem.getQuantity(),
-                unitPrice: transactionItem.getUnitPrice(),
-                lineTotal: transactionItem.getLineTotal()
-            }
-        })
-        return transactionItem;
-    }
-
-    async createMany(transactionItems: TransactionItemJson[]): Promise<TransactionItemJson[]> {
-        if (transactionItems.length == 0) return [];
+    async createManyForTrnasaction(transactionId: number, transactionItems: TransactionItemJson[]): Promise<void> {
+        this.logger.log(`Creating items for transaction with [id=${transactionId}]`)
+        this.logger.log(`Items [${transactionItems}]`)
 
         await this.prisma.transactionItem.createMany({
             data: transactionItems.map(item => ({
-                transactionId: item.getTransactionId(),
+                transactionId,
                 description: item.getDescription(),
                 variantId: item.getProductVariantId(),
                 categoryId: item.getCategoryId(),
@@ -59,12 +22,12 @@ export class TransactionItemService extends BaseService {
                 lineTotal: item.getLineTotal()
             }))
         })
-        return this.getByTransactionId(transactionItems[0].getTransactionId());
     }
 
-    async update(transactionItemId: number, transactionItem: TransactionItemJson): Promise<TransactionItemJson> {
-        return transactionItem;
+    async deleteByTransactionId(transactionId: number): Promise<void> {
+        this.logger.log(`Deleting items for transaction with [id=${transactionId}]`)
+        this.prisma.transactionItem.deleteMany({
+            where: { transactionId }
+        })
     }
-
-    async delete(transactionItemId: number): Promise<void> {}
 }
