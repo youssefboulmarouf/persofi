@@ -34,4 +34,27 @@ export class BalanceService extends BaseService {
 
         return data.map(BalanceJson.from);
     }
+
+    async getLatestBalanceOfAccount(accountId: number): Promise<BalanceJson | null> {
+        this.logger.log(`Get latest balance by [accountI:${accountId}]`);
+
+        const data = await this.prisma.balance.findFirst({
+            where: { accountId },
+            orderBy: [{ date: 'desc' }]
+        });
+
+        return data ? BalanceJson.from(data) : null;
+    }
+
+    async updateAccountBalance(newBalance: number, date: Date, transactionId: number, accountId: number) : Promise<void> {
+        this.logger.log(`Update balance for account with [accountId:${accountId}]`);
+        this.prisma.balance.create({
+            data: {
+                amount: newBalance,
+                date,
+                accountId,
+                transactionId
+            }
+        });
+    }
 }
