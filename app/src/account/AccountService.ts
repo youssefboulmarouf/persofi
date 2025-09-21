@@ -28,15 +28,15 @@ export class AccountService extends BaseService {
     async create(account: AccountJson): Promise<AccountJson> {
         this.logger.log(`Create new account`, account);
 
-        const data = await this.prisma.account.create({
-            data: {
-                name: account.getName(),
-                accountType: account.getAccountType(),
-                currentBalance: account.getCurrentBalance()
-            }
-        });
         return AccountJson.from(
-            data
+            await this.prisma.account.create({
+                data: {
+                    name: account.getName(),
+                    accountType: account.getAccountType(),
+                    currency: account.getCurrency(),
+                    active: true
+                }
+            })
         );
     }
 
@@ -56,7 +56,8 @@ export class AccountService extends BaseService {
                 data: {
                     name: account.getName(),
                     accountType: account.getAccountType(),
-                    currentBalance: account.getCurrentBalance()
+                    currency: account.getCurrency(),
+                    active: account.isActive(),
                 }
             })
         );
@@ -64,8 +65,11 @@ export class AccountService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete account with [id=${id}]`);
-        await this.prisma.account.delete({
-            where: { id }
-        });
+        await this.prisma.account.update({
+            where: { id },
+            data: {
+                active: false,
+            }
+        })
     }
 }

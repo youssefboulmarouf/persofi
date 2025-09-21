@@ -4,13 +4,15 @@ export class AccountJson {
     private readonly id: number;
     private readonly name: string;
     private readonly accountType: AccountTypeEnum;
-    private readonly currentBalance: number;
+    private readonly currency: string;
+    private readonly active: boolean;
 
-    constructor(id: number, name: string, accountType: AccountTypeEnum, currentBalance: number) {
+    constructor(id: number, name: string, accountType: AccountTypeEnum, currency: string, active: boolean) {
         this.id = id;
         this.name = name;
         this.accountType = accountType;
-        this.currentBalance = currentBalance;
+        this.currency = currency;
+        this.active = active;
     }
 
 
@@ -26,8 +28,12 @@ export class AccountJson {
         return this.accountType;
     }
 
-    public getCurrentBalance(): number {
-        return this.currentBalance;
+    public getCurrency(): string {
+        return this.currency;
+    }
+
+    public isActive(): boolean {
+        return this.active;
     }
 
     public static from(body: any): AccountJson {
@@ -35,7 +41,8 @@ export class AccountJson {
             Number(body.id),
             body.name,
             accountTypeFromString(body.accountType),
-            Number(body.currentBalance),
+            body.currency,
+            body.active
         )
     }
 }
