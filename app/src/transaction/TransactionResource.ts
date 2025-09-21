@@ -46,6 +46,20 @@ router.post("/",
     )
 );
 
+router.post("/:id/process",
+    handleAsync(
+        async  (req: Request, res: Response) => {
+            res
+                .status(201)
+                .json(
+                    await transactionService.processTransaction(
+                        Number(req.params.id)
+                    )
+                );
+        }
+    )
+);
+
 router.put("/:id",
     handleAsync(
         async (req: Request, res: Response) => {
@@ -57,15 +71,6 @@ router.put("/:id",
                     TransactionJson.from(req.body)
                 )
             );
-        }
-    )
-);
-
-router.delete("/:id",
-    handleAsync(
-        async (req: Request, res: Response) => {
-            await transactionService.delete(Number(req.params.id));
-            res.status(204).send();
         }
     )
 );
