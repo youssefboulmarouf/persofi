@@ -6,7 +6,6 @@ import ProductResource from "./product/ProductResource";
 import ProductVariantResource from "./product-variant/ProductVariantResource";
 import StoreResource from "./store/StoreResource";
 import TransactionResource from "./transaction/TransactionResource";
-import TransactionItemResource from "./transaction-item/TransactionItemResource";
 import BrandResource from "./brand/BrandResource";
 import BalanceResource from "./balance/BalanceResource";
 
@@ -25,6 +24,5 @@ router.use("/product", ProductResource);
 router.use("/product-variant", ProductVariantResource);
 router.use("/store", StoreResource);
 router.use("/transaction", TransactionResource);
-router.use("/transaction-item", TransactionItemResource);
 
 export default router;
