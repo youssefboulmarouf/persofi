@@ -136,9 +136,10 @@ model ProductVariantBrand {
 // ---------------------------
 
 model Transaction {
-  id   Int      @id @default(autoincrement())
-  date DateTime
-  type String
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  type      String
+  processed Boolean
 
   // Paying Account
   payAccountId Int?
