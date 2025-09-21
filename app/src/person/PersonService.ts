@@ -31,7 +31,8 @@ export class PersonService extends BaseService {
         return PersonJson.from(
             await this.prisma.person.create({
                 data: {
-                    name: person.getName()
+                    name: person.getName(),
+                    active: true
                 }
             })
         );
@@ -51,7 +52,8 @@ export class PersonService extends BaseService {
             await this.prisma.person.update({
                 where: { id },
                 data: {
-                    name: person.getName()
+                    name: person.getName(),
+                    active: person.isActive()
                 }
             })
         );
@@ -59,8 +61,11 @@ export class PersonService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete person with [id=${id}]`);
-        await this.prisma.person.delete({
-            where: { id }
+        await this.prisma.person.update({
+            where: { id },
+            data: {
+                active: false
+            }
         });
     }
 }

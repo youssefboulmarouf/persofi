@@ -32,6 +32,7 @@ export class StoreService extends BaseService {
                 data: {
                     name: store.getName(),
                     url: store.getUrl(),
+                    active: true
                 }
             })
         );
@@ -53,6 +54,7 @@ export class StoreService extends BaseService {
                 data: {
                     name: store.getName(),
                     url: store.getUrl(),
+                    active: store.isActive(),
                 }
             })
         );
@@ -60,8 +62,11 @@ export class StoreService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete store with [id=${id}]`);
-        await this.prisma.store.delete({
-            where: { id }
+        await this.prisma.store.update({
+            where: { id },
+            data: {
+                active: false
+            }
         });
     }
 }

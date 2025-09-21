@@ -32,7 +32,8 @@ export class ProductService extends BaseService {
             await this.prisma.product.create({
                 data: {
                     name: product.getName(),
-                    categoryId: product.getCategoryId()
+                    categoryId: product.getCategoryId(),
+                    active: true
                 }
             })
         );
@@ -53,7 +54,8 @@ export class ProductService extends BaseService {
                 where: { id },
                 data: {
                     name: product.getName(),
-                    categoryId: product.getCategoryId()
+                    categoryId: product.getCategoryId(),
+                    active: product.isActive()
                 }
             })
         );
@@ -61,8 +63,11 @@ export class ProductService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete product with [id=${id}]`);
-        await this.prisma.product.delete({
-            where: { id }
-        });
+        await this.prisma.product.update({
+            where: { id },
+            data: {
+                active: false
+            }
+        })
     }
 }

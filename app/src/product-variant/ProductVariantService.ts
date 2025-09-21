@@ -31,6 +31,7 @@ export class ProductVariantService extends BaseService {
             await this.prisma.productVariant.create({
                 data: {
                     description: variant.getDescription(),
+                    active: true,
                     unitSize: variant.getUnitSize(),
                     unitType: variant.getUnitType(),
                     productId: variant.getProductId()
@@ -54,6 +55,7 @@ export class ProductVariantService extends BaseService {
                 where: { id },
                 data: {
                     description: variant.getDescription(),
+                    active: variant.isActive(),
                     unitSize: variant.getUnitSize(),
                     unitType: variant.getUnitType(),
                     productId: variant.getProductId()
@@ -64,8 +66,11 @@ export class ProductVariantService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete product variant with [id=${id}]`);
-        await this.prisma.productVariant.delete({
-            where: { id }
+        await this.prisma.productVariant.update({
+            where: { id },
+            data: {
+                active: false
+            }
         });
     }
 }

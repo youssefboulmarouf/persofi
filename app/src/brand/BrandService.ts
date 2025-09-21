@@ -32,7 +32,8 @@ export class BrandService extends BaseService {
         const data = await this.prisma.brand.create({
             data: {
                 name: brand.getName(),
-                url: brand.getUrl()
+                url: brand.getUrl(),
+                active: true
             }
         });
         return BrandJson.from(
@@ -55,7 +56,8 @@ export class BrandService extends BaseService {
                 where: { id },
                 data: {
                     name: brand.getName(),
-                    url: brand.getUrl()
+                    url: brand.getUrl(),
+                    active: brand.isActive()
                 }
             })
         );
@@ -63,8 +65,11 @@ export class BrandService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete brand with [id=${id}]`);
-        await this.prisma.brand.delete({
-            where: { id }
-        });
+        await this.prisma.brand.update({
+            where: { id },
+            data: {
+                active: false
+            }
+        })
     }
 }

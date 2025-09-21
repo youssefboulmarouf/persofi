@@ -32,7 +32,8 @@ export class CategoryService extends BaseService {
             await this.prisma.category.create({
                 data: {
                     name: category.getName(),
-                    parentCategoryId: category.getParentCategory()
+                    parentCategoryId: category.getParentCategory(),
+                    active: true
                 }
             })
         );
@@ -52,7 +53,8 @@ export class CategoryService extends BaseService {
                 where: { id },
                 data: {
                     name: category.getName(),
-                    parentCategoryId: category.getParentCategory()
+                    parentCategoryId: category.getParentCategory(),
+                    active: category.isActive()
                 }
             })
         );
@@ -60,8 +62,11 @@ export class CategoryService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete category with [id=${id}]`);
-        await this.prisma.category.delete({
-            where: { id }
+        await this.prisma.category.update({
+            where: { id },
+            data: {
+                active: false
+            }
         });
     }
 }
