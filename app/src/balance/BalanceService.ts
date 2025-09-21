@@ -1,6 +1,7 @@
 import {BaseService} from "../utilities/BaseService";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import {BalanceJson} from "./BalanceJson";
+import BadRequestError from "../utilities/errors/BadRequestError";
 
 export class BalanceService extends BaseService {
 
@@ -35,7 +36,7 @@ export class BalanceService extends BaseService {
         return data.map(BalanceJson.from);
     }
 
-    async getLatestBalanceOfAccount(accountId: number): Promise<BalanceJson | null> {
+    async getLatestBalanceOfAccount(accountId: number): Promise<BalanceJson> {
         this.logger.log(`Get latest balance by [accountI:${accountId}]`);
 
         const data = await this.prisma.balance.findFirst({
@@ -43,7 +44,9 @@ export class BalanceService extends BaseService {
             orderBy: [{ date: 'desc' }]
         });
 
-        return data ? BalanceJson.from(data) : null;
+        BadRequestError.throwIf(!data, `Balance for account with [id:${accountId}] not found, try to initialize it first`);
+
+        return BalanceJson.from(data);
     }
 
     async updateAccountBalance(newBalance: number, date: Date, transactionId: number, accountId: number) : Promise<void> {
