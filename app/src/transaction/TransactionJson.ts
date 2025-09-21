@@ -1,17 +1,15 @@
 import {TransactionTypeEnum} from "./TransactionType";
-import {TransactionItemJson} from "../transaction-item/TransactionItemJson";
 
 export class TransactionJson {
     private readonly id: number;
     private readonly date: Date;
     private readonly transactionType: TransactionTypeEnum;
     private readonly notes: string;
-    private readonly transactionItems: TransactionItemJson[];
 
     private readonly payAccountId: number;
     private readonly counterpartyAccountId: number | null;
     private readonly storeId: number | null;
-    private readonly refundId: number | null;
+    private readonly refundOfId: number | null;
 
     private readonly personId: number | null;
     // Totals for EXPENSE (required when type = expense)
@@ -27,11 +25,10 @@ export class TransactionJson {
         date: Date,
         transactionType: TransactionTypeEnum,
         notes: string,
-        transactionItems: TransactionItemJson[],
         payAccountId: number,
         counterpartyAccountId: number | null,
         storeId: number | null,
-        refundId: number | null,
+        refundOfId: number | null,
         personId: number | null,
         subtotal: number | null,
         taxTotal: number | null,
@@ -42,11 +39,10 @@ export class TransactionJson {
         this.date = date;
         this.transactionType = transactionType;
         this.notes = notes;
-        this.transactionItems = transactionItems;
         this.payAccountId = payAccountId;
         this.counterpartyAccountId = counterpartyAccountId;
         this.storeId = storeId;
-        this.refundId = refundId;
+        this.refundOfId = refundOfId;
         this.personId = personId;
         this.subtotal = subtotal;
         this.taxTotal = taxTotal;
@@ -70,10 +66,6 @@ export class TransactionJson {
         return this.notes;
     }
 
-    public getTransactionItems(): TransactionItemJson[] {
-        return this.transactionItems;
-    }
-
     public getPayAccountId(): number {
         return this.payAccountId;
     }
@@ -86,8 +78,8 @@ export class TransactionJson {
         return this.storeId;
     }
 
-    public getRefundId(): number | null {
-        return this.refundId;
+    public getRefundOfId(): number | null {
+        return this.refundOfId;
     }
 
     public getPersonId(): number | null {
@@ -116,11 +108,10 @@ export class TransactionJson {
             new Date(body.date),
             body.transactionType,
             body.notes,
-            body.transactionItems.map(TransactionItemJson.from),
             Number(body.payAccountId),
             (body.counterpartyAccountId === null) ? null : Number(body.counterpartyAccountId),
             (body.storeId === null) ? null : Number(body.storeId),
-            (body.refundId === null) ? null : Number(body.refundId),
+            (body.refundOfId === null) ? null : Number(body.refundOfId),
             (body.personId === null) ? null : Number(body.personId),
             (body.subtotal === null) ? null : Number(body.subtotal),
             (body.taxTotal === null) ? null : Number(body.taxTotal),
