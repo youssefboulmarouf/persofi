@@ -183,11 +183,15 @@ model Transaction {
 }
 
 model TransactionItem {
-  id            Int         @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
+  description String?
+  // Pricing & quantities (minor units for money)
+  quantity    Decimal @db.Decimal(10, 2) // supports weights (e.g., 0.5 kg)
+  unitPrice   Decimal @default(0.00) @db.Decimal(10, 2)
+  lineTotal   Decimal @default(0.00) @db.Decimal(10, 2)
+
   transactionId Int
   transaction   Transaction @relation(fields: [transactionId], references: [id])
-
-  description String?
 
   variantId Int?
   variant   ProductVariant? @relation(fields: [variantId], references: [id])
@@ -197,11 +201,6 @@ model TransactionItem {
 
   brandId Int?
   brand   Brand? @relation(fields: [brandId], references: [id])
-
-  // Pricing & quantities (minor units for money)
-  quantity  Decimal @db.Decimal(10, 2) // supports weights (e.g., 0.5 kg)
-  unitPrice Decimal @default(0.00) @db.Decimal(10, 2)
-  lineTotal Decimal @default(0.00) @db.Decimal(10, 2)
 
   @@index([transactionId])
   @@index([variantId])

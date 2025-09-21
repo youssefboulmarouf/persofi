@@ -50,6 +50,7 @@ export class ProductVariantService extends BaseService {
         this.logger.log(`Update existing product variant`, existingVariant);
         this.logger.log(`Product variant updated data`, variant);
 
+        // TODO add logic for ProductVariantBrand
         return ProductVariantJson.from(
             await this.prisma.productVariant.update({
                 where: { id },
