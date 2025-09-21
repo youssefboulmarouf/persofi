@@ -1,44 +1,51 @@
 import {TransactionTypeEnum} from "./TransactionType";
+import {TransactionItemJson} from "../transaction-item/TransactionItemJson";
 
 export class TransactionJson {
     private readonly id: number;
     private readonly date: Date;
     private readonly transactionType: TransactionTypeEnum;
+    private readonly items: TransactionItemJson[];
     private readonly notes: string;
+    private readonly processed: boolean;
 
-    private readonly payAccountId: number;
+    private readonly payAccountId: number | null;
     private readonly counterpartyAccountId: number | null;
     private readonly storeId: number | null;
     private readonly refundOfId: number | null;
 
     private readonly personId: number | null;
     // Totals for EXPENSE (required when type = expense)
-    private readonly subtotal: number | null;
-    private readonly taxTotal: number | null;
-    private readonly grandTotal: number | null;
+    private readonly subtotal: number;
+    private readonly taxTotal: number;
+    private readonly grandTotal: number;
 
     // Simple amount for INCOME / CREDIT_PAYMENT / REFUND (required in those cases)
-    private readonly amount: number | null;
+    private readonly amount: number;
 
     constructor(
         id: number,
         date: Date,
         transactionType: TransactionTypeEnum,
         notes: string,
-        payAccountId: number,
+        processed: boolean,
+        items: TransactionItemJson[],
+        payAccountId: number | null,
         counterpartyAccountId: number | null,
         storeId: number | null,
         refundOfId: number | null,
         personId: number | null,
-        subtotal: number | null,
-        taxTotal: number | null,
-        grandTotal: number | null,
-        amount: number | null
+        subtotal: number,
+        taxTotal: number,
+        grandTotal: number,
+        amount: number
     ) {
         this.id = id;
         this.date = date;
         this.transactionType = transactionType;
         this.notes = notes;
+        this.processed = processed;
+        this.items = items;
         this.payAccountId = payAccountId;
         this.counterpartyAccountId = counterpartyAccountId;
         this.storeId = storeId;
@@ -66,7 +73,7 @@ export class TransactionJson {
         return this.notes;
     }
 
-    public getPayAccountId(): number {
+    public getPayAccountId(): number | null {
         return this.payAccountId;
     }
 
@@ -86,20 +93,28 @@ export class TransactionJson {
         return this.personId;
     }
 
-    public getSubtotal(): number | null {
+    public getSubtotal(): number {
         return this.subtotal;
     }
 
-    public getTaxTotal(): number | null {
+    public getTaxTotal(): number {
         return this.taxTotal;
     }
 
-    public getGrandTotal(): number | null {
+    public getGrandTotal(): number {
         return this.grandTotal;
     }
 
-    public getAmount(): number | null {
+    public getAmount(): number {
         return this.amount;
+    }
+
+    public getItems(): TransactionItemJson[] {
+        return this.items;
+    }
+
+    public isProcessed(): boolean {
+        return this.processed;
     }
 
     public static from(body: any): TransactionJson {
@@ -108,15 +123,17 @@ export class TransactionJson {
             new Date(body.date),
             body.transactionType,
             body.notes,
+            Boolean(body.processed),
+            body.items.map(TransactionItemJson.from),
             Number(body.payAccountId),
             (body.counterpartyAccountId === null) ? null : Number(body.counterpartyAccountId),
             (body.storeId === null) ? null : Number(body.storeId),
             (body.refundOfId === null) ? null : Number(body.refundOfId),
             (body.personId === null) ? null : Number(body.personId),
-            (body.subtotal === null) ? null : Number(body.subtotal),
-            (body.taxTotal === null) ? null : Number(body.taxTotal),
-            (body.grandTotal === null) ? null : Number(body.grandTotal),
-            (body.amount === null) ? null : Number(body.amount),
+            Number(body.subtotal),
+            Number(body.taxTotal),
+            Number(body.grandTotal),
+            Number(body.amount),
         )
     }
 }
