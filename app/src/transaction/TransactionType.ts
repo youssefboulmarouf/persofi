@@ -5,6 +5,8 @@ export enum TransactionTypeEnum {
     INCOME = "Income",
     CREDIT_PAYMENT = "Credit_Payment",
     REFUND = "Refund",
+    TRANSFER = "Transfer",
+    INIT_BALANCE = "Init_Balance",
 }
 
 export function TransactionTypeFromString(type: string): TransactionTypeEnum {
