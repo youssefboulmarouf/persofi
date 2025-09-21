@@ -1,0 +1,76 @@
+- Dashboard
+    - Date Search Bar
+
+    Balances
+        - Balance per account types
+        - Historical balances per account types
+        - Balance per account
+        - Historical balances per account
+
+    Net Flow
+        - Expense
+        - Income
+        - Expense - Income
+        - Bar chart expense vs Income totale
+        - Bar chart expense vs Income by month
+
+    Expenses
+        - Total Expense (How much credit / How much debit)
+        - Expense per parent categories
+        - Expense per store
+        - Expense per person
+
+    Tax Paid
+        - how much tax paid
+        - historic tax paid
+-App
+    - Transations
+        - CRUDS
+        - Filter by:
+            . Date
+            . Transaction Type
+            . Account Type
+            . Store
+            . Person
+
+- Settings
+    Finance
+    - Accounts
+        - CRUDS
+        - Filter by:
+            . Name
+            . Account Type
+
+    People
+    - Persons
+        - CRUDS
+        - Filter by:
+            . Name
+
+    Catalog
+    - Categories
+        - CRUDS
+        - Filter by:
+            . Name / Parent Name
+            . Is Parent
+
+    - Products
+        - CRUDS
+        - Filter by:
+            . Product Name / Category Name
+
+    - Variants
+        - CRUDS
+        - Filter by:
+            . Variant Name / Product Name
+
+    - Brands
+        - CRUDS
+        - Filter by:
+            . Name
+
+    Stores
+    - Stores
+        - CRUDS
+        - Filter by:
+            . Name
