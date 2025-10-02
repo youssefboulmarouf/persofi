@@ -6,15 +6,19 @@ import {TransactionTypeEnum} from "./TransactionType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import {TransactionProcessorService} from "./TransactionProcessorService";
 import {TransactionValidationService} from "./TransactionValidationService";
+import {AccountService} from "../account/AccountService";
+import AppError from "../utilities/errors/AppError";
 
 export class TransactionService extends BaseService {
     private readonly transactionItemService: TransactionItemService;
     private readonly transactionProcessor: TransactionProcessorService;
+    private readonly accountService: AccountService;
 
     constructor() {
         super(TransactionService.name);
         this.transactionItemService = new TransactionItemService();
         this.transactionProcessor = new TransactionProcessorService();
+        this.accountService = new AccountService();
     }
 
     async get(): Promise<TransactionJson[]> {
@@ -37,40 +41,48 @@ export class TransactionService extends BaseService {
         return TransactionJson.from(data);
     }
 
-    async create(transaction: TransactionJson): Promise<void> {
+    async create(transaction: TransactionJson): Promise<TransactionJson> {
         this.logger.log(`Create new transaction`, transaction);
+
+        this.logger.log(`Validating transaction data`);
         TransactionValidationService.validate(transaction);
-        await this.prisma.transaction.create({
-                data: {
-                    date: transaction.getDate(),
-                    type: transaction.getTransactionType(),
-                    notes: transaction.getNotes(),
-                    payAccountId: transaction.getPayAccountId(),
-                    counterpartyAccountId: transaction.getCounterpartyAccountId(),
-                    storeId: transaction.getStoreId(),
-                    refundOfId: transaction.getRefundOfId(),
-                    personId: transaction.getPersonId(),
-                    subtotal: transaction.getSubtotal(),
-                    taxTotal: transaction.getTaxTotal(),
-                    grandTotal: transaction.getGrandTotal(),
-                    amount: transaction.getAmount(),
-                    processed: false,
-                    items: {
-                        create: transaction.getItems().map((it) => ({
-                            description: it.getDescription(),
-                            quantity: it.getQuantity(),
-                            unitPrice: it.getUnitPrice(),
-                            lineTotal: it.getLineTotal(),
-                            variantId: it.getProductVariantId(),
-                            brandId: it.getBrandId(),
-                            categoryId: it.getCategoryId(),
-                        })),
-                    },
+        this.logger.log(`Transaction data is valid`);
+
+        this.logger.log(`Inserting transaction`);
+        const data = await this.prisma.transaction.create({
+            data: {
+                date: transaction.getDate(),
+                type: transaction.getTransactionType(),
+                notes: transaction.getNotes(),
+                payAccountId: transaction.getPayAccountId(),
+                counterpartyAccountId: transaction.getCounterpartyAccountId(),
+                storeId: transaction.getStoreId(),
+                refundOfId: transaction.getRefundOfId(),
+                personId: transaction.getPersonId(),
+                subtotal: transaction.getSubtotal(),
+                taxTotal: transaction.getTaxTotal(),
+                grandTotal: transaction.getGrandTotal(),
+                amount: transaction.getAmount(),
+                processed: false,
+                items: {
+                    create: transaction.getItems().map((it) => ({
+                        description: it.getDescription(),
+                        quantity: it.getQuantity(),
+                        unitPrice: it.getUnitPrice(),
+                        lineTotal: it.getLineTotal(),
+                        variantId: it.getProductVariantId(),
+                        brandId: it.getBrandId(),
+                        categoryId: it.getCategoryId(),
+                    })),
                 },
-                include: {
-                    items: true,
-                },
-            });
+            },
+            include: {
+                items: true,
+            },
+        });
+        this.logger.log(`Transaction inserted successfully [id=${data.id}]`);
+
+        return TransactionJson.from(data);
     }
 
     async update(transactionId: number, transaction: TransactionJson): Promise<void> {
@@ -108,24 +120,58 @@ export class TransactionService extends BaseService {
     async processTransaction(transactionId: number): Promise<void> {
         const existingTransaction = await this.getById(transactionId);
 
+        BadRequestError
+            .throwIf(
+                existingTransaction.isProcessed(),
+                `Transaction with [id=${existingTransaction.getTransactionType()}] is already processed. Cannot be processed again.`
+            );
+
         switch (existingTransaction.getTransactionType()) {
             case TransactionTypeEnum.EXPENSE:
-                await this.transactionProcessor.processExpenseTransaction(existingTransaction);
+                this.validatePayAccountId(existingTransaction);
+                await this.transactionProcessor.processExpenseTransaction(
+                    existingTransaction,
+                    await this.accountService.getById(Number(existingTransaction.getPayAccountId()))
+                );
                 break;
             case TransactionTypeEnum.INCOME:
-                await this.transactionProcessor.processIncomeTransaction(existingTransaction);
+                this.validateCounterpartyAccount(existingTransaction);
+                await this.transactionProcessor.processIncomeTransaction(
+                    existingTransaction,
+                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                );
                 break;
             case TransactionTypeEnum.CREDIT_PAYMENT:
-                await this.transactionProcessor.processCreditPaymentTransaction(existingTransaction);
+                this.validatePayAccountId(existingTransaction);
+                this.validateCounterpartyAccount(existingTransaction);
+                await this.transactionProcessor.processCreditPaymentTransaction(
+                    existingTransaction,
+                    await this.accountService.getById(Number(existingTransaction.getPayAccountId())),
+                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                );
                 break;
             case TransactionTypeEnum.REFUND:
-                await this.transactionProcessor.processRefundTransaction(existingTransaction);
+                this.validateCounterpartyAccount(existingTransaction);
+                await this.transactionProcessor.processRefundTransaction(
+                    existingTransaction,
+                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                );
                 break;
             case TransactionTypeEnum.TRANSFER:
-                await this.transactionProcessor.processTransferTransaction(existingTransaction);
+                this.validatePayAccountId(existingTransaction);
+                this.validateCounterpartyAccount(existingTransaction);
+                await this.transactionProcessor.processTransferTransaction(
+                    existingTransaction,
+                    await this.accountService.getById(Number(existingTransaction.getPayAccountId())),
+                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                );
                 break;
             case TransactionTypeEnum.INIT_BALANCE:
-                await this.transactionProcessor.processInitBalanceTransaction(existingTransaction);
+                this.validateCounterpartyAccount(existingTransaction);
+                await this.transactionProcessor.processInitBalanceTransaction(
+                    existingTransaction,
+                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                );
                 break;
             default:
                 BadRequestError
@@ -142,6 +188,27 @@ export class TransactionService extends BaseService {
             },
             where: { id: transactionId },
         });
+    }
+
+
+    private validateCounterpartyAccount(existingTransaction: TransactionJson) {
+        if (existingTransaction.getCounterpartyAccountId() == null) {
+            throw new AppError(
+                "Runtime Error",
+                500,
+                `Counter Party Account is required for Expense transaction [id=${existingTransaction.getId()}]. `
+            );
+        }
+    }
+
+    private validatePayAccountId(existingTransaction: TransactionJson) {
+        if (existingTransaction.getPayAccountId() == null) {
+            throw new AppError(
+                "Runtime Error",
+                500,
+                `Pay Account is required for Expense transaction [id=${existingTransaction.getId()}]. `
+            );
+        }
     }
 
     async delete(id: number) {
