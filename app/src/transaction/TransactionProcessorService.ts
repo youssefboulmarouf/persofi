@@ -5,20 +5,18 @@ import {TransactionJson} from "./TransactionJson";
 import {AccountTypeEnum} from "../account/AccountType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import AppError from "../utilities/errors/AppError";
+import {AccountJson} from "../account/AccountJson";
 
 export class TransactionProcessorService extends BaseService {
 
-    private readonly accountService: AccountService;
     private readonly balanceService: BalanceService;
 
     constructor() {
         super(TransactionProcessorService.name);
-        this.accountService = new AccountService();
         this.balanceService = new BalanceService();
     }
 
-    async processExpenseTransaction(transaction: TransactionJson): Promise<void> {
-        const payAccount = await this.accountService.getById(Number(transaction.getPayAccountId()));
+    async processExpenseTransaction(transaction: TransactionJson, payAccount: AccountJson): Promise<void> {
         const payAccountBalance = await this.balanceService.getLatestBalanceOfAccount(payAccount.getId());
 
         await this.balanceService.updateAccountBalance(
@@ -31,8 +29,7 @@ export class TransactionProcessorService extends BaseService {
         );
     }
 
-    async processIncomeTransaction(transaction: TransactionJson): Promise<void> {
-        const counterPartyAccount = await this.accountService.getById(Number(transaction.getCounterpartyAccountId()));
+    async processIncomeTransaction(transaction: TransactionJson, counterPartyAccount: AccountJson): Promise<void> {
         BadRequestError.throwIf(
             counterPartyAccount.getAccountType() == AccountTypeEnum.CREDIT,
             `Income is only added to Debit, Cash or Saving but got [accountType=${counterPartyAccount.getAccountType()}].`
@@ -48,14 +45,12 @@ export class TransactionProcessorService extends BaseService {
         );
     }
 
-    async processCreditPaymentTransaction(transaction: TransactionJson): Promise<void> {
-        const payAccount = await this.accountService.getById(Number(transaction.getPayAccountId()));
+    async processCreditPaymentTransaction(transaction: TransactionJson, payAccount: AccountJson, counterPartyAccount: AccountJson): Promise<void> {
         BadRequestError.throwIf(
             payAccount.getAccountType() == AccountTypeEnum.CREDIT,
             `Credit Payment emitter should be Debit, Cash or Saving but got [accountType=${payAccount.getAccountType()}].`
         );
 
-        const counterPartyAccount = await this.accountService.getById(Number(transaction.getCounterpartyAccountId()));
         BadRequestError.throwIf(
             counterPartyAccount.getAccountType() != AccountTypeEnum.CREDIT,
             `Credit Payment receiver should be Credit but got [accountType=${counterPartyAccount.getAccountType()}].`
@@ -79,8 +74,7 @@ export class TransactionProcessorService extends BaseService {
         );
     }
 
-    async processRefundTransaction(transaction: TransactionJson): Promise<void> {
-        const counterPartyAccount = await this.accountService.getById(Number(transaction.getCounterpartyAccountId()));
+    async processRefundTransaction(transaction: TransactionJson, counterPartyAccount: AccountJson): Promise<void> {
         const counterPartyAccountBalance = await this.balanceService.getLatestBalanceOfAccount(counterPartyAccount.getId());
 
         await this.balanceService.updateAccountBalance(
@@ -93,11 +87,8 @@ export class TransactionProcessorService extends BaseService {
         );
     }
 
-    async processTransferTransaction(transaction: TransactionJson): Promise<void> {
-        const payAccount = await this.accountService.getById(Number(transaction.getPayAccountId()));
+    async processTransferTransaction(transaction: TransactionJson, payAccount: AccountJson, counterPartyAccount: AccountJson): Promise<void> {
         const payAccountBalance = await this.balanceService.getLatestBalanceOfAccount(payAccount.getId());
-
-        const counterPartyAccount = await this.accountService.getById(Number(transaction.getCounterpartyAccountId()));
         const counterPartyAccountBalance = await this.balanceService.getLatestBalanceOfAccount(counterPartyAccount.getId());
 
         await this.balanceService.updateAccountBalance(
@@ -115,8 +106,7 @@ export class TransactionProcessorService extends BaseService {
         );
     }
 
-    async processInitBalanceTransaction(transaction: TransactionJson): Promise<void> {
-        const counterPartyAccount = await this.accountService.getById(Number(transaction.getCounterpartyAccountId()));
+    async processInitBalanceTransaction(transaction: TransactionJson, counterPartyAccount: AccountJson): Promise<void> {
         try {
             await this.balanceService.getLatestBalanceOfAccount(counterPartyAccount.getId());
             BadRequestError.throwIf(true, `Balance already exists for account [id=${counterPartyAccount.getId()}]`);
