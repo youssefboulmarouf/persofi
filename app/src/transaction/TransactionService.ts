@@ -144,4 +144,10 @@ export class TransactionService extends BaseService {
         });
     }
 
+    async delete(id: number) {
+        this.logger.log(`Delete transaction with [id=${id}]`);
+        await this.prisma.transaction.delete({
+            where: { id }
+        })
+    }
 }

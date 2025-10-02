@@ -75,4 +75,13 @@ router.put("/:id",
     )
 );
 
+router.delete("/:id",
+    handleAsync(
+        async (req: Request, res: Response) => {
+            await transactionService.delete(Number(req.params.id));
+            res.status(204).send();
+        }
+    )
+);
+
 export default router;
