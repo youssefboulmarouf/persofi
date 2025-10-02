@@ -1,10 +1,10 @@
-import {TransactionTypeEnum} from "./TransactionType";
+import {TransactionTypeEnum, TransactionTypeFromString} from "./TransactionType";
 import {TransactionItemJson} from "../transaction-item/TransactionItemJson";
 
 export class TransactionJson {
     private readonly id: number;
     private readonly date: Date;
-    private readonly transactionType: TransactionTypeEnum;
+    private readonly type: TransactionTypeEnum;
     private readonly items: TransactionItemJson[];
     private readonly notes: string;
     private readonly processed: boolean;
@@ -26,7 +26,7 @@ export class TransactionJson {
     constructor(
         id: number,
         date: Date,
-        transactionType: TransactionTypeEnum,
+        type: TransactionTypeEnum,
         notes: string,
         processed: boolean,
         items: TransactionItemJson[],
@@ -42,7 +42,7 @@ export class TransactionJson {
     ) {
         this.id = id;
         this.date = date;
-        this.transactionType = transactionType;
+        this.type = type;
         this.notes = notes;
         this.processed = processed;
         this.items = items;
@@ -66,7 +66,7 @@ export class TransactionJson {
     }
 
     public getTransactionType(): TransactionTypeEnum {
-        return this.transactionType;
+        return this.type;
     }
 
     public getNotes(): string {
@@ -121,11 +121,11 @@ export class TransactionJson {
         return new TransactionJson(
             Number(body.id),
             new Date(body.date),
-            body.transactionType,
+            TransactionTypeFromString(body.type),
             body.notes,
             Boolean(body.processed),
             body.items.map(TransactionItemJson.from),
-            Number(body.payAccountId),
+            (body.payAccountId === null) ? null : Number(body.payAccountId),
             (body.counterpartyAccountId === null) ? null : Number(body.counterpartyAccountId),
             (body.storeId === null) ? null : Number(body.storeId),
             (body.refundOfId === null) ? null : Number(body.refundOfId),
