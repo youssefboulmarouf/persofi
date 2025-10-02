@@ -3,12 +3,17 @@ import Drawer from "@mui/material/Drawer";
 import List from "@mui/material/List";
 import NavHeader from "./NavHeader";
 import NavItem from "./NavItem";
-import {
-    Menu, appMenuItems, transactionMenuItems, financeMenuItems, peopleMenuItems, catalogMenuItems, storeMenuItems
-} from "../common/Menu";
 import React, {useState} from "react";
 import Logo from "../logo/Logo";
 import Divider from "@mui/material/Divider";
+import {
+    appMenuItems,
+    catalogMenuItems,
+    financeMenuItems, Menu,
+    peopleMenuItems,
+    storeMenuItems,
+    transactionMenuItems
+} from "../common/Menu";
 
 const Sidebar: React.FC = () => {
     const [selectedItemId, setSelectedItemId] = useState<string>(appMenuItems[0].id);

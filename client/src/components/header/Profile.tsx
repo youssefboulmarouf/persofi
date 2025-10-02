@@ -6,11 +6,12 @@ import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import Typography from '@mui/material/Typography';
-import {profileMenuItem} from '../common/Menu'
+
 import {Link} from "react-router-dom";
 
 import EmailIcon from '@mui/icons-material/Email';
 import { Stack } from '@mui/system';
+import {profileMenuItem} from "../common/Menu";
 
 
 const Profile: React.FC = () => {
