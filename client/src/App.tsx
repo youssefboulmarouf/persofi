@@ -7,6 +7,12 @@ import Sidebar from "./components/sidebar/Sidebar";
 import Header from "./components/header/Header";
 import Box from "@mui/material/Box";
 import AppProviders from "./AppProviders";
+import {Accounts} from "./components/account/Accounts";
+import {Category} from "./components/category/Category";
+import {Dashboard} from "./components/dashborad/Dashboard";
+import {AccountProvider} from "./context/AccountContext";
+import {TransactionProvider} from "./context/TransactionContext";
+import {BalanceProvider} from "./context/BalanceContext";
 
 const PageWrapper = styled("div")(() => ({
     display: "flex",
@@ -39,8 +45,17 @@ const App: React.FC = () => {
                             <Box sx={{ minHeight: "calc(100vh - 170px)" }}>
                                 <AppProviders>
                                     <Routes>
-                                        <Route path="/" element={"Dashboard"} />
-
+                                        <Route path="/" element={<Dashboard/>} />
+                                        <Route path="/accounts" element={
+                                            <BalanceProvider>
+                                                <TransactionProvider>
+                                                    <AccountProvider>
+                                                        <Accounts/>
+                                                    </AccountProvider>
+                                                </TransactionProvider>
+                                            </BalanceProvider>
+                                        } />
+                                        <Route path="/category" element={<Category/>} />
                                     </Routes>
                                 </AppProviders>
                             </Box>
