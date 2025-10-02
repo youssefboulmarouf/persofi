@@ -15,14 +15,14 @@ router.get("/", (req: Request, res: Response) => {
     res.send("Persofi backend is running!");
 });
 
-router.use("/account", AccountResource);
-router.use("/balance", BalanceResource);
-router.use("/brand", BrandResource);
-router.use("/category", CategoryResource);
-router.use("/person", PersonResource);
-router.use("/product", ProductResource);
-router.use("/product-variant", ProductVariantResource);
-router.use("/store", StoreResource);
-router.use("/transaction", TransactionResource);
+router.use("/accounts", AccountResource);
+router.use("/balances", BalanceResource);
+router.use("/brands", BrandResource);
+router.use("/categories", CategoryResource);
+router.use("/persons", PersonResource);
+router.use("/products", ProductResource);
+router.use("/product-variants", ProductVariantResource);
+router.use("/stores", StoreResource);
+router.use("/transactions", TransactionResource);
 
 export default router;
