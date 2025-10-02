@@ -51,7 +51,7 @@ export class BalanceService extends BaseService {
 
     async updateAccountBalance(newBalance: number, date: Date, transactionId: number, accountId: number) : Promise<void> {
         this.logger.log(`Update balance for account with [accountId:${accountId}]`);
-        this.prisma.balance.create({
+        await this.prisma.balance.create({
             data: {
                 amount: newBalance,
                 date,
@@ -59,5 +59,14 @@ export class BalanceService extends BaseService {
                 transactionId
             }
         });
+    }
+
+    async delete(id: number) {
+        this.logger.log(`Deleting balance with [id:${id}]`);
+        await this.prisma.balance.delete({
+            where: {
+                id
+            }
+        })
     }
 }
