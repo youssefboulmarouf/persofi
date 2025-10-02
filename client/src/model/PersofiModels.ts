@@ -1,7 +1,13 @@
 export enum ModalTypeEnum {
-    ADD = "Ajouter",
-    UPDATE = "Modifier",
-    DELETE = "Supprimer"
+    ADD = "Add",
+    UPDATE = "Update",
+    DELETE = "Delete"
+}
+
+export enum CurrencyEnum {
+    CAD = "CAD",
+    MAD = "MAD",
+    USD = "USD"
 }
 
 export enum AccountTypeEnum {
@@ -31,7 +37,7 @@ export type AccountJson = {
     id: number,
     name: string,
     accountType: AccountTypeEnum,
-    currency: string,
+    currency: CurrencyEnum,
     active: boolean
 }
 
@@ -78,21 +84,22 @@ export type ProductVariantJson = {
     active: boolean,
 }
 
-export type Transaction = {
+export type TransactionJson = {
     id: number,
     date: Date,
     type: TransactionTypeEnum,
-    processed: boolean,
-    subtotal: number,
-    taxTotal: number,
-    grandTotal: number,
-    amount: number,
     notes: string,
+    processed: boolean,
+    items: TransactionItem[],
     payAccountId: number | null,
     counterpartyAccountId: number | null,
     storeId: number | null,
     personId: number | null,
     refundOfId: number | null,
+    subtotal: number,
+    taxTotal: number,
+    grandTotal: number,
+    amount: number,
 }
 
 export type TransactionItem = {
