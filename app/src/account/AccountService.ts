@@ -4,6 +4,7 @@ import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
 
 export class AccountService extends BaseService {
+
     constructor() {
         super(AccountService.name);
     }
@@ -34,7 +35,7 @@ export class AccountService extends BaseService {
                     name: account.getName(),
                     accountType: account.getAccountType(),
                     currency: account.getCurrency(),
-                    active: true
+                    active: account.isActive()
                 }
             })
         );
@@ -65,11 +66,8 @@ export class AccountService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete account with [id=${id}]`);
-        await this.prisma.account.update({
-            where: { id },
-            data: {
-                active: false,
-            }
+        await this.prisma.account.delete({
+            where: { id }
         })
     }
 }
