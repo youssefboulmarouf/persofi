@@ -1,6 +1,12 @@
 import {TransactionJson} from "../model/PersofiModels";
 import {createContext, useContext, useEffect, useMemo, useState} from "react";
-import {createTransaction, deleteTransaction, fetchTransactions, updateTransaction} from "../api/TransactionsApi";
+import {
+    createTransaction,
+    deleteTransaction,
+    fetchTransactions,
+    processTransaction,
+    updateTransaction
+} from "../api/TransactionsApi";
 
 export interface TransactionContextValue {
     transactions: TransactionJson[];
@@ -10,7 +16,7 @@ export interface TransactionContextValue {
     addTransaction: (transaction: TransactionJson) => Promise<TransactionJson | undefined>;
     editTransaction: (transaction: TransactionJson) => void;
     removeTransaction: (transaction: TransactionJson) => void;
-    processTransaction: (transaction: TransactionJson) => void;
+    transactionProcessing: (transaction: TransactionJson) => void;
 }
 
 const TransactionContext = createContext<TransactionContextValue | undefined>(undefined);
@@ -28,7 +34,7 @@ export const TransactionProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
 
-    const processTransaction = async (transaction: TransactionJson) => {
+    const transactionProcessing = async (transaction: TransactionJson) => {
         setLoading(true);
         setError(null);
 
@@ -116,7 +122,7 @@ export const TransactionProvider: React.FC<{ children: React.ReactNode }> = ({ c
         addTransaction,
         editTransaction,
         removeTransaction,
-        processTransaction
+        transactionProcessing
     }), [transactions, loading, error]);
 
     return <TransactionContext.Provider value={value}>{children}</TransactionContext.Provider>;
