@@ -84,7 +84,6 @@ export const AccountDialog: FC<AccountDialogProps> = ({
                     .filter(bl => bl.accountId === selectedAccount.id && bl.transactionId === accountTransactions[0].id);
 
                 await Promise.all(accountBalance.map(async ab => await balanceContext.removeBalance(ab)))
-
                 await transactionContext.removeTransaction(accountTransactions[0])
                 await accountContext.removeAccount(selectedAccount);
             } else {
@@ -93,7 +92,6 @@ export const AccountDialog: FC<AccountDialogProps> = ({
 
 
         } else if (dialogType === ModalTypeEnum.ADD) {
-            console.log("ADD ACCOUNT: ")
             const newAccount = await accountContext.addAccount({
                 id: 0,
                 name: accountName,
@@ -103,8 +101,6 @@ export const AccountDialog: FC<AccountDialogProps> = ({
             });
 
             if (newAccount != undefined) {
-                console.log("ACCOUNT ADDED: ", newAccount)
-                console.log("ADD TRANSACTION: ")
                 const newTransaction = await transactionContext.addTransaction({
                     id: 0,
                     date: new Date(),
@@ -124,9 +120,7 @@ export const AccountDialog: FC<AccountDialogProps> = ({
                 });
 
                 if (newTransaction != undefined) {
-                    console.log("TRANSACTION ADDED: ", newTransaction)
-                    console.log("PROCESS TRANSACTION: ")
-                    await transactionContext.processTransaction(newTransaction);
+                    await transactionContext.transactionProcessing(newTransaction);
                 }
             }
         } else {
