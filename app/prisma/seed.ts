@@ -1,5 +1,43 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 const prisma = new PrismaClient();
+
+async function ensureOpeningForAllAccounts() {
+    const accounts = await prisma.account.findMany({ select: { id: true, name: true } });
+
+    for (const acc of accounts) {
+        await prisma.$transaction(async (tx) => {
+            // If this account already has any Balance row, assume opening rows exist
+            const existing = await tx.balance.findFirst({
+                where: { accountId: acc.id },
+                select: { id: true },
+            });
+            if (existing) return;
+
+            const trx = await tx.transaction.create({
+                data: {
+                    date: new Date(),
+                    type: "Init_Balance",
+                    processed: true,
+                    counterpartyAccountId: acc.id, // link the "opening" transaction to the account
+                    subtotal: new Prisma.Decimal(0),
+                    taxTotal: new Prisma.Decimal(0),
+                    grandTotal: new Prisma.Decimal(0),
+                    amount: new Prisma.Decimal(0),
+                    notes: "Opening Balance",
+                },
+            });
+
+            await tx.balance.create({
+                data: {
+                    amount: new Prisma.Decimal(0),
+                    date: new Date(),
+                    accountId: acc.id,
+                    transactionId: trx.id,
+                },
+            });
+        });
+    }
+}
 
 async function main() {
     // 1) Accounts
@@ -14,7 +52,10 @@ async function main() {
         skipDuplicates: true,
     });
 
-    // 2) Parent categories
+    // 2) Ensure an opening Transaction + Balance exists per account (idempotent)
+    await ensureOpeningForAllAccounts();
+
+    // 3) Parent categories
     const parentNames = [
         "Groceries", "Shopping", "Household", "Transport",
         "Health", "Dining & Leisure", "Other",
@@ -31,7 +72,7 @@ async function main() {
     });
     const byName = Object.fromEntries(parents.map(c => [c.name, c.id]));
 
-    // 3) Children under parents
+    // 4) Children under parents
     const children: Array<{ name: string; parent: string, active: boolean }> = [
         { name: "Dairy", parent: "Groceries", active: true },
         { name: "Vegetables", parent: "Groceries", active: true },
@@ -67,7 +108,7 @@ async function main() {
         skipDuplicates: true,
     });
 
-    // 4) People
+    // 5) People
     await prisma.person.createMany({
         data: [
             { name: "Youssef", active: true },
@@ -80,7 +121,7 @@ async function main() {
         skipDuplicates: true,
     });
 
-    // 5) Stores
+    // 6) Stores
     await prisma.store.createMany({
         data: [
             { name: "Dollarama", active: true },
@@ -94,7 +135,7 @@ async function main() {
         skipDuplicates: true,
     });
 
-    // 6) Products (look up category IDs you need)
+    // 7) Products (look up category IDs you need)
     const leafs = await prisma.category.findMany({
         where: { name: { in: ["Dairy","Vegetables","Fruits","Meat & Poultry","Grains & Pasta","Bread & Bakery","Beverages","Condiments & Spices","Cleaning","Toiletries & Hygiene","Baby Care"] } },
         select: { id: true, name: true },
