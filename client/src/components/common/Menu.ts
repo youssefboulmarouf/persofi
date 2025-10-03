@@ -49,10 +49,6 @@ export const catalogMenuItems: Menu[] = [
         href: "/products"
     },{
         id: uniqueId(),
-        title: "Variants",
-        href: "/variants"
-    },{
-        id: uniqueId(),
         title: "Brands",
         href: "/brands"
     }
