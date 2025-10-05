@@ -102,6 +102,11 @@ const App: React.FC = () => {
                                                 </CategoryProvider>
                                             </TransactionProvider>
                                         } />
+                                        <Route path="/transactions" element={
+                                            <TransactionProvider>
+                                                <Transactions/>
+                                            </TransactionProvider>
+                                        } />
 
                                     </Routes>
                                 </AppProviders>
