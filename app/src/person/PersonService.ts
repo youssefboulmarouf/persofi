@@ -61,11 +61,9 @@ export class PersonService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete person with [id=${id}]`);
-        await this.prisma.person.update({
-            where: { id },
-            data: {
-                active: false
-            }
+        // TODO add validation for person's transaction
+        await this.prisma.person.delete({
+            where: { id }
         });
     }
 }
