@@ -62,11 +62,8 @@ export class StoreService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete store with [id=${id}]`);
-        await this.prisma.store.update({
-            where: { id },
-            data: {
-                active: false
-            }
+        await this.prisma.store.delete({
+            where: { id }
         });
     }
 }
