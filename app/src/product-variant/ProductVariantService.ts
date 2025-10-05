@@ -25,6 +25,16 @@ export class ProductVariantService extends BaseService {
         return ProductVariantJson.from(data);
     }
 
+    async getByProductId(productId: number): Promise<ProductVariantJson[]> {
+        this.logger.log(`Get product variant by [productId:${productId}]`);
+
+        const data = await this.prisma.productVariant.findMany({
+            where: { productId }
+        });
+
+        return data.map(ProductVariantJson.from);
+    }
+
     async create(variant: ProductVariantJson): Promise<ProductVariantJson> {
         this.logger.log(`Create new product variant`, variant);
         return ProductVariantJson.from(
@@ -67,11 +77,8 @@ export class ProductVariantService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete product variant with [id=${id}]`);
-        await this.prisma.productVariant.update({
-            where: { id },
-            data: {
-                active: false
-            }
+        await this.prisma.productVariant.delete({
+            where: { id }
         });
     }
 }
