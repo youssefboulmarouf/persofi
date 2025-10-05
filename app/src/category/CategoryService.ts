@@ -62,11 +62,28 @@ export class CategoryService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete category with [id=${id}]`);
-        await this.prisma.category.update({
-            where: { id },
-            data: {
-                active: false
-            }
-        });
+        const childrenCount = await this.prisma.category.findMany({
+            where: { parentCategoryId: id }
+        })
+
+        if (childrenCount.length > 0) {
+            this.logger.log(`Category with [id=${id}] have [id=${childrenCount.length}] children, will deactivate instead of deleting`);
+            await this.prisma.category.updateMany({
+                where: {
+                    OR: [
+                        { id },
+                        { parentCategoryId: id }
+                    ],
+                },
+                data: {
+                    active: false
+                }
+            });
+        } else {
+            this.logger.log(`Deleting category with [id=${id}]`);
+            await this.prisma.category.delete({
+                where: { id }
+            })
+        }
     }
 }
