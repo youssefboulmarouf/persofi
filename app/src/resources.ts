@@ -21,7 +21,7 @@ router.use("/brands", BrandResource);
 router.use("/categories", CategoryResource);
 router.use("/persons", PersonResource);
 router.use("/products", ProductResource);
-router.use("/product-variants", ProductVariantResource);
+router.use("/variants", ProductVariantResource);
 router.use("/stores", StoreResource);
 router.use("/transactions", TransactionResource);
 
