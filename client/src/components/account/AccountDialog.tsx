@@ -44,7 +44,7 @@ export const AccountDialog: FC<AccountDialogProps> = ({
         setAccountName(selectedAccount.name);
         setAccountType(selectedAccount.accountType);
         setAccountCurrency(selectedAccount.currency);
-        setIsActive(selectedAccount.active);
+        setIsActive(selectedAccount.active ?? true);
     }, [selectedAccount, dialogType]);
 
     const emptyForm = () => {
@@ -65,7 +65,7 @@ export const AccountDialog: FC<AccountDialogProps> = ({
         setIsLoading(true);
 
         if (dialogType === ModalTypeEnum.DELETE) {
-            let accountTransactions = transactionContext
+            const accountTransactions = transactionContext
                 .transactions
                 .filter(tr => tr.payAccountId == selectedAccount.id || tr.counterpartyAccountId == selectedAccount.id);
 
@@ -78,19 +78,18 @@ export const AccountDialog: FC<AccountDialogProps> = ({
                     active: false,
                     currency: selectedAccount.currency
                 });
-            } else if (accountTransactions.length === 1) {
-                let accountBalance = balanceContext
-                    .balances
-                    .filter(bl => bl.accountId === selectedAccount.id && bl.transactionId === accountTransactions[0].id);
-
-                await Promise.all(accountBalance.map(async ab => await balanceContext.removeBalance(ab)))
-                await transactionContext.removeTransaction(accountTransactions[0])
-                await accountContext.removeAccount(selectedAccount);
             } else {
+                if (accountTransactions.length === 1) {
+                    const accountBalance = balanceContext
+                        .balances
+                        .filter(bl => bl.accountId === selectedAccount.id && bl.transactionId === accountTransactions[0].id);
+
+                    await Promise.all(accountBalance.map(async ab => await balanceContext.removeBalance(ab)))
+                    await transactionContext.removeTransaction(accountTransactions[0])
+                }
+
                 await accountContext.removeAccount(selectedAccount);
             }
-
-
         } else if (dialogType === ModalTypeEnum.ADD) {
             const newAccount = await accountContext.addAccount({
                 id: 0,
@@ -141,13 +140,6 @@ export const AccountDialog: FC<AccountDialogProps> = ({
             emptyForm();
         }
     };
-
-    const actionButton = getActionButton(
-        dialogType,
-        handleSubmit,
-        `${dialogType} Account`,
-        accountName === "" || isLoading
-    );
 
     return (
         <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '500px', maxWidth: '500px'}}}>
@@ -206,7 +198,13 @@ export const AccountDialog: FC<AccountDialogProps> = ({
                 )}
             </DialogContent>
             <DialogActions>
-                {actionButton}
+                {
+                    getActionButton(
+                        dialogType,
+                        handleSubmit,
+                        `${dialogType} Account`,
+                        accountName === "" || isLoading)
+                }
                 <Button variant="outlined" onClick={() => emptyForm()}>
                     Cancel
                 </Button>

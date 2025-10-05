@@ -16,7 +16,7 @@ import {useBalanceContext} from "../../context/BalanceContext";
 interface FilterProps {
     searchTerm: string;
     accountType: AccountTypeEnum | null;
-    inactive: boolean;
+    active: boolean;
 }
 
 const bCrumb = [
@@ -33,7 +33,7 @@ const emptyAccount: AccountJson = {
 };
 
 export const Accounts: FC = () => {
-    const [filters, setFilters] = useState<FilterProps>({searchTerm: "", accountType: null, inactive: false});
+    const [filters, setFilters] = useState<FilterProps>({searchTerm: "", accountType: null, active: true});
     const accountContext = useAccountContext();
     const transactionContext = useTransactionContext();
     const balanceContext = useBalanceContext();
@@ -47,9 +47,9 @@ export const Accounts: FC = () => {
             const accountCurrencyMatchSearchTerm = filters.searchTerm ? account.currency.toLowerCase().includes(searchTerm) : true;
             const accountTypeMatchMatchSearchTerm = filters.searchTerm ? account.accountType.toLowerCase().includes(searchTerm) : true;
             const accountTypeMatchFilterType = filters.accountType ? account.accountType === filters.accountType : true;
-            const inactiveAccounts = filters.inactive ? !account.active : true;
+            const activeAccounts = filters.active ? account.active : true;
 
-            return (accountNameMatchSearchTerm || accountCurrencyMatchSearchTerm || accountTypeMatchMatchSearchTerm) && accountTypeMatchFilterType && inactiveAccounts;
+            return (accountNameMatchSearchTerm || accountCurrencyMatchSearchTerm || accountTypeMatchMatchSearchTerm) && accountTypeMatchFilterType && activeAccounts;
         }) || [];
     }, [accountContext.accounts, filters]);
 

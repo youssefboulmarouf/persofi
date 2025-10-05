@@ -47,15 +47,13 @@ export const AccountsList: React.FC<AccountsListProps> = ({
                         <TableCell>{account.accountType}</TableCell>
                         <TableCell>{account.currency}</TableCell>
                         <TableCell>
-                            {account.active ? (
-                                <IconButton color="success">
+                            <IconButton color={account.active ? "success" : "error"}>
+                                {account.active ? (
                                     <CheckIcon width={22} />
-                                </IconButton>
-                            ) : (
-                                <IconButton color="error">
+                                ) : (
                                     <ClearIcon width={22} />
-                                </IconButton>
-                            )}
+                                )}
+                            </IconButton>
                         </TableCell>
                         <TableCell align="right">
                             <EditButton

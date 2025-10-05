@@ -6,7 +6,7 @@ import {AccountTypeEnum} from "../../model/PersofiModels";
 interface FilterProps {
     searchTerm: string;
     accountType: AccountTypeEnum | null;
-    inactive: boolean;
+    active: boolean;
 }
 
 interface AccountFiltersProps {
@@ -43,13 +43,13 @@ const AccountsFilter: React.FC<AccountFiltersProps> = ({ filters, setFilters }) 
             <FormControlLabel
                 control={
                     <Checkbox
-                        checked={filters.inactive}
+                        checked={filters.active}
                         onChange={(e) => {
-                            setFilters({...filters, inactive: e.target.checked })
+                            setFilters({...filters, active: e.target.checked })
                         }}
                     />
                 }
-                label="Inactive"
+                label="Show Only Active Accounts"
             />
         </Stack>
     );
