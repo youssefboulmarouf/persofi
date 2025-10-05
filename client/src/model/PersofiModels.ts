@@ -49,20 +49,27 @@ export type BalanceJson = {
     transactionId: number
 }
 
-export type Store = {
+export type StoreJson = {
     id: number,
     name: string,
     url: string,
     active: boolean,
 }
 
-export type Person = {
+export type BrandJson = {
+    id: number,
+    name: string,
+    url: string,
+    active: boolean,
+}
+
+export type PersonJson = {
     id: number,
     name: string,
     active: boolean,
 }
 
-export type Category = {
+export type CategoryJson = {
     id: number,
     name: string,
     active: boolean,
