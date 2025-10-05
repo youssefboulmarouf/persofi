@@ -65,11 +65,8 @@ export class BrandService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete brand with [id=${id}]`);
-        await this.prisma.brand.update({
-            where: { id },
-            data: {
-                active: false
-            }
+        await this.prisma.brand.delete({
+            where: { id }
         })
     }
 }
