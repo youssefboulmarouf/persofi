@@ -1,6 +1,5 @@
 import {TransactionJson} from "../model/PersofiModels";
 
-
 export const fetchTransactions = async (): Promise<TransactionJson[]> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/transactions`);
     if (!res.ok) {
