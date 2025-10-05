@@ -20,6 +20,9 @@ import {StoreProvider} from "./context/StoreContext";
 import {Stores} from "./components/store/Stores";
 import {BrandProvider} from "./context/BrandContext";
 import {Brands} from "./components/brand/Brands";
+import {ProductProvider} from "./context/ProductContext";
+import {Products} from "./components/product/Products";
+import {Transactions} from "./components/transaction/Transactions";
 
 const PageWrapper = styled("div")(() => ({
     display: "flex",
@@ -90,6 +93,16 @@ const App: React.FC = () => {
                                                 </BrandProvider>
                                             </TransactionProvider>
                                         } />
+                                        <Route path="/products" element={
+                                            <TransactionProvider>
+                                                <CategoryProvider>
+                                                    <ProductProvider>
+                                                        <Products/>
+                                                    </ProductProvider>
+                                                </CategoryProvider>
+                                            </TransactionProvider>
+                                        } />
+
                                     </Routes>
                                 </AppProviders>
                             </Box>
