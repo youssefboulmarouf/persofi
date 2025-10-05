@@ -81,10 +81,12 @@ export type ProductJson = {
     name: string,
     active: boolean,
     categoryId: number,
+    variants: ProductVariantJson[]
 }
 
 export type ProductVariantJson = {
     id: number;
+    productId: number,
     unitSize: number;
     unitType: UintTypeEnum;
     description: string;
@@ -97,7 +99,7 @@ export type TransactionJson = {
     type: TransactionTypeEnum,
     notes: string,
     processed: boolean,
-    items: TransactionItem[],
+    items: TransactionItemJson[],
     payAccountId: number | null,
     counterpartyAccountId: number | null,
     storeId: number | null,
@@ -109,7 +111,7 @@ export type TransactionJson = {
     amount: number,
 }
 
-export type TransactionItem = {
+export type TransactionItemJson = {
     id: number,
     description: string,
     quantity: number,
