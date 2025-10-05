@@ -8,11 +8,18 @@ import Header from "./components/header/Header";
 import Box from "@mui/material/Box";
 import AppProviders from "./AppProviders";
 import {Accounts} from "./components/account/Accounts";
-import {Category} from "./components/category/Category";
+import {Categories} from "./components/category/Categories";
 import {Dashboard} from "./components/dashborad/Dashboard";
 import {AccountProvider} from "./context/AccountContext";
 import {TransactionProvider} from "./context/TransactionContext";
 import {BalanceProvider} from "./context/BalanceContext";
+import {Persons} from "./components/person/Persons";
+import {PersonProvider} from "./context/PersonContext";
+import {CategoryProvider} from "./context/CategoryContext";
+import {StoreProvider} from "./context/StoreContext";
+import {Stores} from "./components/store/Stores";
+import {BrandProvider} from "./context/BrandContext";
+import {Brands} from "./components/brand/Brands";
 
 const PageWrapper = styled("div")(() => ({
     display: "flex",
@@ -55,7 +62,34 @@ const App: React.FC = () => {
                                                 </TransactionProvider>
                                             </BalanceProvider>
                                         } />
-                                        <Route path="/category" element={<Category/>} />
+                                        <Route path="/persons" element={
+                                            <TransactionProvider>
+                                                <PersonProvider>
+                                                    <Persons/>
+                                                </PersonProvider>
+                                            </TransactionProvider>
+                                        } />
+                                        <Route path="/categories" element={
+                                            <TransactionProvider>
+                                                <CategoryProvider>
+                                                    <Categories/>
+                                                </CategoryProvider>
+                                            </TransactionProvider>
+                                        } />
+                                        <Route path="/stores" element={
+                                            <TransactionProvider>
+                                                <StoreProvider>
+                                                    <Stores/>
+                                                </StoreProvider>
+                                            </TransactionProvider>
+                                        } />
+                                        <Route path="/brands" element={
+                                            <TransactionProvider>
+                                                <BrandProvider>
+                                                    <Brands/>
+                                                </BrandProvider>
+                                            </TransactionProvider>
+                                        } />
                                     </Routes>
                                 </AppProviders>
                             </Box>
