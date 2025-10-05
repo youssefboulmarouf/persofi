@@ -1,5 +1,5 @@
 import {FC, useEffect, useMemo, useState} from "react";
-import {AccountTypeEnum, CategoryJson, CurrencyEnum, ModalTypeEnum} from "../../model/PersofiModels";
+import {CategoryJson, ModalTypeEnum} from "../../model/PersofiModels";
 import {getActionButton} from "../common/Utilities";
 import {Autocomplete, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Switch, TextField} from "@mui/material";
 import LoadingComponent from "../common/LoadingComponent";
@@ -45,6 +45,8 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
     }, [selectedCategory, dialogType]);
 
     const handleSubmit = async () => {
+        if (categoryName == "") return;
+
         setIsLoading(true);
         if (dialogType === ModalTypeEnum.ADD) {
             await categoryContext.addCategory({
