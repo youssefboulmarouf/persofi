@@ -1,9 +1,9 @@
 import {FC} from "react";
 
-export const Category: FC = () => {
+export const Transactions: FC = () => {
     return (
         <>
-            {"Transaction"}
+            {"Transactions"}
         </>
     );
 }
