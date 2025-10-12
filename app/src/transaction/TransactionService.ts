@@ -70,7 +70,7 @@ export class TransactionService extends BaseService {
                         quantity: it.getQuantity(),
                         unitPrice: it.getUnitPrice(),
                         lineTotal: it.getLineTotal(),
-                        variantId: it.getProductVariantId(),
+                        variantId: it.getVariantId(),
                         brandId: it.getBrandId(),
                         categoryId: it.getCategoryId(),
                     })),
