@@ -93,13 +93,6 @@ export const PersonDialog: FC<PersonDialogProps> = ({
         }
     };
 
-    const actionButton = getActionButton(
-        dialogType,
-        handleSubmit,
-        `${dialogType} Person`,
-        personName === "" || isLoading
-    );
-
     return (
         <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '500px', maxWidth: '500px'}}}>
             <DialogTitle sx={{ mt: 2 }}>{dialogType} Person: {selectedPerson.name}</DialogTitle>
