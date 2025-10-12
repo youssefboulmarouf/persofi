@@ -74,12 +74,10 @@ export class TransactionValidationService {
     private static validateRefund(t: TransactionJson): void {
         this.mustNull(t.getPayAccountId(), "Pay Account must be null for a refund transaction");
         this.mustNotNull(t.getCounterpartyAccountId(), "Counter Party Account cannot be null for a refund transaction");
-        this.mustNotNull(t.getStoreId(), "Store Id cannot be null for a refund transaction");
-        this.mustNotNull(t.getPersonId(), "Person Id cannot be null for a refund transaction");
         this.mustGt0(t.getSubtotal(), "Subtotal must be greater than 0 for a refund transaction");
         this.mustGte0(t.getTaxTotal(), "Tax Total must be greater than or equal to 0 for a refund transaction");
         this.mustEq(t.getGrandTotal(), t.getSubtotal() + t.getTaxTotal(), "Grand Total must be equal to Subtotal + Tax Total for a refund transaction");
-        this.mustPositive(t.getAmount(), "Amount must be greater than 0 for a refund transaction");
+        this.mustEq(t.getAmount(), 0, "Amount must be greater than 0 for a refund transaction");
         this.mustNotNull(t.getRefundOfId(), "Refund ID cannot be null for a refund transaction");
     }
 
