@@ -77,13 +77,11 @@ export const Products: FC = () => {
                     <CardContent>
                         <Stack justifyContent="space-between" direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 2, md: 4 }}>
                             <ProductsFilter categoryContext={categoryContext} filters={filters} setFilters={setFilters} />
-                            <Box display="flex" gap={1}>
-                                <TableCallToActionButton
-                                    fullwidth={false}
-                                    callToActionText="Add Product"
-                                    callToActionFunction={() => productDialog.openDialog(ModalTypeEnum.ADD, emptyProduct)}
-                                />
-                            </Box>
+                            <TableCallToActionButton
+                                fullwidth={false}
+                                callToActionText="Add Product"
+                                callToActionFunction={() => productDialog.openDialog(ModalTypeEnum.ADD, emptyProduct)}
+                            />
                         </Stack>
 
                         <Box sx={{ overflowX: "auto" }} mt={3}>
