@@ -4,7 +4,7 @@ export class TransactionItemJson {
     private readonly description: string;
 
     private readonly brandId: number | null;
-    private readonly productVariantId: number | null;
+    private readonly variantId: number | null;
     private readonly categoryId: number | null;
 
     private readonly quantity: number;
@@ -18,7 +18,7 @@ export class TransactionItemJson {
         quantity: number,
         unitPrice: number,
         lineTotal: number,
-        productVariantId: number | null,
+        variantId: number | null,
         brandId: number | null,
         categoryId: number | null,
     ) {
@@ -29,7 +29,7 @@ export class TransactionItemJson {
         this.unitPrice = unitPrice;
         this.lineTotal = lineTotal;
         this.brandId = brandId;
-        this.productVariantId = productVariantId;
+        this.variantId = variantId;
         this.categoryId = categoryId;
     }
 
@@ -61,8 +61,8 @@ export class TransactionItemJson {
         return this.lineTotal;
     }
 
-    public getProductVariantId(): number | null {
-        return this.productVariantId;
+    public getVariantId(): number | null {
+        return this.variantId;
     }
 
     public getCategoryId(): number | null {
@@ -81,7 +81,7 @@ export class TransactionItemJson {
             Number(body.quantity),
             Number(body.unitPrice),
             Number(body.lineTotal),
-            (body.productVariantId === null) ? null : Number(body.productVariantId),
+            (body.variantId === null) ? null : Number(body.variantId),
             (body.brandId === null) ? null : Number(body.brandId),
             (body.categoryId === null) ? null : Number(body.categoryId),
         )
