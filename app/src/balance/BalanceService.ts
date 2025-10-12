@@ -50,7 +50,7 @@ export class BalanceService extends BaseService {
     }
 
     async updateAccountBalance(newBalance: number, date: Date, transactionId: number, accountId: number) : Promise<void> {
-        this.logger.log(`Update balance for account with [accountId:${accountId}]`);
+        this.logger.log(`Update balance for account with [accountId:${accountId}] and transaction with [transactionId:${transactionId}]`);
         await this.prisma.balance.create({
             data: {
                 amount: newBalance,
