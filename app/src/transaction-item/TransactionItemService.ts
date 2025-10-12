@@ -14,7 +14,7 @@ export class TransactionItemService extends BaseService {
             data: transactionItems.map(item => ({
                 transactionId,
                 description: item.getDescription(),
-                variantId: item.getProductVariantId(),
+                variantId: item.getVariantId(),
                 categoryId: item.getCategoryId(),
                 brandId: item.getBrandId(),
                 quantity: item.getQuantity(),
@@ -26,7 +26,7 @@ export class TransactionItemService extends BaseService {
 
     async deleteByTransactionId(transactionId: number): Promise<void> {
         this.logger.log(`Deleting items for transaction with [id=${transactionId}]`)
-        this.prisma.transactionItem.deleteMany({
+        await this.prisma.transactionItem.deleteMany({
             where: { transactionId }
         })
     }
