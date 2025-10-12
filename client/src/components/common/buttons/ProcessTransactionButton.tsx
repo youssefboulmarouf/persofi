@@ -1,5 +1,5 @@
 import * as React from "react";
-import AddIcon from "@mui/icons-material/Add";
+import SettingsIcon from "@mui/icons-material/Settings";
 import IconActionButton from "./IconActionButton";
 
 type Props = {
@@ -8,16 +8,16 @@ type Props = {
     disable?: boolean;
 };
 
-const AddButton: React.FC<Props> = ({ tooltipText, openDialogWithType, disable = false }) => (
+const ProcessTransactionButton: React.FC<Props> = ({ tooltipText, openDialogWithType, disable = false }) => (
     <IconActionButton
         tooltip={tooltipText}
         onClick={openDialogWithType}
         disabled={disable}
         color="primary"
-        icon={<AddIcon />}
+        icon={<SettingsIcon />}
         iconSize={22}
-        aria-label="add"
+        aria-label="process"
     />
 );
 
-export default AddButton;
+export default ProcessTransactionButton;

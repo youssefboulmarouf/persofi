@@ -1,21 +1,23 @@
-import IconButton from "@mui/material/IconButton";
+import * as React from "react";
 import DeleteIcon from "@mui/icons-material/Delete";
-import {Tooltip} from "@mui/material";
-import React from "react";
-import {ButtonProps} from "./ButtonProps";
+import IconActionButton from "./IconActionButton";
 
-const DeleteButton: React.FC<ButtonProps> = ({tooltipText, openDialogWithType, disable = false}) => {
-    return (
-        <Tooltip title={tooltipText}>
-            <IconButton
-                color="error"
-                onClick={openDialogWithType}
-                disabled={disable}
-            >
-                <DeleteIcon width={22} />
-            </IconButton>
-        </Tooltip>
-    )
-}
+type Props = {
+    tooltipText?: string;
+    openDialogWithType?: () => void;
+    disable?: boolean;
+};
+
+const DeleteButton: React.FC<Props> = ({ tooltipText, openDialogWithType, disable = false }) => (
+    <IconActionButton
+        tooltip={tooltipText}
+        onClick={openDialogWithType}
+        disabled={disable}
+        color="error"
+        icon={<DeleteIcon />}
+        iconSize={22}
+        aria-label="delete"
+    />
+);
 
 export default DeleteButton;

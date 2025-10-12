@@ -1,21 +1,23 @@
-import IconButton from "@mui/material/IconButton";
-import {Tooltip} from "@mui/material";
-import React from "react";
+import * as React from "react";
 import EditIcon from "@mui/icons-material/Edit";
-import {ButtonProps} from "./ButtonProps";
+import IconActionButton from "./IconActionButton";
 
-const EditButton: React.FC<ButtonProps> = ({tooltipText, openDialogWithType, disable = false}) => {
-    return (
-        <Tooltip title={tooltipText}>
-            <IconButton
-                color="warning"
-                onClick={openDialogWithType}
-                disabled={disable}
-            >
-                <EditIcon width={22} />
-            </IconButton>
-        </Tooltip>
-    )
-}
+type Props = {
+    tooltipText?: string;
+    openDialogWithType?: () => void;
+    disable?: boolean;
+};
+
+const EditButton: React.FC<Props> = ({ tooltipText, openDialogWithType, disable = false }) => (
+    <IconActionButton
+        tooltip={tooltipText}
+        onClick={openDialogWithType}
+        disabled={disable}
+        color="warning"
+        icon={<EditIcon />}
+        iconSize={22}
+        aria-label="edit"
+    />
+);
 
 export default EditButton;
