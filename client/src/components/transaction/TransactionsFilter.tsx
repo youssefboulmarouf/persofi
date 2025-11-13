@@ -3,11 +3,15 @@ import {Checkbox, FormControlLabel, Stack, TextField} from "@mui/material";
 import TableSearch from "../common/TableSearch";
 import {TransactionTypeEnum} from "../../model/PersofiModels";
 import Autocomplete from "@mui/material/Autocomplete";
+import {DatePicker, LocalizationProvider} from "@mui/x-date-pickers";
+import {AdapterDateFns} from "@mui/x-date-pickers/AdapterDateFns";
 
 interface FilterProps {
     searchTerm: string;
     type: TransactionTypeEnum | null;
     unprocessed: boolean;
+    startDate: Date | null;
+    endDate: Date | null;
 }
 
 interface TransactionsFilterProps {
@@ -39,6 +43,25 @@ const TransactionsFilter: React.FC<TransactionsFilterProps> = ({ filters, setFil
                 size="small"
             />
 
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                {/* TODO : Move date picker to seperated component*/}
+                <DatePicker
+                    label="Start Date"
+                    value={filters.startDate}
+                    onChange={(newValue: Date | null) => setFilters({ ...filters, startDate: newValue })}
+                    minDate={new Date("01/01/2024")}
+                    maxDate={new Date("01/01/2047")}
+                />
+
+                <DatePicker
+                    label="End Date"
+                    value={filters.endDate}
+                    onChange={(newValue: Date | null) => setFilters({ ...filters, endDate: newValue })}
+                    minDate={new Date("01/01/2024")}
+                    maxDate={new Date("01/01/2047")}
+                />
+            </LocalizationProvider>
+
             <FormControlLabel
                 control={
                     <Checkbox
@@ -46,7 +69,7 @@ const TransactionsFilter: React.FC<TransactionsFilterProps> = ({ filters, setFil
                         onChange={(e) => setFilters({ ...filters, unprocessed: e.target.checked })}
                     />
                 }
-                label="Show only unprocessed"
+                label="Unprocessed"
             />
         </Stack>
     );
