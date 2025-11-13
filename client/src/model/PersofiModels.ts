@@ -43,7 +43,7 @@ export type AccountJson = {
 
 export type BalanceJson = {
     id: number,
-    amount: string,
+    amount: number,
     date: Date,
     accountId: number,
     transactionId: number
