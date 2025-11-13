@@ -11,6 +11,7 @@ import {usePaginationController} from "../common/usePaginationController";
 import Pagination from "../common/Pagination";
 import LoadingComponent from "../common/LoadingComponent";
 import {
+    AccountJson,
     ModalTypeEnum,
     ProductJson,
     TransactionItemJson,
@@ -23,6 +24,7 @@ import ProcessTransactionButton from "../common/buttons/ProcessTransactionButton
 interface TransactionsListProps {
     transactions: TransactionJson[];
     products: ProductJson[];
+    accounts: AccountJson[];
     openTransactionDialogWithType: (type: ModalTypeEnum, transaction: TransactionJson) => void;
     openRefundTransactionDialog: (type: ModalTypeEnum, transaction: TransactionJson) => void;
     processTransaction: (tx: TransactionJson) => void;
@@ -32,6 +34,7 @@ interface TransactionsListProps {
 export const TransactionsList: React.FC<TransactionsListProps> = ({
     transactions,
     products,
+    accounts,
     openTransactionDialogWithType,
     openRefundTransactionDialog,
     processTransaction,
@@ -66,6 +69,8 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                     <TableCell><Typography variant="h6" fontSize="14px">Date</Typography></TableCell>
                     <TableCell><Typography variant="h6" fontSize="14px">Type</Typography></TableCell>
                     <TableCell><Typography variant="h6" fontSize="14px">Notes</Typography></TableCell>
+                    <TableCell><Typography variant="h6" fontSize="14px">Source Account</Typography></TableCell>
+                    <TableCell><Typography variant="h6" fontSize="14px">Destination Account</Typography></TableCell>
                     <TableCell><Typography variant="h6" fontSize="14px">Processed</Typography></TableCell>
                     <TableCell><Typography variant="h6" fontSize="14px">Total</Typography></TableCell>
                     <TableCell align="right"><Typography variant="h6" fontSize="14px">Actions</Typography></TableCell>
@@ -89,6 +94,16 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                                     : tx.type
                             }</TableCell>
                             <TableCell>{tx.notes}</TableCell>
+                            <TableCell>{
+                                tx.payAccountId != null
+                                    ? accounts.find(a => a.id === tx.payAccountId)?.accountType
+                                    : "-"
+                            }</TableCell>
+                            <TableCell>{
+                                tx.counterpartyAccountId != null
+                                    ? accounts.find(a => a.id === tx.counterpartyAccountId)?.accountType
+                                    : "-"
+                            }</TableCell>
                             <TableCell>
                                 <IconButton color={tx.processed ? "success" : "error"}>
                                     {tx.processed ? (
