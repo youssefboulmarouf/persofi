@@ -16,11 +16,14 @@ import {useProductContext} from "../../context/ProductContext";
 import {useStoreContext} from "../../context/StoreContext";
 import {usePersonContext} from "../../context/PersonContext";
 import {TransactionRefundDialog} from "./TransactionRefundDialog";
+import {getFirstDayOfCurrentMonth} from "../common/Utilities";
 
 interface FilterProps {
     searchTerm: string;
     type: TransactionTypeEnum | null;
     unprocessed: boolean;
+    startDate: Date | null;
+    endDate: Date | null;
 }
 
 const bCrumb = [
@@ -46,20 +49,14 @@ const emptyTransaction: TransactionJson = {
     amount: 0,
 };
 
-const emptyItem: TransactionItemJson = {
-    id: 0,
-    description: "",
-    quantity: 0,
-    unitPrice: 0,
-    lineTotal: 0,
-    transactionId: 0,
-    variantId: null,
-    categoryId: null,
-    brandId: null,
-};
-
 export const Transactions: FC = () => {
-    const [filters, setFilters] = useState<FilterProps>({ searchTerm: "", type: null, unprocessed: false });
+    const [filters, setFilters] = useState<FilterProps>({
+        searchTerm: "",
+        type: null,
+        unprocessed: false,
+        startDate: getFirstDayOfCurrentMonth(),
+        endDate: null
+    });
     const transactionDialog = useDialogController<TransactionJson>(emptyTransaction);
     const refundTransactionDialog = useDialogController<TransactionJson>(emptyTransaction);
     const transactionContext = useTransactionContext();
@@ -70,15 +67,42 @@ export const Transactions: FC = () => {
     const personContext = usePersonContext();
 
     const filteredTransactions = useMemo(() => {
-        const searchTerm = filters.searchTerm.toLowerCase();
+        const q = (filters.searchTerm ?? "").toLowerCase().trim();
 
-        return transactionContext.transactions.filter((t) => {
-            const nonMatchInitBalance = t.type !== TransactionTypeEnum.INIT_BALANCE;
-            const notesMatch = filters.searchTerm ? (t.notes ?? "").toLowerCase().includes(searchTerm) : true;
-            const typeMatch = filters.type ? filters.type === t.type : true;
+        // Normalize date bounds
+        const startTs =
+            filters.startDate ? new Date(filters.startDate).setHours(0, 0, 0, 0) : null;
+        const endTs =
+            filters.endDate ? new Date(filters.endDate).setHours(23, 59, 59, 999) : null;
+
+        const typeIsSet = filters.type !== undefined && filters.type !== null;
+
+        const results = (transactionContext.transactions ?? []).filter((t) => {
+            const tTime = new Date(t.date as any).getTime();
+            if (Number.isNaN(tTime)) return false;
+
+            const nonInitBalance = t.type !== TransactionTypeEnum.INIT_BALANCE;
+            const notesMatch = q ? (t.notes ?? "").toLowerCase().includes(q) : true;
+            const typeMatch = typeIsSet ? t.type === filters.type : true;
             const unprocessedMatch = filters.unprocessed ? !t.processed : true;
-            return nonMatchInitBalance && notesMatch && typeMatch && unprocessedMatch;
+
+            const startMatch = startTs != null ? tTime >= startTs : true;
+            const endMatch = endTs != null ? tTime <= endTs : true;
+
+            return (
+                nonInitBalance &&
+                notesMatch &&
+                typeMatch &&
+                unprocessedMatch &&
+                startMatch &&
+                endMatch
+            );
         });
+
+        // Sort by date descending (newest first)
+        return results.sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
     }, [transactionContext.transactions, filters]);
 
     const processTransaction = async (tx: TransactionJson) => {
@@ -103,6 +127,7 @@ export const Transactions: FC = () => {
                             <TransactionsList
                                 transactions={filteredTransactions}
                                 products={productContext.products}
+                                accounts={accountContext.accounts}
                                 openTransactionDialogWithType={transactionDialog.openDialog}
                                 openRefundTransactionDialog={refundTransactionDialog.openDialog}
                                 isLoading={transactionContext.loading}
