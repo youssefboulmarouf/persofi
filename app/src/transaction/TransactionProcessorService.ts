@@ -102,7 +102,7 @@ export class TransactionProcessorService extends BaseService {
         } catch (e: any) {
             if (e instanceof BadRequestError && e.message.includes("try to initialize it first")) {
                 await this.balanceService.updateAccountBalance(
-                    0,
+                    transaction.getAmount(),
                     transaction.getDate(),
                     transaction.getId(),
                     counterPartyAccount.getId()
