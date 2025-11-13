@@ -191,6 +191,8 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
     }
 
     const validateForm = (): boolean => {
+        if (processed) return false;
+
         switch (type) {
             case TransactionTypeEnum.EXPENSE:
                 return payAccount !== null
@@ -217,6 +219,14 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                     && grandTotal === 0
                     && amount > 0
                     && refundOf === null;
+                case TransactionTypeEnum.REFUND:
+                    return payAccount == null
+                        && counterPartyAccount !== null
+                        && subtotal > 0
+                        && taxTotal >= 0
+                        && grandTotal === subtotal + taxTotal
+                        && amount === 0
+                        && refundOf !== null;
             default: return false;
         }
     }
