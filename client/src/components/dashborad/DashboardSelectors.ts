@@ -98,7 +98,7 @@ export function useKpisInRange(range?: DateRange) {
 /* ------------------------------------------
    Cashflow series (Income vs Expense) daily
 -------------------------------------------*/
-export function useCashflowDailyInRange(range?: DateRange) {
+export function useCashFlowDailyInRange(range?: DateRange) {
     const { transactions } = useTransactionContext();
 
     return useMemo(() => {

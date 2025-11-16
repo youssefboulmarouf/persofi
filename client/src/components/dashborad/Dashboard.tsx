@@ -11,7 +11,7 @@ import {
     useNetWorthByCurrency,
     useSpendByTransactionTypeInRange,
     useKpisInRange,
-    useCashflowDailyInRange,
+    useCashFlowDailyInRange,
     useCategoryBreakdownInRange,
     useTopStoresInRange,
     useSpendByPersonInRange,
@@ -59,7 +59,7 @@ export const Dashboard: FC = () => {
         end: filters.endDate
     });
 
-    const cashflow = useCashflowDailyInRange({
+    const cashflow = useCashFlowDailyInRange({
         start: filters.startDate,
         end: filters.endDate
     });
