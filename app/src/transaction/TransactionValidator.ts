@@ -2,7 +2,7 @@ import { TransactionJson } from "./TransactionJson";
 import { TransactionTypeEnum } from "./TransactionType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 
-export class TransactionValidationService {
+export class TransactionValidator {
     static validate(t: TransactionJson): void {
         switch (t.getTransactionType()) {
             case TransactionTypeEnum.EXPENSE:

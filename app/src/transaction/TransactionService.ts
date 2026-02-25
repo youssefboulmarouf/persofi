@@ -5,7 +5,7 @@ import {TransactionItemService} from "../transaction-item/TransactionItemService
 import {TransactionTypeEnum} from "./TransactionType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import {TransactionProcessorService} from "./TransactionProcessorService";
-import {TransactionValidationService} from "./TransactionValidationService";
+import {TransactionValidator} from "./TransactionValidator";
 import {AccountService} from "../account/AccountService";
 import AppError from "../utilities/errors/AppError";
 
@@ -45,7 +45,7 @@ export class TransactionService extends BaseService {
         this.logger.log(`Create new transaction`, transaction);
 
         this.logger.log(`Validating transaction data`);
-        TransactionValidationService.validate(transaction);
+        TransactionValidator.validate(transaction);
         this.logger.log(`Transaction data is valid`);
 
         this.logger.log(`Inserting transaction`);
@@ -86,7 +86,7 @@ export class TransactionService extends BaseService {
     }
 
     async update(transactionId: number, transaction: TransactionJson): Promise<void> {
-        TransactionValidationService.validate(transaction);
+        TransactionValidator.validate(transaction);
         BadRequestError.throwIf(transactionId != transaction.getId(), `Transaction id mismatch`);
         BadRequestError.throwIf(transaction.isProcessed(), `Transaction is processed. Cannot be updated.`);
 
