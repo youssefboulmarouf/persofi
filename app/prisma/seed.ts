@@ -41,19 +41,18 @@ async function ensureOpeningForAllAccounts() {
 
 async function main() {
     // 1) Accounts
-    await prisma.account.createMany({
-        data: [
-            { name: "RBC - Debit", accountType: "Debit", currency: "CAD", active: true },
-            { name: "RBC - Credit", accountType: "Credit", currency: "CAD", active: true },
-            { name: "Pocket Money (Canada)", accountType: "Cash", currency: "CAD", active: true },
-            { name: "Pocket Money (Morocco)", accountType: "Cash", currency: "CAD", active: true },
-            { name: "Saving Account Morocco", accountType: "Debit", currency: "MAD", active: true },
-        ],
-        skipDuplicates: true,
-    });
+    // await prisma.account.createMany({
+    //     data: [
+    //         { name: "Debit", accountType: "Debit", currency: "CAD", active: true },
+    //         { name: "Credit", accountType: "Credit", currency: "CAD", active: true },
+    //         { name: "Pocket Money", accountType: "Cash", currency: "CAD", active: true },
+    //         { name: "Saving Account", accountType: "Debit", currency: "MAD", active: true },
+    //     ],
+    //     skipDuplicates: true,
+    // });
 
     // 2) Ensure an opening Transaction + Balance exists per account (idempotent)
-    await ensureOpeningForAllAccounts();
+    //await ensureOpeningForAllAccounts();
 
     // 3) Parent categories
     const parentNames = [
