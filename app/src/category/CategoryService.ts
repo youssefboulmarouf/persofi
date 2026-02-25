@@ -2,6 +2,7 @@ import {BaseService} from "../utilities/BaseService";
 import {CategoryJson} from "./CategoryJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
+import AppError from "../utilities/errors/AppError";
 
 export class CategoryService extends BaseService {
     constructor() {
@@ -81,9 +82,18 @@ export class CategoryService extends BaseService {
             });
         } else {
             this.logger.log(`Deleting category with [id=${id}]`);
-            await this.prisma.category.delete({
-                where: { id }
-            })
+            try {
+                await this.prisma.category.delete({
+                    where: { id }
+                })
+            } catch (e: any) {
+                throw new AppError(
+                    "Runtime Error",
+                    500,
+                    `Unable to delete category that is tied to other entities: ${e.message}.`
+                );
+            }
+
         }
     }
 }

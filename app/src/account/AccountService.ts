@@ -2,6 +2,7 @@ import {BaseService} from "../utilities/BaseService";
 import {AccountJson} from "./AccountJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
+import AppError from "../utilities/errors/AppError";
 
 export class AccountService extends BaseService {
 
@@ -66,8 +67,17 @@ export class AccountService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete account with [id=${id}]`);
-        await this.prisma.account.delete({
-            where: { id }
-        })
+
+        try {
+            await this.prisma.account.delete({
+                where: { id }
+            })
+        } catch (e: any) {
+            throw new AppError(
+                "Runtime Error",
+                500,
+                `Unable to delete account that is tied to other entities: ${e.message}.`
+            );
+        }
     }
 }

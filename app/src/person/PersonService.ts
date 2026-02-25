@@ -2,6 +2,7 @@ import {BaseService} from "../utilities/BaseService";
 import {PersonJson} from "./PersonJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
+import AppError from "../utilities/errors/AppError";
 
 export class PersonService extends BaseService {
     constructor() {
@@ -61,9 +62,16 @@ export class PersonService extends BaseService {
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete person with [id=${id}]`);
-        // TODO add validation for person's transaction
-        await this.prisma.person.delete({
-            where: { id }
-        });
+        try {
+            await this.prisma.person.delete({
+                where: { id }
+            });
+        } catch (e: any) {
+            throw new AppError(
+                "Runtime Error",
+                500,
+                `Unable to delete person that is tied to other entities: ${e.message}.`
+            );
+        }
     }
 }
