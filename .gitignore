@@ -1,4 +1,5 @@
 .idea/
+.env
 
 app/.env
 app/.env.test
