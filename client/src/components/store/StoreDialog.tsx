@@ -5,30 +5,33 @@ import {Dialog, DialogActions, DialogContent, DialogTitle, Stack, Switch, TextFi
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import Button from "@mui/material/Button";
-import {StoreContextValue} from "../../context/StoreContext";
-import {TransactionContextValue} from "../../context/TransactionContext";
+import { useAddStore, useUpdateStore, useDeleteStore } from "../../hooks/useStores";
+import { useTransactions } from "../../hooks/useTransactions";
 
 interface StoreDialogProps {
     selectedStore: StoreJson;
     dialogType: ModalTypeEnum;
     openDialog: boolean;
     closeDialog: () => void;
-    storeContext: StoreContextValue;
-    transactionContext: TransactionContextValue;
 }
 
 export const StoreDialog: FC<StoreDialogProps> = ({
     selectedStore,
     dialogType,
     openDialog,
-    closeDialog,
-    storeContext,
-    transactionContext
+    closeDialog
 }) => {
     const [storeName, setStoreName] = useState<string>("");
     const [storeUrl, setStoreUrl] = useState<string>("");
     const [isActive, setIsActive] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const { mutateAsync: addStore } = useAddStore();
+    const { mutateAsync: updateStore } = useUpdateStore();
+    const { mutateAsync: deleteStore } = useDeleteStore();
+    
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
 
     useEffect(() => {
         setStoreName(selectedStore.name ?? "");
@@ -38,39 +41,43 @@ export const StoreDialog: FC<StoreDialogProps> = ({
 
     const handleSubmit = async () => {
         setIsLoading(true);
-        if (dialogType === ModalTypeEnum.ADD) {
-            await storeContext.addStore({
-                id: 0,
-                name: storeName.trim(),
-                url: storeUrl.trim(),
-                active: isActive
-            });
-        } else if (dialogType === ModalTypeEnum.UPDATE) {
-            await storeContext.editStore({
-                id: selectedStore.id,
-                name: storeName.trim(),
-                url: storeUrl.trim(),
-                active: isActive
-            });
-        } else if (dialogType === ModalTypeEnum.DELETE) {
-            const storeTransactions = transactionContext
-                .transactions
-                .filter(tr => tr.storeId === selectedStore.id);
-
-            if (storeTransactions.length > 1) {
-                console.log(`Store with [id=${selectedStore.id}] have ${storeTransactions.length} transactions, deactivate instead of delete`)
-                await storeContext.editStore({
-                    id: selectedStore.id,
-                    name: selectedStore.name,
-                    url: selectedStore.url,
-                    active: false
+        try {
+            if (dialogType === ModalTypeEnum.ADD) {
+                await addStore({
+                    id: 0,
+                    name: storeName.trim(),
+                    url: storeUrl.trim(),
+                    active: isActive
                 });
-            } else {
-                await storeContext.removeStore(selectedStore);
+            } else if (dialogType === ModalTypeEnum.UPDATE) {
+                await updateStore({
+                    id: selectedStore.id,
+                    name: storeName.trim(),
+                    url: storeUrl.trim(),
+                    active: isActive
+                });
+            } else if (dialogType === ModalTypeEnum.DELETE) {
+                const storeTransactions = transactions
+                    .filter(tr => tr.storeId === selectedStore.id);
+
+                if (storeTransactions.length > 1) {
+                    console.log(`Store with [id=${selectedStore.id}] have ${storeTransactions.length} transactions, deactivate instead of delete`)
+                    await updateStore({
+                        id: selectedStore.id,
+                        name: selectedStore.name,
+                        url: selectedStore.url,
+                        active: false
+                    });
+                } else {
+                    await deleteStore(selectedStore);
+                }
             }
+        } catch (err) {
+            console.log(`Error while ${dialogType} store`, err);
+        } finally {
+            setIsLoading(false);
+            closeDialog();
         }
-        setIsLoading(false);
-        closeDialog();
     };
 
     const emptyForm = () => {

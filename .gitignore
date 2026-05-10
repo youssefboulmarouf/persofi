@@ -8,6 +8,14 @@ app/logs/
 app/src/logs/
 app/dist/
 app/prisma/migrations/
+app/coverage/
+
+# Generated JS / source-map files (compiled from TypeScript)
+app/**/*.js
+app/**/*.js.map
+app/**/*.d.ts
+# But keep config files that are intentionally JS
+!app/jest.config.js
 
 client/.env
 client/node_modules/

@@ -9,8 +9,7 @@ import BrandsFilter from "./BrandsFilter";
 import { BrandsList } from "./BrandsList";
 import { BrandDialog } from "./BrandDialog";
 import { ModalTypeEnum, BrandJson } from "../../model/PersofiModels";
-import {useTransactionContext} from "../../context/TransactionContext";
-import {useBrandContext} from "../../context/BrandContext";
+import { useBrands } from "../../hooks/useBrands";
 
 interface FilterProps {
     searchTerm: string;
@@ -32,17 +31,17 @@ const emptyBrand: BrandJson = {
 export const Brands: FC = () => {
     const [filters, setFilters] = useState<FilterProps>({ searchTerm: "", active: true });
     const brandDialog = useDialogController<BrandJson>(emptyBrand);
-    const brandContext = useBrandContext();
-    const transactionContext = useTransactionContext();
+    const { data: brandsData, isLoading: isBrandsLoading } = useBrands();
+    const brands = brandsData || [];
 
     const filteredBrands = useMemo(() => {
         const searchTerm = filters.searchTerm.toLowerCase();
-        return brandContext.brands.filter((b) => {
+        return brands.filter((b) => {
             const nameMatches = filters.searchTerm ? b.name.toLowerCase().includes(searchTerm) : true;
             const activeMatches = filters.active ? b.active : true;
             return nameMatches && activeMatches;
         });
-    }, [filters, brandContext.brands]);
+    }, [filters, brands]);
 
     return (
         <>
@@ -62,7 +61,7 @@ export const Brands: FC = () => {
                               <BrandsList
                                   brands={filteredBrands}
                                   openDialogWithType={brandDialog.openDialog}
-                                  isLoading={brandContext.loading}
+                                  isLoading={isBrandsLoading}
                               />
                           </Box>
                       </CardContent>
@@ -74,8 +73,6 @@ export const Brands: FC = () => {
                 dialogType={brandDialog.type}
                 openDialog={brandDialog.open}
                 closeDialog={brandDialog.closeDialog}
-                brandContext={brandContext}
-                transactionContext={transactionContext}
             />
       </>
     );

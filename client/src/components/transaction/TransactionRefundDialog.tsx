@@ -6,7 +6,7 @@ import {
     TransactionJson,
     TransactionTypeEnum
 } from "../../model/PersofiModels";
-import {AccountContextValue} from "../../context/AccountContext";
+import { useAddTransaction, useProcessTransaction } from "../../hooks/useTransactions";
 import React, {FC, useEffect, useState} from "react";
 import {
     Autocomplete,
@@ -28,14 +28,12 @@ import Box from "@mui/material/Box";
 import LoadingComponent from "../common/LoadingComponent";
 import {getActionButton} from "../common/Utilities";
 import Button from "@mui/material/Button";
-import {TransactionContextValue} from "../../context/TransactionContext";
 
 interface TransactionRefundDialogProps {
     transactionToRefund: TransactionJson;
     openDialog: boolean;
     closeDialog: () => void;
-    accountContext: AccountContextValue;
-    transactionContext: TransactionContextValue;
+    accounts: AccountJson[];
     products: ProductJson[];
 }
 
@@ -43,10 +41,11 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
     transactionToRefund, 
     openDialog, 
     closeDialog, 
-    accountContext,
-    transactionContext,
+    accounts,
     products
 }) => {
+    const { mutateAsync: addTransaction } = useAddTransaction();
+    const { mutateAsync: processTx } = useProcessTransaction();
     const [dateStr, setDateStr] = useState<string>("");
     const [notes, setNotes] = useState<string>("");
     const [counterPartyAccount, setCounterPartyAccount] = useState<AccountJson | null>(null);
@@ -56,15 +55,18 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const buildItemName = (item: TransactionItemJson): string => {
-        const variant = products.flatMap(pr => pr.variants).find(vr => vr.id === item.variantId);
-        const product =  products.find(pr => pr.id === variant?.productId)
-        return (product?.name + " (" + variant?.unitSize + " " + variant?.unitType + ")");
+        if (!item.variantId) return "—";
+        const variant = products.flatMap(pr => pr.variants || []).find(vr => vr.id === item.variantId);
+        if (!variant) return "—";
+        const product = products.find(pr => pr.id === variant.productId);
+        if (!product) return "—";
+        return `${product.name} (${variant.unitSize} ${variant.unitType})`;
     }
 
     useEffect(() => {
         setDateStr(new Date().toISOString().slice(0, 10));
-        setCounterPartyAccount(accountContext.accounts.find(a => a.id === transactionToRefund.payAccountId) ?? null);
-    }, [openDialog, transactionToRefund]);
+        setCounterPartyAccount(accounts.find(a => a.id === transactionToRefund.payAccountId) ?? null);
+    }, [openDialog, transactionToRefund, accounts]);
 
     const emptyForm = () => {
         setDateStr(new Date().toISOString().slice(0, 10));
@@ -84,7 +86,7 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
             || counterPartyAccount === null) return;
 
         setIsLoading(true);
-        const refundTx = await transactionContext.addTransaction({
+        const refundTx = await addTransaction({
             id: 0,
             date: new Date(dateStr),
             type: TransactionTypeEnum.REFUND,
@@ -107,7 +109,7 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
             return;
         }
 
-        await transactionContext.transactionProcessing(refundTx);
+        await processTx(refundTx);
 
         setIsLoading(false);
         emptyForm();
@@ -193,7 +195,7 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
 
                         <FormLabel>Deposit Account</FormLabel>
                         <Autocomplete
-                            options={accountContext.accounts}
+                            options={accounts}
                             getOptionLabel={(opt: AccountJson) => opt.name}
                             getOptionKey={(opt: AccountJson) => opt.id}
                             value={counterPartyAccount}

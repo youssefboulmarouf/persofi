@@ -8,17 +8,19 @@ import Pagination from "../common/Pagination";
 import IconButton from "@mui/material/IconButton";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
-import {AccountJson, ModalTypeEnum} from "../../model/PersofiModels";
+import {AccountJson, BalanceJson, ModalTypeEnum} from "../../model/PersofiModels";
 import LoadingComponent from "../common/LoadingComponent";
 
 interface AccountsListProps {
     accounts: AccountJson[];
+    balances: BalanceJson[];
     openDialogWithType: (type: ModalTypeEnum, account: AccountJson) => void;
     isLoading: boolean;
 }
 
 export const AccountsList: React.FC<AccountsListProps> = ({
     accounts,
+    balances,
     openDialogWithType,
     isLoading
 }) => {
@@ -26,6 +28,14 @@ export const AccountsList: React.FC<AccountsListProps> = ({
 
     if (isLoading) return <LoadingComponent message="Loading Accounts" />;
     if (accounts.length === 0) return <Typography>No Account Found</Typography>;
+
+    const getBalance = (accountId: number) => {
+        const accBalances = balances.filter(b => b.accountId === accountId);
+        if (accBalances.length === 0) return 0;
+        // Sort by id DESC — balance rows are append-only, highest id = most recent
+        accBalances.sort((a, b) => b.id - a.id);
+        return accBalances[0].amount;
+    };
 
     return (
         <Table>
@@ -35,6 +45,7 @@ export const AccountsList: React.FC<AccountsListProps> = ({
                     <TableCell><Typography variant="h6" fontSize="14px">Account Name</Typography></TableCell>
                     <TableCell><Typography variant="h6" fontSize="14px">Account Type</Typography></TableCell>
                     <TableCell><Typography variant="h6" fontSize="14px">Currency</Typography></TableCell>
+                    <TableCell><Typography variant="h6" fontSize="14px">Current Balance</Typography></TableCell>
                     <TableCell><Typography variant="h6" fontSize="14px">Active</Typography></TableCell>
                     <TableCell align="right"><Typography variant="h6" fontSize="14px">Actions</Typography></TableCell>
                 </TableRow>
@@ -46,6 +57,7 @@ export const AccountsList: React.FC<AccountsListProps> = ({
                         <TableCell>{account.name}</TableCell>
                         <TableCell>{account.accountType}</TableCell>
                         <TableCell>{account.currency}</TableCell>
+                        <TableCell>{getBalance(account.id)}</TableCell>
                         <TableCell>
                             <IconButton color={account.active ? "success" : "error"}>
                                 {account.active ? (

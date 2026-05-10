@@ -7,11 +7,10 @@ import {AccountJson, AccountTypeEnum, CurrencyEnum, ModalTypeEnum} from "../../m
 import TableCallToActionButton from "../common/TableCallToActionButton";
 import Box from "@mui/material/Box";
 import AccountsFilter from "./AccountsFilter";
-import {useAccountContext} from "../../context/AccountContext";
+import {useAccounts} from "../../hooks/useAccounts";
+import {useBalances} from "../../hooks/useBalances";
 import {AccountsList} from "./AccountsList";
 import {AccountDialog} from "./AccountDialog";
-import {useTransactionContext} from "../../context/TransactionContext";
-import {useBalanceContext} from "../../context/BalanceContext";
 
 interface FilterProps {
     searchTerm: string;
@@ -34,13 +33,14 @@ const emptyAccount: AccountJson = {
 
 export const Accounts: FC = () => {
     const [filters, setFilters] = useState<FilterProps>({searchTerm: "", accountType: null, active: true});
-    const accountContext = useAccountContext();
-    const transactionContext = useTransactionContext();
-    const balanceContext = useBalanceContext();
+    const { data: accountsData, isLoading: isAccountsLoading } = useAccounts();
+    const accounts = accountsData || [];
+    const { data: balancesData } = useBalances();
+    const balances = balancesData || [];
     const accountDialog = useDialogController<AccountJson>(emptyAccount);
 
     const filteredAccounts = useMemo(() => {
-        return accountContext.accounts.filter(account => {
+        return accounts.filter(account => {
             const searchTerm = filters.searchTerm.toLowerCase();
 
             const accountNameMatchSearchTerm = filters.searchTerm ? account.name.toLowerCase().includes(searchTerm) : true;
@@ -51,7 +51,7 @@ export const Accounts: FC = () => {
 
             return (accountNameMatchSearchTerm || accountCurrencyMatchSearchTerm || accountTypeMatchMatchSearchTerm) && accountTypeMatchFilterType && activeAccounts;
         }) || [];
-    }, [accountContext.accounts, filters]);
+    }, [accounts, filters]);
 
     return (
         <>
@@ -70,8 +70,9 @@ export const Accounts: FC = () => {
                         <Box sx={{ overflowX: "auto" }} mt={3}>
                             <AccountsList
                                 accounts={filteredAccounts}
+                                balances={balances}
                                 openDialogWithType={accountDialog.openDialog}
-                                isLoading={accountContext.loading}
+                                isLoading={isAccountsLoading}
                             />
                         </Box>
                     </CardContent>
@@ -83,9 +84,6 @@ export const Accounts: FC = () => {
                 dialogType={accountDialog.type}
                 openDialog={accountDialog.open}
                 closeDialog={accountDialog.closeDialog}
-                accountContext={accountContext}
-                transactionContext={transactionContext}
-                balanceContext={balanceContext}
             />
         </>
     );

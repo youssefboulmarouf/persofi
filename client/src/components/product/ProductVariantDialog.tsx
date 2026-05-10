@@ -5,41 +5,47 @@ import {Autocomplete, Dialog, DialogActions, DialogContent, DialogTitle, Stack, 
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import Button from "@mui/material/Button";
-import {ProductContextValue} from "../../context/ProductContext";
-import {TransactionContextValue} from "../../context/TransactionContext";
+import { useProducts, useAddVariant, useUpdateVariant, useDeleteVariant } from "../../hooks/useProducts";
+import { useTransactions } from "../../hooks/useTransactions";
 
 interface ProductVariantDialogProps {
     selectedVariant: ProductVariantJson;
     dialogType: ModalTypeEnum;
     openDialog: boolean;
     closeDialog: () => void;
-    productContext: ProductContextValue;
-    transactionContext: TransactionContextValue;
 }
 
 export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
     selectedVariant,
     dialogType,
     openDialog,
-    closeDialog,
-    productContext,
-    transactionContext
+    closeDialog
 }) => {
-    const [productId, setProductId] = useState<number>(0);
+    const [productId, setProductId] = useState<number | null>(null);
     const [unitSize, setUnitSize] = useState<number>(0);
     const [unitType, setUnitType] = useState<UintTypeEnum | null>(null);
     const [description, setDescription] = useState<string>("");
     const [isActive, setIsActive] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    const { mutateAsync: addVariant } = useAddVariant();
+    const { mutateAsync: updateVariant } = useUpdateVariant();
+    const { mutateAsync: deleteVariant } = useDeleteVariant();
+
+    const { data: productsData } = useProducts();
+    const products = productsData || [];
+    
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+
     const productOptions = useMemo(() => {
-        return productContext.products
+        return products
             .filter(p => p.active)
             .map(p => ({ label: p.name, value: p.id }));
-    }, [productContext.products]);
+    }, [products]);
 
     useEffect(() => {
-        setProductId(selectedVariant.productId ?? 0);
+        setProductId(selectedVariant.productId ?? null);
         setUnitSize(selectedVariant.unitSize ?? 0);
         setUnitType(selectedVariant.unitType ?? UintTypeEnum.KG);
         setDescription(selectedVariant.description ?? "");
@@ -47,50 +53,53 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
     }, [selectedVariant, dialogType]);
 
     const handleSubmit = async () => {
-        if (unitType == null || unitSize == 0 || description == "") return;
+        if (unitType == null || unitSize == 0 || description == "" || productId == null) return;
         setIsLoading(true);
 
-        if (dialogType === ModalTypeEnum.ADD) {
-            await productContext.addVariant({
-                id: 0,
-                productId,
-                unitSize,
-                unitType,
-                description,
-                active: isActive
-            });
-        } else if (dialogType === ModalTypeEnum.UPDATE) {
-            await productContext.editVariant({
-                id: selectedVariant.id,
-                productId,
-                unitSize,
-                unitType,
-                description,
-                active: isActive
-            });
-        } else if (dialogType === ModalTypeEnum.DELETE) {
-            const variantTransactions = transactionContext
-                .transactions
-                .flatMap(tr => tr.items)
-                .filter(item => item.variantId && selectedVariant.id === item.variantId)
-
-            if (variantTransactions.length > 0) {
-                console.log(`Variant with [id=${selectedVariant.id}] have ${variantTransactions.length} transactions, deactivate instead of delete`)
-                await productContext.editVariant({
-                    id: selectedVariant.id,
-                    productId: selectedVariant.productId,
-                    unitSize: selectedVariant.unitSize,
-                    unitType: selectedVariant.unitType,
-                    description: selectedVariant.description,
-                    active: false
+        try {
+            if (dialogType === ModalTypeEnum.ADD) {
+                await addVariant({
+                    id: 0,
+                    productId: productId!,
+                    unitSize,
+                    unitType,
+                    description,
+                    active: isActive
                 });
-            } else {
-                await productContext.removeVariant(selectedVariant);
-            }
-        }
+            } else if (dialogType === ModalTypeEnum.UPDATE) {
+                await updateVariant({
+                    id: selectedVariant.id,
+                    productId: productId!,
+                    unitSize,
+                    unitType,
+                    description,
+                    active: isActive
+                });
+            } else if (dialogType === ModalTypeEnum.DELETE) {
+                const variantTransactions = transactions
+                    .flatMap(tr => tr.items)
+                    .filter(item => item.variantId && selectedVariant.id === item.variantId)
 
-        setIsLoading(false);
-        closeDialog();
+                if (variantTransactions.length > 0) {
+                    console.log(`Variant with [id=${selectedVariant.id}] have ${variantTransactions.length} transactions, deactivate instead of delete`)
+                    await updateVariant({
+                        id: selectedVariant.id,
+                        productId: selectedVariant.productId,
+                        unitSize: selectedVariant.unitSize,
+                        unitType: selectedVariant.unitType,
+                        description: selectedVariant.description,
+                        active: false
+                    });
+                } else {
+                    await deleteVariant(selectedVariant);
+                }
+            }
+        } catch (err) {
+            console.log(`Error while ${dialogType} variant`, err);
+        } finally {
+            setIsLoading(false);
+            closeDialog();
+        }
     };
 
     return (
@@ -111,8 +120,14 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
                             options={productOptions}
                             getOptionLabel={(opt) => opt.label}
                             value={productOptions.find(o => o.value === productId) ?? null}
-                            onChange={(e, nv) => setProductId(nv?.value ?? 0)}
-                            renderInput={(params) => <TextField {...params} fullWidth />}
+                            onChange={(e, nv) => setProductId(nv?.value ?? null)}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    fullWidth
+                                    placeholder="Search product..."
+                                />
+                            )}
                         />
 
                         <FormLabel>Unit Size</FormLabel>

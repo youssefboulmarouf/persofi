@@ -11,6 +11,7 @@ import {
     catalogMenuItems,
     financeMenuItems, Menu,
     peopleMenuItems,
+    settingsMenuItems,
     storeMenuItems,
     transactionMenuItems
 } from "../common/Menu";
@@ -53,6 +54,11 @@ const Sidebar: React.FC = () => {
                             ))}
                             <Divider/>
                             {storeMenuItems.map((item: Menu) => (
+                                <NavItem item={item} key={item.id} selectedItemId={selectedItemId} handleSelectedItem={handleSelectedItem} />
+                            ))}
+                            <Divider/>
+                            <NavHeader label="System"/>
+                            {settingsMenuItems.map((item: Menu) => (
                                 <NavItem item={item} key={item.id} selectedItemId={selectedItemId} handleSelectedItem={handleSelectedItem} />
                             ))}
 

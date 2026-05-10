@@ -12,7 +12,7 @@
     "seed-db": "npx prisma db seed"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "node dist/prisma/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +28,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^24.3.0",
     "@types/supertest": "^6.0.2",
     "dotenv-cli": "^8.0.0",

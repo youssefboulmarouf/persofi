@@ -10,19 +10,12 @@ import AppProviders from "./AppProviders";
 import {Accounts} from "./components/account/Accounts";
 import {Dashboard} from "./components/dashborad/Dashboard";
 import {Categories} from "./components/category/Categories";
-import {AccountProvider} from "./context/AccountContext";
-import {TransactionProvider} from "./context/TransactionContext";
-import {BalanceProvider} from "./context/BalanceContext";
 import {Persons} from "./components/person/Persons";
-import {PersonProvider} from "./context/PersonContext";
-import {CategoryProvider} from "./context/CategoryContext";
-import {StoreProvider} from "./context/StoreContext";
 import {Stores} from "./components/store/Stores";
-import {BrandProvider} from "./context/BrandContext";
 import {Brands} from "./components/brand/Brands";
-import {ProductProvider} from "./context/ProductContext";
 import {Products} from "./components/product/Products";
 import {Transactions} from "./components/transaction/Transactions";
+import {Settings} from "./components/settings/Settings";
 
 const PageWrapper = styled("div")(() => ({
     display: "flex",
@@ -55,83 +48,15 @@ const App: React.FC = () => {
                             <Box sx={{ minHeight: "calc(100vh - 170px)" }}>
                                 <AppProviders>
                                     <Routes>
-                                        <Route path="/" element={
-                                            <PersonProvider>
-                                                <StoreProvider>
-                                                    <CategoryProvider>
-                                                        <BalanceProvider>
-                                                            <TransactionProvider>
-                                                                <AccountProvider>
-                                                                    <Dashboard />
-                                                                </AccountProvider>
-                                                            </TransactionProvider>
-                                                        </BalanceProvider>
-                                                    </CategoryProvider>
-                                                </StoreProvider>
-                                            </PersonProvider>
-                                        } />
-                                        <Route path="/accounts" element={
-                                            <BalanceProvider>
-                                                <TransactionProvider>
-                                                    <AccountProvider>
-                                                        <Accounts/>
-                                                    </AccountProvider>
-                                                </TransactionProvider>
-                                            </BalanceProvider>
-                                        } />
-                                        <Route path="/persons" element={
-                                            <TransactionProvider>
-                                                <PersonProvider>
-                                                    <Persons/>
-                                                </PersonProvider>
-                                            </TransactionProvider>
-                                        } />
-                                        <Route path="/categories" element={
-                                            <TransactionProvider>
-                                                <CategoryProvider>
-                                                    <Categories/>
-                                                </CategoryProvider>
-                                            </TransactionProvider>
-                                        } />
-                                        <Route path="/stores" element={
-                                            <TransactionProvider>
-                                                <StoreProvider>
-                                                    <Stores/>
-                                                </StoreProvider>
-                                            </TransactionProvider>
-                                        } />
-                                        <Route path="/brands" element={
-                                            <TransactionProvider>
-                                                <BrandProvider>
-                                                    <Brands/>
-                                                </BrandProvider>
-                                            </TransactionProvider>
-                                        } />
-                                        <Route path="/products" element={
-                                            <TransactionProvider>
-                                                <CategoryProvider>
-                                                    <ProductProvider>
-                                                        <Products/>
-                                                    </ProductProvider>
-                                                </CategoryProvider>
-                                            </TransactionProvider>
-                                        } />
-                                        <Route path="/transactions" element={
-                                            <TransactionProvider>
-                                                <CategoryProvider>
-                                                    <ProductProvider>
-                                                        <AccountProvider>
-                                                            <StoreProvider>
-                                                                <PersonProvider>
-                                                                    <Transactions/>
-                                                                </PersonProvider>
-                                                            </StoreProvider>
-                                                        </AccountProvider>
-                                                    </ProductProvider>
-                                                </CategoryProvider>
-                                            </TransactionProvider>
-                                        } />
-
+                                        <Route path="/" element={<Dashboard />} />
+                                        <Route path="/accounts" element={<Accounts/>} />
+                                        <Route path="/persons" element={<Persons/>} />
+                                        <Route path="/categories" element={<Categories/>} />
+                                        <Route path="/stores" element={<Stores/>} />
+                                        <Route path="/brands" element={<Brands/>} />
+                                        <Route path="/products" element={<Products/>} />
+                                        <Route path="/transactions" element={<Transactions/>} />
+                                        <Route path="/settings" element={<Settings/>} />
                                     </Routes>
                                 </AppProviders>
                             </Box>

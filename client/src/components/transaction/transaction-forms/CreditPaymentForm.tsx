@@ -1,12 +1,11 @@
 import React, {FC} from "react";
 import {AccountJson, AccountTypeEnum, ModalTypeEnum, TransactionJson} from "../../../model/PersofiModels";
-import {AccountContextValue} from "../../../context/AccountContext";
 import FormLabel from "../../common/FormLabel";
 import {Autocomplete, TextField} from "@mui/material";
+import { useAccounts } from "../../../hooks/useAccounts";
 
 interface CreditPaymentFormProps {
     selectedTransaction: TransactionJson,
-    accountContext: AccountContextValue,
     payAccount: AccountJson | null,
     setPayAccount: (account: AccountJson | null) => void,
     counterPartyAccount: AccountJson | null,
@@ -18,7 +17,6 @@ interface CreditPaymentFormProps {
 
 export const CreditPaymentForm: FC<CreditPaymentFormProps> = ({
     selectedTransaction,
-    accountContext,
     payAccount,
     setPayAccount,
     counterPartyAccount,
@@ -27,39 +25,51 @@ export const CreditPaymentForm: FC<CreditPaymentFormProps> = ({
     setAmount,
     dialogType
 }) => {
+    const { data: accountsData } = useAccounts();
+    const accounts = accountsData || [];
+
+    const isReadOnly = dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed;
+
     return (
         <>
-            <FormLabel>Paying Account</FormLabel>
+            <FormLabel>Paying with (Debit / Cash / Saving)</FormLabel>
             <Autocomplete
-                options={accountContext.accounts.filter(acc => acc.accountType !== AccountTypeEnum.CREDIT)}
-                getOptionLabel={(opt: AccountJson) => opt.name}
+                options={accounts.filter(acc => acc.accountType !== AccountTypeEnum.CREDIT)}
+                getOptionLabel={(opt: AccountJson) => `${opt.name} (${opt.accountType})`}
                 getOptionKey={(opt: AccountJson) => opt.id}
                 value={payAccount}
                 onChange={(e, nv) => setPayAccount(nv)}
-                renderInput={(params) => <TextField {...params} fullWidth/>}
+                renderInput={(params) => (
+                    <TextField {...params} fullWidth placeholder="Select paying account..." />
+                )}
                 size="small"
-                disabled={dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed}
+                disabled={isReadOnly}
             />
 
-            <FormLabel>Receiving Account</FormLabel>
+            <FormLabel>Credit card to pay off</FormLabel>
             <Autocomplete
-                options={accountContext.accounts.filter(acc => acc.accountType === AccountTypeEnum.CREDIT)}
+                options={accounts.filter(acc => acc.accountType === AccountTypeEnum.CREDIT)}
                 getOptionLabel={(opt: AccountJson) => opt.name}
                 getOptionKey={(opt: AccountJson) => opt.id}
                 value={counterPartyAccount}
                 onChange={(e, nv) => setCounterPartyAccount(nv)}
-                renderInput={(params) => <TextField {...params} fullWidth/>}
+                renderInput={(params) => (
+                    <TextField {...params} fullWidth placeholder="Select credit card..." />
+                )}
                 size="small"
-                disabled={dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed}
+                disabled={isReadOnly}
             />
 
-            <FormLabel>Amount</FormLabel>
+            <FormLabel>Payment Amount</FormLabel>
             <TextField
                 type="number"
                 fullWidth
-                value={amount}
-                onChange={(e) => setAmount(parseFloat(e.target.value))}
-                disabled={dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed}
+                size="small"
+                value={amount || ""}
+                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                placeholder="Enter payment amount (e.g. 500.00)"
+                disabled={isReadOnly}
+                inputProps={{ min: 0.01, step: 0.01 }}
             />
         </>
     );

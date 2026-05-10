@@ -6,12 +6,11 @@ import {useDialogController} from "../common/useDialogController";
 import {ModalTypeEnum, ProductJson, ProductVariantJson, UintTypeEnum} from "../../model/PersofiModels";
 import TableCallToActionButton from "../common/TableCallToActionButton";
 import Box from "@mui/material/Box";
-import {useProductContext} from "../../context/ProductContext";
+import { useProducts } from "../../hooks/useProducts";
 import ProductsFilter from "./ProductsFilter";
-import {useCategoryContext} from "../../context/CategoryContext";
+import { useCategories } from "../../hooks/useCategories";
 import {ProductsList} from "./ProductsList";
 import {ProductDialog} from "./ProductDialog";
-import {useTransactionContext} from "../../context/TransactionContext";
 import {ProductVariantDialog} from "./ProductVariantDialog";
 
 interface FilterProps {
@@ -44,21 +43,23 @@ const emptyVariant: ProductVariantJson = {
 
 export const Products: FC = () => {
     const [filters, setFilters] = useState<FilterProps>({searchTerm: "", active: true, categoryId: 0});
-    const transactionContext = useTransactionContext();
-    const categoryContext = useCategoryContext();
-    const productContext = useProductContext();
     const productDialog = useDialogController<ProductJson>(emptyProduct);
     const variantDialog = useDialogController<ProductVariantJson>(emptyVariant);
+
+    const { data: productsData, isLoading: isProductsLoading } = useProducts();
+    const products = productsData || [];
+    
+    const { data: categoriesData } = useCategories();
+    const categories = categoriesData || [];
 
     const filteredProducts = useMemo(() => {
         const search = filters.searchTerm.toLowerCase();
 
-        const selectedCategories = categoryContext
-            .categories
+        const selectedCategories = categories
             .filter(ct => ct.id === filters.categoryId || ct.parentCategoryId === filters.categoryId)
 
         return (
-            productContext.products.filter((p) => {
+            products.filter((p) => {
                 const nameMatch = filters.searchTerm ? p.name.toLowerCase().includes(search) : true;
                 const activeMatch = filters.active ? p.active : true;
                 const categoryMatch = filters.categoryId
@@ -67,7 +68,7 @@ export const Products: FC = () => {
                 return nameMatch && categoryMatch && activeMatch;
             }) || []
         );
-    }, [productContext.products, filters]);
+    }, [products, categories, filters]);
 
     return (
         <>
@@ -76,7 +77,7 @@ export const Products: FC = () => {
                 <Card sx={{padding: 0, borderColor: (theme) => theme.palette.divider}} variant="outlined">
                     <CardContent>
                         <Stack justifyContent="space-between" direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 2, md: 4 }}>
-                            <ProductsFilter categoryContext={categoryContext} filters={filters} setFilters={setFilters} />
+                            <ProductsFilter filters={filters} setFilters={setFilters} />
                             <TableCallToActionButton
                                 fullwidth={false}
                                 callToActionText="Add Product"
@@ -89,7 +90,7 @@ export const Products: FC = () => {
                                 products={filteredProducts}
                                 openProductDialogWithType={productDialog.openDialog}
                                 openVariantDialogWithType={variantDialog.openDialog}
-                                isLoading={productContext.loading}
+                                isLoading={isProductsLoading}
                             />
                         </Box>
                     </CardContent>
@@ -101,9 +102,6 @@ export const Products: FC = () => {
                 dialogType={productDialog.type}
                 openDialog={productDialog.open}
                 closeDialog={productDialog.closeDialog}
-                productContext={productContext}
-                categoryContext={categoryContext}
-                transactionContext={transactionContext}
             />
 
             <ProductVariantDialog
@@ -111,8 +109,6 @@ export const Products: FC = () => {
                 dialogType={variantDialog.type}
                 openDialog={variantDialog.open}
                 closeDialog={variantDialog.closeDialog}
-                productContext={productContext}
-                transactionContext={transactionContext}
             />
         </>
     );

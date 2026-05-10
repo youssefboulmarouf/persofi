@@ -1,12 +1,11 @@
 import React, {FC} from "react";
 import FormLabel from "../../common/FormLabel";
 import {Autocomplete, TextField} from "@mui/material";
-import {AccountJson, ModalTypeEnum, TransactionJson} from "../../../model/PersofiModels";
-import {AccountContextValue} from "../../../context/AccountContext";
+import {AccountJson, AccountTypeEnum, ModalTypeEnum, TransactionJson} from "../../../model/PersofiModels";
+import { useAccounts } from "../../../hooks/useAccounts";
 
 interface IncomeFormProps {
     selectedTransaction: TransactionJson,
-    accountContext: AccountContextValue,
     counterPartyAccount: AccountJson | null,
     setCounterPartyAccount: (account: AccountJson | null) => void,
     amount: number,
@@ -16,34 +15,48 @@ interface IncomeFormProps {
 
 export const IncomeForm: FC<IncomeFormProps> = ({
     selectedTransaction,
-    accountContext,
     counterPartyAccount,
     setCounterPartyAccount,
     amount,
     setAmount,
     dialogType
 }) => {
+    const { data: accountsData } = useAccounts();
+    const accounts = accountsData || [];
+
+    // Credit accounts cannot receive income (backend rejects them)
+    const depositableAccounts = accounts.filter(
+        a => a.accountType !== AccountTypeEnum.CREDIT
+    );
+
+    const isReadOnly = dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed;
+
     return (
         <>
             <FormLabel>Deposit Account</FormLabel>
             <Autocomplete
-                options={accountContext.accounts}
-                getOptionLabel={(opt: AccountJson) => opt.name}
+                options={depositableAccounts}
+                getOptionLabel={(opt: AccountJson) => `${opt.name} (${opt.accountType})`}
                 getOptionKey={(opt: AccountJson) => opt.id}
                 value={counterPartyAccount}
                 onChange={(e, nv) => setCounterPartyAccount(nv)}
-                renderInput={(params) => <TextField {...params} fullWidth/>}
+                renderInput={(params) => (
+                    <TextField {...params} fullWidth placeholder="Search Debit / Cash / Saving account..." />
+                )}
                 size="small"
-                disabled={dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed}
+                disabled={isReadOnly}
             />
 
             <FormLabel>Amount</FormLabel>
             <TextField
                 type="number"
                 fullWidth
-                value={amount}
-                onChange={(e) => setAmount(parseFloat(e.target.value))}
-                disabled={dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed}
+                size="small"
+                value={amount || ""}
+                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                placeholder="Enter received amount (e.g. 1500.00)"
+                disabled={isReadOnly}
+                inputProps={{ min: 0.01, step: 0.01 }}
             />
         </>
     );

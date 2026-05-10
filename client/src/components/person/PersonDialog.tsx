@@ -5,16 +5,14 @@ import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import { getActionButton } from "../common/Utilities";
 import {ModalTypeEnum, PersonJson} from "../../model/PersofiModels";
-import { PersonContextValue } from "../../context/PersonContext";
-import {TransactionContextValue} from "../../context/TransactionContext";
+import { useAddPerson, useUpdatePerson, useDeletePerson } from "../../hooks/usePersons";
+import { useTransactions } from "../../hooks/useTransactions";
 
 interface PersonDialogProps {
     selectedPerson: PersonJson;
     dialogType: ModalTypeEnum;
     openDialog: boolean;
     closeDialog: () => void;
-    personContext: PersonContextValue;
-    transactionContext: TransactionContextValue;
 }
 
 export const PersonDialog: FC<PersonDialogProps> = ({
@@ -22,12 +20,17 @@ export const PersonDialog: FC<PersonDialogProps> = ({
     dialogType,
     openDialog,
     closeDialog,
-    personContext,
-    transactionContext,
 }) => {
     const [personName, setPersonName] = useState<string>("");
     const [isActive, setIsActive] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+
+    const { mutateAsync: addPerson } = useAddPerson();
+    const { mutateAsync: updatePerson } = useUpdatePerson();
+    const { mutateAsync: deletePerson } = useDeletePerson();
+    
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
 
     useEffect(() => {
         if (openDialog && selectedPerson) {
@@ -52,44 +55,40 @@ export const PersonDialog: FC<PersonDialogProps> = ({
 
         setIsLoading(true);
 
-        if (dialogType === ModalTypeEnum.ADD) {
-            await personContext.addPerson({
-                id: 0,
-                name: personName.trim(),
-                active: isActive,
-            });
-        } else if (dialogType === ModalTypeEnum.UPDATE) {
-            await personContext.editPerson({
-                id: selectedPerson.id,
-                name: personName.trim(),
-                active: isActive,
-            });
-        } else if (dialogType === ModalTypeEnum.DELETE) {
-            const personTransactions = transactionContext
-                .transactions
-                .filter(tr => tr.personId == selectedPerson.id);
-            console.log(`personTransactions: ${personTransactions.length}`)
-
-            if (personTransactions.length > 0) {
-                console.log(`Person with [id=${selectedPerson.id}] have ${personTransactions.length} transactions, deactivate instead of delete`)
-                await personContext.editPerson({
+        try {
+            if (dialogType === ModalTypeEnum.ADD) {
+                await addPerson({
+                    id: 0,
+                    name: personName.trim(),
+                    active: isActive,
+                });
+            } else if (dialogType === ModalTypeEnum.UPDATE) {
+                await updatePerson({
                     id: selectedPerson.id,
                     name: personName.trim(),
-                    active: false,
+                    active: isActive,
                 });
-            } else {
-              await personContext.removePerson(selectedPerson);
+            } else if (dialogType === ModalTypeEnum.DELETE) {
+                const personTransactions = transactions
+                    .filter(tr => tr.personId == selectedPerson.id);
+                console.log(`personTransactions: ${personTransactions.length}`)
+
+                if (personTransactions.length > 0) {
+                    console.log(`Person with [id=${selectedPerson.id}] have ${personTransactions.length} transactions, deactivate instead of delete`)
+                    await updatePerson({
+                        id: selectedPerson.id,
+                        name: personName.trim(),
+                        active: false,
+                    });
+                } else {
+                  await deletePerson(selectedPerson);
+                }
             }
-        }
-        closeDialog();
-
-        setIsLoading(false);
-
-        if (personContext.error) {
-            // show error
-            console.log(`Error while ${dialogType} person`, personContext.error);
-        } else {
             emptyForm();
+        } catch (err) {
+            console.log(`Error while ${dialogType} person`, err);
+        } finally {
+            setIsLoading(false);
         }
     };
 

@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Autocomplete, Checkbox, FormControlLabel, Stack, TextField } from "@mui/material";
 import TableSearch from "../common/TableSearch";
-import { useCategoryContext } from "../../context/CategoryContext";
+import { useCategories } from "../../hooks/useCategories";
 
 interface FilterProps {
     searchTerm: string;
@@ -15,7 +15,8 @@ interface CategoryFiltersProps {
 }
 
 const CategoriesFilter: React.FC<CategoryFiltersProps> = ({filters, setFilters}) => {
-    const { categories } = useCategoryContext();
+    const { data: categoriesData } = useCategories();
+    const categories = categoriesData || [];
 
     // Only names of *parent* categories (top-level: parentCategoryId === null), sorted
     const parentNames = useMemo(() => {

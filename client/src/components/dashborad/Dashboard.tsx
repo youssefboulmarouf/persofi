@@ -1,12 +1,9 @@
-import {FC, useEffect, useMemo, useState} from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
-import {Container, Grid} from "@mui/material";
+import { Container, Grid, Tabs, Tab, Typography } from "@mui/material";
 import DashboardTopCards from "./DashboardTopCards";
-import {useAccountContext} from "../../context/AccountContext";
-import {useBalanceContext} from "../../context/BalanceContext";
 import MultyStatsChart from "./MultyStatsChart";
-import {useTransactionContext} from "../../context/TransactionContext";
-import {TransactionTypeEnum} from "../../model/PersofiModels";
+import { TransactionTypeEnum } from "../../model/PersofiModels";
 import {
     useNetWorthByCurrency,
     useSpendByTransactionTypeInRange,
@@ -21,28 +18,28 @@ import {
     useWeekdayHourHeatmap,
     useTransactionSizeHistogram
 } from './DashboardSelectors';
+import { useAccounts } from "../../hooks/useAccounts";
+import { useTransactions } from "../../hooks/useTransactions";
+import { useBalances } from "../../hooks/useBalances";
 import DashboardFilter from "./DashboardFilter";
-import {Stack} from "@mui/system";
+import { Stack } from "@mui/system";
 import DashboardBarChart from "./DashboardBarChart";
 import HeatmapChartCard from "./HeatmapChartCard";
 import DashboardCard from "./DashboardCard";
-import {getCurrentMonthKey} from "../common/Utilities";
+import { getCurrentMonthKey } from "../common/Utilities";
 
 interface FilterProps {
     startDate: Date | null;
     endDate: Date | null;
 }
 
-const dayKey = (d: Date): string => {
-    const date = new Date(d);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-};
+// Extract YYYY-MM-DD from a date value without timezone shift.
+// The date field is typed as Date but arrives as an ISO string from JSON;
+// calling new Date() on a UTC midnight string shifts the day in UTC- timezones.
+const dayKey = (d: Date): string => String(d).slice(0, 10);
 
 export const Dashboard: FC = () => {
-    const [filters, setFilters] = useState<FilterProps>({startDate: null , endDate: null });
+    const [filters, setFilters] = useState<FilterProps>({ startDate: null, endDate: null });
 
     // ------------------------------------------------
     const { spend, income, netCashFlow, processedPct } = useKpisInRange({
@@ -85,25 +82,32 @@ export const Dashboard: FC = () => {
         start: filters.startDate,
         end: filters.endDate
     });
-    const heatmap = useWeekdayHourHeatmap({ range: {
-        start: filters.startDate,
-        end: filters.endDate
-    }});
+    const heatmap = useWeekdayHourHeatmap({
+        range: {
+            start: filters.startDate,
+            end: filters.endDate
+        }
+    });
 
-    const hist = useTransactionSizeHistogram({ range: {
-        start: filters.startDate,
-        end: filters.endDate
-    }});
+    const hist = useTransactionSizeHistogram({
+        range: {
+            start: filters.startDate,
+            end: filters.endDate
+        }
+    });
 
     // ------------------------------------------------
-    const accountContext = useAccountContext();
-    const transactionContext = useTransactionContext();
-    const balanceContext = useBalanceContext();
+    const { data: accountsData } = useAccounts();
+    const accounts = accountsData || [];
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+    const { data: balancesData } = useBalances();
+    const balances = balancesData || [];
 
     const [balanceDateSet, setBalanceDateSet] = useState<Set<string>>(new Set<string>());
-    const [balanceSeries, setBalanceSerires] = useState<{name: string, data: number[]}[]>([]);
+    const [balanceSeries, setBalanceSeries] = useState<{ name: string, data: number[] }[]>([]);
     const [transactionDateSet, setTransactionDateSet] = useState<Set<string>>(new Set<string>());
-    const [transactionSeries, setTransactionSerires] = useState<{name: TransactionTypeEnum, data: number[]}[]>([]);
+    const [transactionSeries, setTransactionSeries] = useState<{ name: TransactionTypeEnum, data: number[] }[]>([]);
 
     const filteredBalances = useMemo(() => {
         // Normalize date bounds
@@ -112,8 +116,9 @@ export const Dashboard: FC = () => {
         const endTs =
             filters.endDate ? new Date(filters.endDate).setHours(23, 59, 59, 999) : null;
 
-        const results = (balanceContext.balances ?? []).filter((t) => {
-            const tTime = new Date(t.date as any).getTime();
+        const results = balances.filter((t) => {
+            const dateStr = String(t.date).slice(0, 10);
+            const tTime = new Date(dateStr + 'T00:00:00').getTime();
             if (Number.isNaN(tTime)) return false;
 
             const startMatch = startTs != null ? tTime >= startTs : true;
@@ -125,11 +130,15 @@ export const Dashboard: FC = () => {
             );
         });
 
-        // Sort by date descending (newest first)
-        return results.sort(
-            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-    }, [balanceContext.balances, filters]);
+        // Sort chronologically (oldest first) so the chart renders left-to-right
+        return results.sort((a, b) => {
+            const timeA = new Date(String(a.date).slice(0, 10) + 'T00:00:00').getTime();
+            const timeB = new Date(String(b.date).slice(0, 10) + 'T00:00:00').getTime();
+            if (timeA !== timeB) return timeA - timeB;
+            // Fallback to ID-based chronological sort for balances on the same day
+            return a.id - b.id;
+        });
+    }, [balances, filters]);
 
     const filteredTransactions = useMemo(() => {
         // Normalize date bounds
@@ -138,8 +147,9 @@ export const Dashboard: FC = () => {
         const endTs =
             filters.endDate ? new Date(filters.endDate).setHours(23, 59, 59, 999) : null;
 
-        const results = (transactionContext.transactions ?? []).filter((t) => {
-            const tTime = new Date(t.date as any).getTime();
+        const results = transactions.filter((t) => {
+            const dateStr = String(t.date).slice(0, 10);
+            const tTime = new Date(dateStr + 'T00:00:00').getTime();
             if (Number.isNaN(tTime)) return false;
 
             const startMatch = startTs != null ? tTime >= startTs : true;
@@ -151,11 +161,15 @@ export const Dashboard: FC = () => {
             );
         });
 
-        // Sort by date descending (newest first)
-        return results.sort(
-            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
-    }, [transactionContext.transactions, filters]);
+        // Sort chronologically (oldest first) so the chart renders left-to-right
+        return results.sort((a, b) => {
+            const timeA = new Date(String(a.date).slice(0, 10) + 'T00:00:00').getTime();
+            const timeB = new Date(String(b.date).slice(0, 10) + 'T00:00:00').getTime();
+            if (timeA !== timeB) return timeA - timeB;
+            // Fallback to ID-based chronological sort for transactions on the same day
+            return a.id - b.id;
+        });
+    }, [transactions, filters]);
 
     useEffect(() => {
         // 1) Build sorted unique list of date keys across all balances
@@ -179,7 +193,7 @@ export const Dashboard: FC = () => {
             accountBalancePerDay.set(key, balance.amount);
         }
 
-        setBalanceSerires(accountContext.accounts.map((acc) => {
+        setBalanceSeries(accounts.map((acc) => {
             const dailyAccountBalancesMap =
                 balancesByAccountByDay.get(acc.id) ?? new Map<string, number>();
 
@@ -228,7 +242,7 @@ export const Dashboard: FC = () => {
             m.set(key, (m.get(key) ?? 0) + val);
         }
 
-        setTransactionSerires(TYPE_LABELS.map(type => {
+        setTransactionSeries(TYPE_LABELS.map(type => {
             const m = txByTypeByDay.get(type)!;
             const data = categories.map(d => m.get(d) ?? 0);
             return { name: type, data };
@@ -237,161 +251,185 @@ export const Dashboard: FC = () => {
     }, [filteredTransactions])
 
     const currentMonthKey = getCurrentMonthKey();
+    const [activeTab, setActiveTab] = useState(0);
+
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setActiveTab(newValue);
+    };
 
     return (
-        <>
-            <Box>
-                <Grid container spacing={3}>
-                    <DashboardTopCards
-                        accounts={accountContext.accounts}
-                        balances={balanceContext.balances}
-                    />
-                </Grid>
+        <Box>
+            {/* Global Header */}
+            <Stack
+                justifyContent="space-between"
+                direction={{ xs: "column", sm: "row" }}
+                alignItems="center"
+                mb={3}
+            >
+                <Typography variant="h4">Dashboard</Typography>
+                <DashboardFilter filters={filters} setFilters={setFilters} />
+            </Stack>
 
-                <Stack
-                    justifyContent="space-between"
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={{ xs: 1, sm: 2, md: 4}}
-                    mt={3}
-                >
-                    <DashboardFilter filters={filters} setFilters={setFilters}/>
-                </Stack>
-
-                <Grid container spacing={3} mt={3}>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <DashboardCard
-                            title="Income"
-                            currentMonth={currentMonthKey}
-                            currentMonthStats={income}
-                            pastMonth={""}
-                            pastMonthStats={""}
-                            color="primary"
-                        />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <DashboardCard
-                            title="Spend"
-                            currentMonth={currentMonthKey}
-                            currentMonthStats={spend}
-                            pastMonth={""}
-                            pastMonthStats={""}
-                            color="error"
-                        />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <DashboardCard
-                            title="Net Cashflow"
-                            currentMonth={currentMonthKey}
-                            currentMonthStats={netCashFlow}
-                            pastMonth={""}
-                            pastMonthStats={""}
-                            color="secondary"
-                        />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <DashboardCard
-                            title="Processed %"
-                            currentMonth={currentMonthKey}
-                            currentMonthStats={`${Math.round(processedPct * 100)}%`}
-                            pastMonth={""}
-                            pastMonthStats={""}
-                            color=""
-                        />
-                    </Grid>
-                </Grid>
-
-                <Grid container spacing={1} mt={3}>
-                    <MultyStatsChart
-                        title={"Historical Accounts Balances"}
-                        categories={Array.from(balanceDateSet).sort()}
-                        series={balanceSeries}
-                    />
-                    <MultyStatsChart
-                        title={"Historical Transactions"}
-                        categories={Array.from(transactionDateSet).sort()}
-                        series={transactionSeries}
-                    />
-                </Grid>
-
-                <Grid container spacing={1} mt={3}>
-                    <DashboardBarChart
-                        title={`Transaction Breakdown (MTD)`}
-                        categories={spendByTransactionType.rows.map(c => c.type)}
-                        series={[{
-                            name: '',
-                            data: spendByTransactionType.rows.map(c => c.total)
-                        }]}
-                    />
-                    <DashboardBarChart
-                        title={`Category Breakdown (MTD) — Total: ${cat.totalAll}`}
-                        categories={cat.rows.map(c => c.categoryName)}
-                        series={[{
-                            name: '',
-                            data: cat.rows.map(c => c.total)
-                        }]}
-                    />
-                    <DashboardBarChart
-                        title={`Top Stores (MTD)`}
-                        categories={topStores.map(s => s.storeName)}
-                        series={[{
-                            name: '',
-                            data: topStores.map(s => s.total)
-                        }]}
-                    />
-                    <DashboardBarChart
-                        title={`Spend by Person (MTD)`}
-                        categories={spendByPerson.map(s => s.personName)}
-                        series={[{
-                            name: '',
-                            data: spendByPerson.map(s => s.total)
-                        }]}
-                    />
-
-                    <DashboardBarChart
-                        title="Weekday Spend"
-                        categories={weekday.labels}
-                        series={[{ name: 'Expense', data: weekday.series }]}
-                    />
-
-                    <DashboardBarChart
-                        title="Transaction Size Histogram"
-                        categories={hist.labels}
-                        series={[{ name: 'Count', data: hist.series }]}
-                    />
-                </Grid>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+                <Tabs value={activeTab} onChange={handleTabChange} aria-label="dashboard tabs">
+                    <Tab label="Overview" />
+                    <Tab label="Spending Analysis" />
+                    <Tab label="Accounts" />
+                </Tabs>
             </Box>
-            <Container sx={{ py: 3 }}>
-                <Grid container spacing={2}>
 
-                    {/* Net worth by currency */}
-                    {/*<Grid size={12}>*/}
-                    {/*    <Card>*/}
-                    {/*        <CardHeader title="Net Worth by Currency (latest balances)" />*/}
-                    {/*        <CardContent>*/}
-                    {/*            <List dense>*/}
-                    {/*                {netWorth.map((r) => (*/}
-                    {/*                    <ListItem key={r.currency} disableGutters>*/}
-                    {/*                        <ListItemText primary={r.currency} secondary={r.value.toFixed(2)} />*/}
-                    {/*                    </ListItem>*/}
-                    {/*                ))}*/}
-                    {/*            </List>*/}
-                    {/*        </CardContent>*/}
-                    {/*    </Card>*/}
-                    {/*</Grid>*/}
+            {/* TAB 0: Overview */}
+            {activeTab === 0 && (
+                <Box>
+                    {/* Net Worth Hero */}
+                    {netWorth.length > 0 && (
+                        <Grid container spacing={3} mb={3}>
+                            {netWorth.map(nw => (
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={nw.currency}>
+                                    <DashboardCard
+                                        title={`Net Worth (${nw.currency})`}
+                                        currentMonthStats={nw.value.toFixed(2)}
+                                        color="info"
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
 
-                    {/*<NumberCard*/}
-                    {/*    label="Savings"*/}
-                    {/*    value={`${savings.saved.toFixed(2)} (${Math.round(savings.rate * 100)}%)`}*/}
-                    {/*    hint={`Income ${savings.income.toFixed(2)} • Expense ${savings.expense.toFixed(2)}`}*/}
-                    {/*/>*/}
+                    <Grid container spacing={3}>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <DashboardCard
+                                title="Income"
+                                currentMonth={currentMonthKey}
+                                currentMonthStats={income}
+                                color="primary"
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <DashboardCard
+                                title="Spend"
+                                currentMonth={currentMonthKey}
+                                currentMonthStats={spend}
+                                color="error"
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <DashboardCard
+                                title="Net Cashflow"
+                                currentMonth={currentMonthKey}
+                                currentMonthStats={netCashFlow}
+                                color="secondary"
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <DashboardCard
+                                title="Processed %"
+                                currentMonth={currentMonthKey}
+                                currentMonthStats={`${Math.round(processedPct * 100)}%`}
+                                color="success"
+                            />
+                        </Grid>
+                    </Grid>
 
-                    <HeatmapChartCard
-                        title="Weekday × Hour Heatmap"
-                        series={heatmap.series}
+                    <Grid container spacing={1} mt={3}>
+                        <MultyStatsChart
+                            title={"Historical Accounts Balances"}
+                            categories={Array.from(balanceDateSet).sort()}
+                            series={balanceSeries}
+                        />
+                        <MultyStatsChart
+                            title={"Historical Transactions"}
+                            categories={Array.from(transactionDateSet).sort()}
+                            series={transactionSeries}
+                        />
+                    </Grid>
+                </Box>
+            )}
+
+            {/* TAB 1: Spending Analysis */}
+            {activeTab === 1 && (
+                <Box>
+                    {/* Breakdown 2x2 grid */}
+                    <Typography variant="h5" mb={2}>Where does it go?</Typography>
+                    <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <DashboardBarChart
+                                title={`Transaction Breakdown (MTD)`}
+                                categories={spendByTransactionType.rows.map(c => c.type)}
+                                series={[{
+                                    name: '',
+                                    data: spendByTransactionType.rows.map(c => c.total)
+                                }]}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <DashboardBarChart
+                                title={`Category Breakdown (MTD) — Total: ${cat.totalAll}`}
+                                categories={cat.rows.map(c => c.categoryName)}
+                                series={[{
+                                    name: '',
+                                    data: cat.rows.map(c => c.total)
+                                }]}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <DashboardBarChart
+                                title={`Top Stores (MTD)`}
+                                categories={topStores.map(s => s.storeName)}
+                                series={[{
+                                    name: '',
+                                    data: topStores.map(s => s.total)
+                                }]}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <DashboardBarChart
+                                title={`Spend by Person (MTD)`}
+                                categories={spendByPerson.map(s => s.personName)}
+                                series={[{
+                                    name: '',
+                                    data: spendByPerson.map(s => s.total)
+                                }]}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <Typography variant="h5" mt={4} mb={2}>Spending Habits</Typography>
+                    <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <DashboardBarChart
+                                title="Weekday Spend"
+                                categories={weekday.labels}
+                                series={[{ name: 'Expense', data: weekday.series }]}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <DashboardBarChart
+                                title="Transaction Size Histogram"
+                                categories={hist.labels}
+                                series={[{ name: 'Count', data: hist.series }]}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12 }}>
+                            <HeatmapChartCard
+                                title="Weekday × Hour Heatmap"
+                                series={heatmap.series}
+                            />
+                        </Grid>
+                    </Grid>
+                </Box>
+            )}
+
+            {/* TAB 2: Accounts */}
+            {activeTab === 2 && (
+                <Box>
+                    <Typography variant="h5" mb={2}>Accounts Overview</Typography>
+                    <DashboardTopCards
+                        accounts={accounts}
+                        balances={balances}
                     />
-                </Grid>
-            </Container>
-        </>
+                </Box>
+            )}
+        </Box>
     );
-}
+};

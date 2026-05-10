@@ -12,7 +12,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import LoadingComponent from "../common/LoadingComponent";
 import {ModalTypeEnum, ProductJson, ProductVariantJson, UintTypeEnum} from "../../model/PersofiModels";
-import { useCategoryContext } from "../../context/CategoryContext";
+import { useCategories } from "../../hooks/useCategories";
 import AddButton from "../common/buttons/AddButton";
 
 interface ProductsListProps {
@@ -34,7 +34,8 @@ const emptyVariant: ProductVariantJson = {
 export const ProductsList: React.FC<ProductsListProps> = ({products, openProductDialogWithType, openVariantDialogWithType, isLoading}) => {
     const paginationController = usePaginationController<ProductJson>(products);
     const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
-    const { categories } = useCategoryContext();
+    const { data: categoriesData } = useCategories();
+    const categories = categoriesData || [];
     const categoryNameById = useMemo(() => new Map<number, string>(categories.map(c => [c.id, c.name])), [categories]);
 
     if (isLoading) return <LoadingComponent message="Loading Products and Variants" />;

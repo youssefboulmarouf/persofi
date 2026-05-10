@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import {Checkbox, FormControlLabel, Stack, TextField} from "@mui/material";
 import TableSearch from "../common/TableSearch";
-import {CategoryContextValue, useCategoryContext} from "../../context/CategoryContext";
+import { useCategories } from "../../hooks/useCategories";
 import Autocomplete from "@mui/material/Autocomplete";
 
 interface FilterProps {
@@ -11,22 +11,22 @@ interface FilterProps {
 }
 
 interface ProductsFilterProps {
-    categoryContext: CategoryContextValue;
     filters: FilterProps;
     setFilters: (filters: FilterProps) => void;
 }
 
-const ProductsFilter: React.FC<ProductsFilterProps> = ({categoryContext, filters, setFilters}) => {
+const ProductsFilter: React.FC<ProductsFilterProps> = ({filters, setFilters}) => {
+    const { data: categoriesData } = useCategories();
+    const categories = categoriesData || [];
 
     const categoryOptions = useMemo(
         () =>
             [{ label: "All categories", value: 0 }].concat(
-                categoryContext
-                    .categories
+                categories
                     .filter((c) => c.active)
                     .map((c) => ({ label: c.name, value: c.id }))
             ),
-        [categoryContext.categories]
+        [categories]
     );
 
     const selectedOption =

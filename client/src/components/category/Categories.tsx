@@ -8,10 +8,9 @@ import {CategoryJson, ModalTypeEnum} from "../../model/PersofiModels";
 import TableCallToActionButton from "../common/TableCallToActionButton";
 import Box from "@mui/material/Box";
 import CategoriesFilter from "./CategoriesFilter";
-import {useCategoryContext} from "../../context/CategoryContext";
 import {CategoriesList} from "./CategoriesList";
 import {CategoryDialog} from "./CategoryDialog";
-import {useTransactionContext} from "../../context/TransactionContext";
+import {useCategories} from "../../hooks/useCategories";
 
 interface FilterProps {
     searchTerm: string;
@@ -33,25 +32,25 @@ const emptyCategory: CategoryJson = {
 
 export const Categories: FC = () => {
     const [filters, setFilters] = useState<FilterProps>({searchTerm: "", parentCategoryName: null, active: true});
-    const categoryContext = useCategoryContext();
-    const transactionContext = useTransactionContext();
     const categoryDialog = useDialogController<CategoryJson>(emptyCategory);
+    const { data: categoriesData, isLoading: isCategoriesLoading } = useCategories();
+    const categories = categoriesData || [];
 
     const filteredCategories = useMemo(() => {
         const searchLower = filters.searchTerm.toLowerCase();
 
         // resolve selected parent by name (must be a top-level category: parentCategoryId === null)
         const selectedParent = filters.parentCategoryName
-            ? categoryContext.categories.find(c => c.parentCategoryId === null && c.name === filters.parentCategoryName)
+            ? categories.find(c => c.parentCategoryId === null && c.name === filters.parentCategoryName)
             : null;
 
-        return categoryContext.categories.filter(category => {
+        return categories.filter(category => {
             const nameMatch = filters.searchTerm ? category.name.toLowerCase().includes(searchLower) : true;
             const activeMatch = filters.active ? category.active : true;
             const parentMatch = selectedParent ? category.parentCategoryId === selectedParent.id : true;
             return nameMatch && activeMatch && parentMatch;
         }) || [];
-    }, [categoryContext.categories, filters]);
+    }, [categories, filters]);
 
     return (
         <>
@@ -71,7 +70,7 @@ export const Categories: FC = () => {
                             <CategoriesList
                                 categories={filteredCategories}
                                 openDialogWithType={categoryDialog.openDialog}
-                                isLoading={categoryContext.loading}
+                                isLoading={isCategoriesLoading}
                             />
                         </Box>
                     </CardContent>
@@ -83,8 +82,6 @@ export const Categories: FC = () => {
                 dialogType={categoryDialog.type}
                 openDialog={categoryDialog.open}
                 closeDialog={categoryDialog.closeDialog}
-                categoryContext={categoryContext}
-                transactionContext={transactionContext}
             />
         </>
     );

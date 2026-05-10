@@ -9,8 +9,7 @@ import Box from "@mui/material/Box";
 import StoresFilter from "./StoresFilter";
 import {StoresList} from "./StoresList";
 import {StoreDialog} from "./StoreDialog";
-import {useStoreContext} from "../../context/StoreContext";
-import {useTransactionContext} from "../../context/TransactionContext";
+import { useStores } from "../../hooks/useStores";
 
 interface FilterProps {
     searchTerm: string;
@@ -31,18 +30,18 @@ const emptyStore: StoreJson = {
 
 export const Stores: FC = () => {
     const [filters, setFilters] = useState<FilterProps>({searchTerm: "", active: true});
-    const storeContext = useStoreContext();
-    const transactionContext = useTransactionContext();
     const storeDialog = useDialogController<StoreJson>(emptyStore);
+    const { data: storesData, isLoading: isStoresLoading } = useStores();
+    const stores = storesData || [];
 
     const filteredStores = useMemo(() => {
-        return storeContext.stores.filter(store => {
+        return stores.filter(store => {
             const search = filters.searchTerm.toLowerCase();
             const nameMatch = filters.searchTerm ? store.name.toLowerCase().includes(search) : true;
             const activeMatch = filters.active ? store.active : true;
             return nameMatch && activeMatch;
         }) || [];
-    }, [storeContext.stores, filters]);
+    }, [stores, filters]);
 
     return (
         <>
@@ -62,7 +61,7 @@ export const Stores: FC = () => {
                             <StoresList
                                 stores={filteredStores}
                                 openDialogWithType={storeDialog.openDialog}
-                                isLoading={storeContext.loading}
+                                isLoading={isStoresLoading}
                             />
                         </Box>
                     </CardContent>
@@ -74,8 +73,6 @@ export const Stores: FC = () => {
                 dialogType={storeDialog.type}
                 openDialog={storeDialog.open}
                 closeDialog={storeDialog.closeDialog}
-                storeContext={storeContext}
-                transactionContext={transactionContext}
             />
         </>
     );

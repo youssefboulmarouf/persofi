@@ -6,11 +6,10 @@ import { useDialogController } from "../common/useDialogController";
 import TableCallToActionButton from "../common/TableCallToActionButton";
 import Box from "@mui/material/Box";
 import PersonsFilter from "./PersonsFilter";
-import { usePersonContext } from "../../context/PersonContext";
 import { PersonsList } from "./PersonsList";
 import { PersonDialog } from "./PersonDialog";
 import { ModalTypeEnum, PersonJson } from "../../model/PersofiModels";
-import {useTransactionContext} from "../../context/TransactionContext";
+import { usePersons } from "../../hooks/usePersons";
 
 interface FilterProps {
   searchTerm: string;
@@ -31,17 +30,17 @@ const emptyPerson: PersonJson = {
 export const Persons: FC = () => {
     const [filters, setFilters] = useState<FilterProps>({ searchTerm: "", active: true });
     const personDialog = useDialogController<PersonJson>(emptyPerson);
-    const personContext = usePersonContext();
-    const transactionContext = useTransactionContext();
+    const { data: personsData, isLoading: isPersonsLoading } = usePersons();
+    const persons = personsData || [];
 
     const filteredPersons = useMemo(() => {
         const searchTerm = filters.searchTerm.toLowerCase();
-        return personContext.persons.filter((person) => {
+        return persons.filter((person) => {
             const nameMatches = filters.searchTerm ? person.name.toLowerCase().includes(searchTerm) : true;
             const activeMatches = filters.active ? person.active : true;
             return nameMatches && activeMatches;
         });
-    }, [filters, personContext.persons]);
+    }, [filters, persons]);
 
     return (
         <>
@@ -63,7 +62,7 @@ export const Persons: FC = () => {
                                 <PersonsList
                                     persons={filteredPersons}
                                     openDialogWithType={personDialog.openDialog}
-                                    isLoading={personContext.loading}
+                                    isLoading={isPersonsLoading}
                                 />
                             </Box>
                         </Stack>
@@ -76,8 +75,6 @@ export const Persons: FC = () => {
                 dialogType={personDialog.type}
                 openDialog={personDialog.open}
                 closeDialog={personDialog.closeDialog}
-                personContext={personContext}
-                transactionContext={transactionContext}
             />
         </>
     );

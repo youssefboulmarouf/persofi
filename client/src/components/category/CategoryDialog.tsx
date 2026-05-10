@@ -5,16 +5,14 @@ import {Autocomplete, Dialog, DialogActions, DialogContent, DialogTitle, Stack, 
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import Button from "@mui/material/Button";
-import {CategoryContextValue} from "../../context/CategoryContext";
-import {TransactionContextValue} from "../../context/TransactionContext";
+import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from "../../hooks/useCategories";
+import { useTransactions } from "../../hooks/useTransactions";
 
 interface CategoryDialogProps {
     selectedCategory: CategoryJson;
     dialogType: ModalTypeEnum;
     openDialog: boolean;
     closeDialog: () => void;
-    categoryContext: CategoryContextValue;
-    transactionContext: TransactionContextValue;
 }
 
 export const CategoryDialog: FC<CategoryDialogProps> = ({
@@ -22,21 +20,29 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
     dialogType,
     openDialog,
     closeDialog,
-    categoryContext,
-    transactionContext,
 }) => {
     const [categoryName, setCategoryName] = useState<string>("");
     const [isActive, setIsActive] = useState<boolean>(true);
     const [parent, setParent] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    const { mutateAsync: addCategory } = useAddCategory();
+    const { mutateAsync: updateCategory } = useUpdateCategory();
+    const { mutateAsync: deleteCategory } = useDeleteCategory();
+
+    const { data: categoriesData } = useCategories();
+    const categories = categoriesData || [];
+    
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+
     const parentOptions = useMemo(() => {
         // Allow selecting no parent (null) or any other category (excluding self when updating)
-        const options = categoryContext.categories
+        const options = categories
             .filter(c => dialogType !== ModalTypeEnum.UPDATE || c.id !== selectedCategory.id)
             .map(c => ({ label: c.name + ` (#${c.id})`, value: c.id }));
         return [{ label: "No Parent", value: null }, ...options];
-    }, [categoryContext.categories, dialogType, selectedCategory.id]);
+    }, [categories, dialogType, selectedCategory.id]);
 
     useEffect(() => {
         setCategoryName(selectedCategory.name ?? "");
@@ -48,40 +54,44 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
         if (categoryName == "") return;
 
         setIsLoading(true);
-        if (dialogType === ModalTypeEnum.ADD) {
-            await categoryContext.addCategory({
-                id: 0,
-                name: categoryName.trim(),
-                active: isActive,
-                parentCategoryId: parent,
-            });
-        } else if (dialogType === ModalTypeEnum.UPDATE) {
-            await categoryContext.editCategory({
-                id: selectedCategory.id,
-                name: categoryName.trim(),
-                active: isActive,
-                parentCategoryId: parent,
-            });
-        } else if (dialogType === ModalTypeEnum.DELETE) {
-            const categoryTransactions = transactionContext
-                .transactions
-                .flatMap(tr => tr.items)
-                .filter(item => item.categoryId === selectedCategory.id);
-
-            if (categoryTransactions.length > 1) {
-                console.log(`Category with [id=${selectedCategory.id}] have ${categoryTransactions.length} transactions, deactivate instead of delete`)
-                await categoryContext.editCategory({
-                    id: selectedCategory.id,
+        try {
+            if (dialogType === ModalTypeEnum.ADD) {
+                await addCategory({
+                    id: 0,
                     name: categoryName.trim(),
-                    active: false,
+                    active: isActive,
                     parentCategoryId: parent,
                 });
-            } else {
-                await categoryContext.removeCategory(selectedCategory);
+            } else if (dialogType === ModalTypeEnum.UPDATE) {
+                await updateCategory({
+                    id: selectedCategory.id,
+                    name: categoryName.trim(),
+                    active: isActive,
+                    parentCategoryId: parent,
+                });
+            } else if (dialogType === ModalTypeEnum.DELETE) {
+                const categoryTransactions = transactions
+                    .flatMap(tr => tr.items)
+                    .filter(item => item.categoryId === selectedCategory.id);
+
+                if (categoryTransactions.length > 1) {
+                    console.log(`Category with [id=${selectedCategory.id}] have ${categoryTransactions.length} transactions, deactivate instead of delete`)
+                    await updateCategory({
+                        id: selectedCategory.id,
+                        name: categoryName.trim(),
+                        active: false,
+                        parentCategoryId: parent,
+                    });
+                } else {
+                    await deleteCategory(selectedCategory);
+                }
             }
+        } catch (err) {
+            console.log(`Error while ${dialogType} category`, err);
+        } finally {
+            setIsLoading(false);
+            emptyForm();
         }
-        setIsLoading(false);
-        emptyForm();
     };
 
     const emptyForm = () => {

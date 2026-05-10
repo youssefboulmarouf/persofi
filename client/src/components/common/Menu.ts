@@ -62,6 +62,14 @@ export const storeMenuItems: Menu[] = [
     }
 ];
 
+export const settingsMenuItems: Menu[] = [
+    {
+        id: uniqueId(),
+        title: "Settings",
+        href: "/settings"
+    }
+];
+
 export interface ProfileType {
     href: string;
     title: string;

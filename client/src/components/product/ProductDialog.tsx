@@ -5,18 +5,15 @@ import {Autocomplete, Dialog, DialogActions, DialogContent, DialogTitle, Stack, 
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import Button from "@mui/material/Button";
-import {ProductContextValue} from "../../context/ProductContext";
-import {CategoryContextValue} from "../../context/CategoryContext";
-import {TransactionContextValue} from "../../context/TransactionContext";
+import { useAddProduct, useUpdateProduct, useDeleteProduct, useUpdateVariant } from "../../hooks/useProducts";
+import { useCategories } from "../../hooks/useCategories";
+import { useTransactions } from "../../hooks/useTransactions";
 
 interface ProductDialogProps {
     selectedProduct: ProductJson;
     dialogType: ModalTypeEnum;
     openDialog: boolean;
     closeDialog: () => void;
-    productContext: ProductContextValue;
-    categoryContext: CategoryContextValue;
-    transactionContext: TransactionContextValue;
 }
 
 export const ProductDialog: FC<ProductDialogProps> = ({
@@ -24,20 +21,28 @@ export const ProductDialog: FC<ProductDialogProps> = ({
     dialogType,
     openDialog,
     closeDialog,
-    productContext,
-    categoryContext,
-    transactionContext,
 }) => {
     const [productName, setProductName] = useState<string>("");
     const [isActive, setIsActive] = useState<boolean>(true);
     const [categoryId, setCategoryId] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
+    const { mutateAsync: addProduct } = useAddProduct();
+    const { mutateAsync: updateProduct } = useUpdateProduct();
+    const { mutateAsync: deleteProduct } = useDeleteProduct();
+    const { mutateAsync: updateVariant } = useUpdateVariant();
+    
+    const { data: categoriesData } = useCategories();
+    const categories = categoriesData || [];
+    
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+
     const categoryOptions = useMemo(() => {
-        return categoryContext.categories
+        return categories
             .filter(c => c.active)
             .map(c => ({ label: c.name, value: c.id }));
-    }, [categoryContext.categories]);
+    }, [categories]);
 
     useEffect(() => {
         setProductName(selectedProduct.name ?? "");
@@ -49,74 +54,78 @@ export const ProductDialog: FC<ProductDialogProps> = ({
         if (productName == "") return;
 
         setIsLoading(true);
-        if (dialogType === ModalTypeEnum.ADD) {
-            await productContext.addProduct({
-                id: 0,
-                name: productName.trim(),
-                active: isActive,
-                categoryId: categoryId,
-                variants: []
-            });
-        } else if (dialogType === ModalTypeEnum.UPDATE) {
-            await productContext.editProduct({
-                id: selectedProduct.id,
-                name: productName.trim(),
-                active: isActive,
-                categoryId: categoryId,
-                variants: selectedProduct.variants ?? []
-            });
-
-            if (!isActive) {
-                await Promise.all(
-                    selectedProduct
-                        .variants
-                        .map(async vr => await productContext.editVariant({
-                            id: vr.id,
-                            productId: vr.productId,
-                            unitSize: vr.unitSize,
-                            unitType: vr.unitType,
-                            description: vr.description,
-                            active: false,
-                        }))
-                );
-            }
-        } else if (dialogType === ModalTypeEnum.DELETE) {
-            const productTransactions = transactionContext
-                .transactions
-                .flatMap(tr => tr.items)
-                .filter(item =>
-                    item.variantId
-                    && selectedProduct
-                        .variants
-                        .map(vr => vr.id).includes(item.variantId))
-            if (selectedProduct.variants.length > 0 || productTransactions.length > 0) {
-                console.log(`Product with [id=${selectedProduct.id}] have ${selectedProduct.variants.length} variants, and have ${productTransactions.length} transactions, deactivate instead of delete`)
-                await Promise.all(
-                    selectedProduct
-                        .variants
-                        .map(async vr => await productContext.editVariant({
-                            id: vr.id,
-                            productId: vr.productId,
-                            unitSize: vr.unitSize,
-                            unitType: vr.unitType,
-                            description: vr.description,
-                            active: false,
-                        }))
-                );
-
-                await productContext.editProduct({
+        try {
+            if (dialogType === ModalTypeEnum.ADD) {
+                await addProduct({
+                    id: 0,
+                    name: productName.trim(),
+                    active: isActive,
+                    categoryId: categoryId,
+                    variants: []
+                });
+            } else if (dialogType === ModalTypeEnum.UPDATE) {
+                await updateProduct({
                     id: selectedProduct.id,
-                    name: selectedProduct.name.trim(),
-                    active: false,
-                    categoryId: selectedProduct.categoryId,
+                    name: productName.trim(),
+                    active: isActive,
+                    categoryId: categoryId,
                     variants: selectedProduct.variants ?? []
                 });
-            } else {
-                await productContext.removeProduct(selectedProduct);
+
+                if (!isActive) {
+                    await Promise.all(
+                        selectedProduct
+                            .variants
+                            .map(async vr => await updateVariant({
+                                id: vr.id,
+                                productId: vr.productId,
+                                unitSize: vr.unitSize,
+                                unitType: vr.unitType,
+                                description: vr.description,
+                                active: false,
+                            }))
+                    );
+                }
+            } else if (dialogType === ModalTypeEnum.DELETE) {
+                const productTransactions = transactions
+                    .flatMap(tr => tr.items)
+                    .filter(item =>
+                        item.variantId
+                        && selectedProduct
+                            .variants
+                            .map(vr => vr.id).includes(item.variantId))
+                if (selectedProduct.variants.length > 0 || productTransactions.length > 0) {
+                    console.log(`Product with [id=${selectedProduct.id}] have ${selectedProduct.variants.length} variants, and have ${productTransactions.length} transactions, deactivate instead of delete`)
+                    await Promise.all(
+                        selectedProduct
+                            .variants
+                            .map(async vr => await updateVariant({
+                                id: vr.id,
+                                productId: vr.productId,
+                                unitSize: vr.unitSize,
+                                unitType: vr.unitType,
+                                description: vr.description,
+                                active: false,
+                            }))
+                    );
+
+                    await updateProduct({
+                        id: selectedProduct.id,
+                        name: selectedProduct.name.trim(),
+                        active: false,
+                        categoryId: selectedProduct.categoryId,
+                        variants: selectedProduct.variants ?? []
+                    });
+                } else {
+                    await deleteProduct(selectedProduct);
+                }
             }
+        } catch (err) {
+            console.log(`Error while ${dialogType} product`, err);
+        } finally {
+            setIsLoading(false);
+            emptyForm();
         }
-        setIsLoading(false);
-        emptyForm();
     };
 
     const emptyForm = () => {

@@ -2,11 +2,10 @@ import React, {FC} from "react";
 import FormLabel from "../../common/FormLabel";
 import {Autocomplete, TextField} from "@mui/material";
 import {AccountJson, ModalTypeEnum, TransactionJson} from "../../../model/PersofiModels";
-import {AccountContextValue} from "../../../context/AccountContext";
+import { useAccounts } from "../../../hooks/useAccounts";
 
 interface TransferFormProps {
     selectedTransaction: TransactionJson,
-    accountContext: AccountContextValue,
     payAccount: AccountJson | null,
     setPayAccount: (account: AccountJson | null) => void,
     counterPartyAccount: AccountJson | null,
@@ -18,7 +17,6 @@ interface TransferFormProps {
 
 export const TransferForm: FC<TransferFormProps> = ({
     selectedTransaction,
-    accountContext,
     payAccount,
     setPayAccount,
     counterPartyAccount,
@@ -27,11 +25,13 @@ export const TransferForm: FC<TransferFormProps> = ({
     setAmount,
     dialogType
 }) => {
+    const { data: accountsData } = useAccounts();
+    const accounts = accountsData || [];
     return (
         <>
             <FormLabel>Sending Account</FormLabel>
             <Autocomplete
-                options={accountContext.accounts}
+                options={accounts}
                 getOptionLabel={(opt: AccountJson) => opt.name}
                 getOptionKey={(opt: AccountJson) => opt.id}
                 value={payAccount}
@@ -43,7 +43,7 @@ export const TransferForm: FC<TransferFormProps> = ({
 
             <FormLabel>Receiving Account</FormLabel>
             <Autocomplete
-                options={accountContext.accounts.filter(a => a.id !== payAccount?.id)}
+                options={accounts.filter(a => a.id !== payAccount?.id)}
                 getOptionLabel={(opt: AccountJson) => opt.name}
                 getOptionKey={(opt: AccountJson) => opt.id}
                 value={counterPartyAccount}

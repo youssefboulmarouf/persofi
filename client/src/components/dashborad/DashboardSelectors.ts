@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
-import { useAccountContext } from '../../context/AccountContext';
-import { useBalanceContext } from '../../context/BalanceContext';
-import { useTransactionContext } from '../../context/TransactionContext';
-import { useCategoryContext } from '../../context/CategoryContext';
-import { useStoreContext } from '../../context/StoreContext';
-import { usePersonContext } from '../../context/PersonContext';
-import { useProductContext } from '../../context/ProductContext';
-import { useBrandContext } from '../../context/BrandContext';
+import { useAccounts } from '../../hooks/useAccounts';
+import { useBalances } from '../../hooks/useBalances';
+import { useTransactions } from '../../hooks/useTransactions';
+import { useCategories } from '../../hooks/useCategories';
+import { useStores } from '../../hooks/useStores';
+import { usePersons } from '../../hooks/usePersons';
+import { useProducts } from '../../hooks/useProducts';
+import { useBrands } from '../../hooks/useBrands';
 
 import {
     AccountJson,
@@ -43,7 +43,8 @@ function fmtDM(d: Date) {
    Latest balance per account (fast selector)
 -------------------------------------------*/
 export function useLatestBalancesByAccount(): Map<number, BalanceJson> {
-    const { balances } = useBalanceContext();
+    const { data: balancesData } = useBalances();
+    const balances = balancesData || [];
     // balances: BalanceJson[] (amount: string!)
     return useMemo(() => {
         const byAcc = new Map<number, BalanceJson>();
@@ -61,7 +62,8 @@ export function useLatestBalancesByAccount(): Map<number, BalanceJson> {
    KPIs: spend, income, net, processed ratio
 -------------------------------------------*/
 export function useKpisInRange(range?: DateRange) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
 
     return useMemo(() => {
         const txDates = transactions.map((t) => new Date(t.date));
@@ -99,7 +101,8 @@ export function useKpisInRange(range?: DateRange) {
    Cashflow series (Income vs Expense) daily
 -------------------------------------------*/
 export function useCashFlowDailyInRange(range?: DateRange) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
 
     return useMemo(() => {
         if (!transactions.length) return { dates: [], income: [], expense: [] };
@@ -147,8 +150,10 @@ export function useCashFlowDailyInRange(range?: DateRange) {
    Category breakdown (Expense, current month)
 -------------------------------------------*/
 export function useCategoryBreakdownInRange(range?: DateRange) {
-    const { transactions } = useTransactionContext();
-    const { categories } = useCategoryContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+    const { data: categoriesData } = useCategories();
+    const categories = categoriesData || [];
 
     return useMemo(() => {
         if (!transactions.length) return { rows: [], totalAll: 0 };
@@ -188,8 +193,10 @@ export function useCategoryBreakdownInRange(range?: DateRange) {
    Top stores & spend by person (MTD)
 -------------------------------------------*/
 export function useTopStoresInRange(limit = 10, range?: DateRange) {
-    const { transactions } = useTransactionContext();
-    const { stores } = useStoreContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+    const { data: storesData } = useStores();
+    const stores = storesData || [];
 
     return useMemo(() => {
         if (!transactions.length) return [];
@@ -213,8 +220,10 @@ export function useTopStoresInRange(limit = 10, range?: DateRange) {
 }
 
 export function useSpendByPersonInRange(limit = 10, range?: DateRange) {
-    const { transactions } = useTransactionContext();
-    const { persons } = usePersonContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+    const { data: personsData } = usePersons();
+    const persons = personsData || [];
 
     return useMemo(() => {
         if (!transactions.length) return [];
@@ -241,7 +250,8 @@ export function useSpendByPersonInRange(limit = 10, range?: DateRange) {
    Net worth / latest balance per currency
 -------------------------------------------*/
 export function useNetWorthByCurrency() {
-    const { accounts } = useAccountContext();
+    const { data: accountsData } = useAccounts();
+    const accounts = accountsData || [];
     const latestByAcc = useLatestBalancesByAccount();
 
     return useMemo(() => {
@@ -276,7 +286,8 @@ function getNumericAmount(t: TransactionJson): number {
 }
 
 export function useSpendByTransactionTypeInRange(range?: DateRange) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
 
     return useMemo(() => {
         const txDates = transactions.map((t) => new Date(t.date));
@@ -317,7 +328,8 @@ export function useSpendByTransactionTypeInRange(range?: DateRange) {
 }
 
 export function useSavingsRateInRange(range?: DateRange) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
     return useMemo(() => {
         const txDates = transactions.map((t) => new Date(t.date));
         const { start, end } = normalizeRange(range, txDates);
@@ -338,7 +350,8 @@ export function useSavingsRateInRange(range?: DateRange) {
 }
 
 export function useRefundRateInRange(range?: DateRange) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
     return useMemo(() => {
         const txDates = transactions.map((t) => new Date(t.date));
         const { start, end } = normalizeRange(range, txDates);
@@ -358,7 +371,8 @@ export function useRefundRateInRange(range?: DateRange) {
 }
 
 export function useWeekdaySpendDistributionInRange(range?: DateRange) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
     return useMemo(() => {
         const txDates = transactions.map((t) => new Date(t.date));
         if (!txDates.length) return { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], series: [0,0,0,0,0,0,0] };
@@ -387,7 +401,8 @@ type HeatmapOptions = {
 };
 
 export function useWeekdayHourHeatmap(opts?: HeatmapOptions) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
     const include = opts?.includeTypes ?? [TransactionTypeEnum.EXPENSE];
 
     return useMemo(() => {
@@ -436,7 +451,8 @@ type HistogramOptions = {
 };
 
 export function useTransactionSizeHistogram(opts?: HistogramOptions) {
-    const { transactions } = useTransactionContext();
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
     const bounds = opts?.buckets ?? [10, 25, 50, 100, 200, 500];
 
     return useMemo(() => {

@@ -1,5 +1,6 @@
 import React, {FC, useEffect, useState} from "react";
 import {
+    Chip,
     Dialog,
     DialogActions,
     DialogContent,
@@ -19,20 +20,18 @@ import {
     TransactionJson,
     TransactionTypeEnum
 } from "../../model/PersofiModels";
-import {TransactionContextValue} from "../../context/TransactionContext";
+import { useTransactions, useAddTransaction, useUpdateTransaction, useDeleteTransaction } from "../../hooks/useTransactions";
+import { useAccounts } from "../../hooks/useAccounts";
+import { useStores } from "../../hooks/useStores";
+import { usePersons } from "../../hooks/usePersons";
 import {TabContext, TabPanel} from "@mui/lab";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
 import {IncomeForm} from "./transaction-forms/IncomeForm";
 import {TransferForm} from "./transaction-forms/TransferForm";
 import {CreditPaymentForm} from "./transaction-forms/CreditPaymentForm";
-import {AccountContextValue} from "../../context/AccountContext";
 import {TransactionItemDialog} from "./TransactionItemDialog";
 import {useDialogController} from "../common/useDialogController";
-import {CategoryContextValue} from "../../context/CategoryContext";
-import {ProductContextValue} from "../../context/ProductContext";
-import {StoreContextValue} from "../../context/StoreContext";
-import {PersonContextValue} from "../../context/PersonContext";
 import {ExpenseForm} from "./transaction-forms/ExpenseForm";
 
 interface TransactionDialogProps {
@@ -40,12 +39,6 @@ interface TransactionDialogProps {
     dialogType: ModalTypeEnum;
     openDialog: boolean;
     closeDialog: () => void;
-    transactionContext: TransactionContextValue;
-    accountContext: AccountContextValue;
-    categoryContext: CategoryContextValue;
-    productContext: ProductContextValue;
-    storeContext: StoreContextValue;
-    personContext: PersonContextValue;
 }
 
 const emptyItem: TransactionItemJson = {
@@ -65,12 +58,6 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
     dialogType,
     openDialog,
     closeDialog,
-    transactionContext,
-    accountContext,
-    productContext,
-    categoryContext,
-    storeContext,
-    personContext,
 }) => {
     const [dateStr, setDateStr] = useState<string>("");
     const [type, setType] = useState<TransactionTypeEnum>(TransactionTypeEnum.EXPENSE);
@@ -92,14 +79,27 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
 
     const itemDialog = useDialogController<TransactionItemJson>(emptyItem);
 
+    const { mutateAsync: addTransaction } = useAddTransaction();
+    const { mutateAsync: updateTransaction } = useUpdateTransaction();
+    const { mutateAsync: deleteTransaction } = useDeleteTransaction();
+
+    const { data: transactionsData } = useTransactions();
+    const transactions = transactionsData || [];
+    const { data: accountsData } = useAccounts();
+    const accounts = accountsData || [];
+    const { data: storesData } = useStores();
+    const stores = storesData || [];
+    const { data: personsData } = usePersons();
+    const persons = personsData || [];
+
     useEffect(() => {
         setDateStr(
             selectedTransaction?.date
                 ? new Date(selectedTransaction.date).toISOString().slice(0, 10)
                 : new Date().toISOString().slice(0, 10)
         );
-        setPayAccount(accountContext.accounts.find(a => a.id === selectedTransaction.payAccountId) ?? null);
-        setCounterPartyAccount(accountContext.accounts.find(a => a.id === selectedTransaction.counterpartyAccountId) ?? null);
+        setPayAccount(accounts.find(a => a.id === selectedTransaction.payAccountId) ?? null);
+        setCounterPartyAccount(accounts.find(a => a.id === selectedTransaction.counterpartyAccountId) ?? null);
         setType(selectedTransaction.type);
         setNotes(selectedTransaction.notes);
         setProcessed(selectedTransaction.processed);
@@ -108,10 +108,10 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
         setTaxTotal(selectedTransaction.taxTotal);
         setGrandTotal(selectedTransaction.grandTotal);
         setAmount(selectedTransaction.amount);
-        setStore(storeContext.stores.filter(st => st.id === selectedTransaction.storeId)[0] ?? null);
-        setPerson(personContext.persons.filter(pr => pr.id === selectedTransaction.personId)[0] ?? null);
-        setRefundOf(transactionContext.transactions.filter(tr => tr.id === selectedTransaction.refundOfId)[0] ?? null);
-    }, [openDialog, selectedTransaction]);
+        setStore(stores.filter(st => st.id === selectedTransaction.storeId)[0] ?? null);
+        setPerson(persons.filter(pr => pr.id === selectedTransaction.personId)[0] ?? null);
+        setRefundOf(transactions.filter(tr => tr.id === selectedTransaction.refundOfId)[0] ?? null);
+    }, [openDialog, selectedTransaction, accounts, stores, persons, transactions]);
 
     useEffect(() => {
         const newSubtotal = (items ?? []).reduce((acc, i) => acc + (i.lineTotal || 0), 0);
@@ -168,19 +168,19 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
         };
 
         if (dialogType === ModalTypeEnum.ADD) {
-            await transactionContext.addTransaction(tx);
+            await addTransaction(tx);
         } else if (dialogType === ModalTypeEnum.UPDATE) {
             if (selectedTransaction.processed) {
                 console.log("Transaction processed, cannot update");
                 return;
             }
-            await transactionContext.editTransaction({...tx, id: selectedTransaction.id});
+            await updateTransaction({...tx, id: selectedTransaction.id});
         } else if (dialogType === ModalTypeEnum.DELETE) {
             if (selectedTransaction.processed) {
                 console.log("Transaction processed, cannot delete");
                 return;
             }
-            await transactionContext.removeTransaction(tx);
+            await deleteTransaction(tx);
         }
         setIsLoading(false);
         emptyForm();
@@ -234,46 +234,76 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
     return (
         <>
             <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '900px', maxWidth: '900px'}}}>
-                <DialogTitle sx={{ mt: 2 }}>{dialogType} Transaction:</DialogTitle>
+                <DialogTitle sx={{ mt: 2, pb: 0 }}>
+                    {dialogType} Transaction
+                </DialogTitle>
 
                 <DialogContent>
                     {isLoading ? (
                         <LoadingComponent message={"Processing..."} />
                     ) : (
                         <Stack spacing={2} sx={{ mt: 1 }}>
-                            <FormLabel>Date</FormLabel>
-                            <TextField
-                                fullWidth
-                                type="date"
-                                value={dateStr}
-                                onChange={(e) => setDateStr(e.target.value)}
-                                disabled={dialogType === ModalTypeEnum.DELETE || processed}
-                            />
 
-                            <FormLabel>Notes</FormLabel>
-                            <TextField
-                                fullWidth
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder={"Optional notes"}
-                                disabled={dialogType === ModalTypeEnum.DELETE || processed}
-                            />
+                            {/* ── Date + Notes side by side ── */}
+                            <Stack direction="row" spacing={2}>
+                                <Box sx={{ width: '35%' }}>
+                                    <FormLabel>Date</FormLabel>
+                                    <TextField
+                                        fullWidth
+                                        type="date"
+                                        value={dateStr}
+                                        onChange={(e) => setDateStr(e.target.value)}
+                                        disabled={dialogType === ModalTypeEnum.DELETE || processed}
+                                        size="small"
+                                    />
+                                </Box>
+                                <Box sx={{ flex: 1 }}>
+                                    <FormLabel>Notes <span style={{ fontWeight: 400, opacity: 0.55, fontSize: '0.8em' }}>(optional)</span></FormLabel>
+                                    <TextField
+                                        fullWidth
+                                        value={notes}
+                                        onChange={(e) => setNotes(e.target.value)}
+                                        placeholder="e.g. Monthly groceries run"
+                                        disabled={dialogType === ModalTypeEnum.DELETE || processed}
+                                        size="small"
+                                    />
+                                </Box>
+                            </Stack>
 
+                            {/* ── Type tabs ── */}
                             <TabContext value={type ?? TransactionTypeEnum.EXPENSE}>
                                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                                    <Tabs value={type} onChange={handleTabChange}>
-                                        <Tab label={TransactionTypeEnum.EXPENSE} value={TransactionTypeEnum.EXPENSE} />
-                                        <Tab label={TransactionTypeEnum.INCOME} value={TransactionTypeEnum.INCOME} />
-                                        <Tab label={TransactionTypeEnum.TRANSFER} value={TransactionTypeEnum.TRANSFER} />
-                                        <Tab label={TransactionTypeEnum.CREDIT_PAYMENT} value={TransactionTypeEnum.CREDIT_PAYMENT} />
+                                    <Tabs
+                                        value={type}
+                                        onChange={handleTabChange}
+                                        variant="scrollable"
+                                        scrollButtons="auto"
+                                    >
+                                        <Tab
+                                            label="🛒 Expense"
+                                            value={TransactionTypeEnum.EXPENSE}
+                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                        />
+                                        <Tab
+                                            label="💰 Income"
+                                            value={TransactionTypeEnum.INCOME}
+                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                        />
+                                        <Tab
+                                            label="↔️ Transfer"
+                                            value={TransactionTypeEnum.TRANSFER}
+                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                        />
+                                        <Tab
+                                            label="💳 Credit Payment"
+                                            value={TransactionTypeEnum.CREDIT_PAYMENT}
+                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                        />
                                     </Tabs>
                                 </Box>
                                 <TabPanel value={TransactionTypeEnum.EXPENSE}>
                                     <ExpenseForm
                                         selectedTransaction={selectedTransaction}
-                                        storeContext={storeContext}
-                                        personContext={personContext}
-                                        accountContext={accountContext}
                                         payAccount={payAccount}
                                         setPayAccount={setPayAccount}
                                         person={person}
@@ -293,7 +323,6 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                                 <TabPanel value={TransactionTypeEnum.INCOME}>
                                     <IncomeForm
                                         selectedTransaction={selectedTransaction}
-                                        accountContext={accountContext}
                                         counterPartyAccount={counterPartyAccount}
                                         setCounterPartyAccount={setCounterPartyAccount}
                                         amount={amount}
@@ -303,7 +332,6 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                                 </TabPanel>
                                 <TabPanel value={TransactionTypeEnum.TRANSFER}>
                                     <TransferForm
-                                        accountContext={accountContext}
                                         selectedTransaction={selectedTransaction}
                                         payAccount={payAccount}
                                         setPayAccount={setPayAccount}
@@ -316,7 +344,6 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                                 </TabPanel>
                                 <TabPanel value={TransactionTypeEnum.CREDIT_PAYMENT}>
                                     <CreditPaymentForm
-                                        accountContext={accountContext}
                                         selectedTransaction={selectedTransaction}
                                         payAccount={payAccount}
                                         setPayAccount={setPayAccount}
@@ -328,6 +355,18 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                                     />
                                 </TabPanel>
                             </TabContext>
+
+                            {/* ── Live total summary ── */}
+                            {validateForm() && (
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1 }}>
+                                    <Chip
+                                        label={`Total: ${(grandTotal > 0 ? grandTotal : amount).toFixed(2)}`}
+                                        color="primary"
+                                        variant="outlined"
+                                        sx={{ fontWeight: 700, fontSize: '1rem', px: 1 }}
+                                    />
+                                </Box>
+                            )}
 
                         </Stack>
                     )}
@@ -351,8 +390,6 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                 openDialog={itemDialog.open}
                 closeDialog={itemDialog.closeDialog}
                 handleAddItem={handleAddItem}
-                productContext={productContext}
-                categoryContext={categoryContext}
             />
         </>
     );

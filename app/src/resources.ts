@@ -8,6 +8,7 @@ import StoreResource from "./store/StoreResource";
 import TransactionResource from "./transaction/TransactionResource";
 import BrandResource from "./brand/BrandResource";
 import BalanceResource from "./balance/BalanceResource";
+import BackupResource from "./backup/BackupResource";
 
 const router = express.Router();
 
@@ -24,5 +25,6 @@ router.use("/products", ProductResource);
 router.use("/variants", ProductVariantResource);
 router.use("/stores", StoreResource);
 router.use("/transactions", TransactionResource);
+router.use("/backup", BackupResource);
 
 export default router;

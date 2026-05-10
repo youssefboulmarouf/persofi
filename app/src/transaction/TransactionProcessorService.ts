@@ -1,11 +1,11 @@
-import {BaseService} from "../utilities/BaseService";
-import {AccountService} from "../account/AccountService";
-import {BalanceService} from "../balance/BalanceService";
-import {TransactionJson} from "./TransactionJson";
-import {AccountTypeEnum} from "../account/AccountType";
+import { BaseService } from "../utilities/BaseService";
+import { AccountService } from "../account/AccountService";
+import { BalanceService } from "../balance/BalanceService";
+import { TransactionJson } from "./TransactionJson";
+import { AccountTypeEnum } from "../account/AccountType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import AppError from "../utilities/errors/AppError";
-import {AccountJson} from "../account/AccountJson";
+import { AccountJson } from "../account/AccountJson";
 
 export class TransactionProcessorService extends BaseService {
 
@@ -56,11 +56,22 @@ export class TransactionProcessorService extends BaseService {
             `Credit Payment receiver should be Credit but got [accountType=${counterPartyAccount.getAccountType()}].`
         );
 
-        await this.processTransferTransaction(
-            transaction,
-            payAccount,
-            counterPartyAccount,
-        )
+        const payAccountBalance = await this.balanceService.getLatestBalanceOfAccount(payAccount.getId());
+        const counterPartyAccountBalance = await this.balanceService.getLatestBalanceOfAccount(counterPartyAccount.getId());
+
+        await this.balanceService.updateAccountBalance(
+            payAccountBalance.getAmount() - transaction.getAmount(),
+            transaction.getDate(),
+            transaction.getId(),
+            payAccount.getId()
+        );
+
+        await this.balanceService.updateAccountBalance(
+            counterPartyAccountBalance.getAmount() - transaction.getAmount(),
+            transaction.getDate(),
+            transaction.getId(),
+            counterPartyAccount.getId()
+        );
     }
 
     async processRefundTransaction(transaction: TransactionJson, counterPartyAccount: AccountJson): Promise<void> {

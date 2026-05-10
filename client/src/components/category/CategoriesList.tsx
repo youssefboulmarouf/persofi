@@ -10,7 +10,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import {CategoryJson, ModalTypeEnum} from "../../model/PersofiModels";
 import LoadingComponent from "../common/LoadingComponent";
-import { useCategoryContext } from "../../context/CategoryContext";
+import { useCategories } from "../../hooks/useCategories";
 
 interface CategoriesListProps {
     categories: CategoryJson[];
@@ -20,7 +20,8 @@ interface CategoriesListProps {
 
 export const CategoriesList: React.FC<CategoriesListProps> = ({categories, openDialogWithType, isLoading}) => {
     const paginationController = usePaginationController<CategoryJson>(categories);
-    const { categories: allCategories } = useCategoryContext();
+    const { data: allCategoriesData } = useCategories();
+    const allCategories = allCategoriesData || [];
 
     const parentNameById = useMemo(() => {
         const map = new Map<number, string>();

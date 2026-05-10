@@ -110,7 +110,7 @@ export class TransactionValidator {
     }
 
     private static mustPositive(v: number, msg: string): void {
-        BadRequestError.throwIf(v < 0, msg);
+        BadRequestError.throwIf(v <= 0, msg);
     }
 
     private static mustEq(total: number, a: number, msg: string): void {

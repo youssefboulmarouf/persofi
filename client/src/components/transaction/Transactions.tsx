@@ -1,22 +1,19 @@
-import {FC, useMemo, useState} from "react";
+import { FC, useMemo, useState } from "react";
 import Breadcrumb from "../common/Breadcrumb";
-import {Card, CardContent, Grid} from "@mui/material";
-import {Stack} from "@mui/system";
+import { Card, CardContent, Grid } from "@mui/material";
+import { Stack } from "@mui/system";
 import TableCallToActionButton from "../common/TableCallToActionButton";
 import Box from "@mui/material/Box";
-import {useDialogController} from "../common/useDialogController";
-import {ModalTypeEnum, TransactionItemJson, TransactionJson, TransactionTypeEnum} from "../../model/PersofiModels";
-import {useTransactionContext} from "../../context/TransactionContext";
+import { useDialogController } from "../common/useDialogController";
+import { ModalTypeEnum, TransactionItemJson, TransactionJson, TransactionTypeEnum } from "../../model/PersofiModels";
+import { useTransactions, useProcessTransaction } from "../../hooks/useTransactions";
 import TransactionsFilter from "./TransactionsFilter";
-import {TransactionsList} from "./TransactionsList";
-import {TransactionDialog} from "./TransactionDialog";
-import {useAccountContext} from "../../context/AccountContext";
-import {useCategoryContext} from "../../context/CategoryContext";
-import {useProductContext} from "../../context/ProductContext";
-import {useStoreContext} from "../../context/StoreContext";
-import {usePersonContext} from "../../context/PersonContext";
-import {TransactionRefundDialog} from "./TransactionRefundDialog";
-import {getFirstDayOfCurrentMonth} from "../common/Utilities";
+import { TransactionsList } from "./TransactionsList";
+import { TransactionDialog } from "./TransactionDialog";
+import { TransactionRefundDialog } from "./TransactionRefundDialog";
+import { getFirstDayOfCurrentMonth } from "../common/Utilities";
+import { useAccounts } from "../../hooks/useAccounts";
+import { useProducts } from "../../hooks/useProducts";
 
 interface FilterProps {
     searchTerm: string;
@@ -59,12 +56,16 @@ export const Transactions: FC = () => {
     });
     const transactionDialog = useDialogController<TransactionJson>(emptyTransaction);
     const refundTransactionDialog = useDialogController<TransactionJson>(emptyTransaction);
-    const transactionContext = useTransactionContext();
-    const accountContext = useAccountContext();
-    const categoryContext = useCategoryContext();
-    const productContext = useProductContext();
-    const storeContext = useStoreContext();
-    const personContext = usePersonContext();
+
+    const { data: transactionsData, isLoading: isTransactionsLoading } = useTransactions();
+    const transactions = transactionsData || [];
+    const { mutateAsync: processTx } = useProcessTransaction();
+
+    const { data: accountsData } = useAccounts();
+    const accounts = accountsData || [];
+
+    const { data: productsData } = useProducts();
+    const products = productsData || [];
 
     const filteredTransactions = useMemo(() => {
         const q = (filters.searchTerm ?? "").toLowerCase().trim();
@@ -77,8 +78,11 @@ export const Transactions: FC = () => {
 
         const typeIsSet = filters.type !== undefined && filters.type !== null;
 
-        const results = (transactionContext.transactions ?? []).filter((t) => {
-            const tTime = new Date(t.date as any).getTime();
+        const results = transactions.filter((t) => {
+            // The date field is typed as Date but arrives as an ISO string from JSON.
+            // Slice to YYYY-MM-DD and append local midnight to avoid UTC→local day shift.
+            const dateStr = String(t.date).slice(0, 10);
+            const tTime = new Date(dateStr + 'T00:00:00').getTime();
             if (Number.isNaN(tTime)) return false;
 
             const nonInitBalance = t.type !== TransactionTypeEnum.INIT_BALANCE;
@@ -103,10 +107,10 @@ export const Transactions: FC = () => {
         return results.sort(
             (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
         );
-    }, [transactionContext.transactions, filters]);
+    }, [transactions, filters]);
 
     const processTransaction = async (tx: TransactionJson) => {
-        await transactionContext.transactionProcessing(tx);
+        await processTx(tx);
     }
 
     return (
@@ -126,11 +130,11 @@ export const Transactions: FC = () => {
                         <Box sx={{ overflowX: "auto" }} mt={3}>
                             <TransactionsList
                                 transactions={filteredTransactions}
-                                products={productContext.products}
-                                accounts={accountContext.accounts}
+                                products={products}
+                                accounts={accounts}
                                 openTransactionDialogWithType={transactionDialog.openDialog}
                                 openRefundTransactionDialog={refundTransactionDialog.openDialog}
-                                isLoading={transactionContext.loading}
+                                isLoading={isTransactionsLoading}
                                 processTransaction={processTransaction}
                             />
                         </Box>
@@ -143,21 +147,14 @@ export const Transactions: FC = () => {
                 dialogType={transactionDialog.type}
                 openDialog={transactionDialog.open}
                 closeDialog={transactionDialog.closeDialog}
-                transactionContext={transactionContext}
-                accountContext={accountContext}
-                categoryContext={categoryContext}
-                productContext={productContext}
-                storeContext={storeContext}
-                personContext={personContext}
             />
 
             <TransactionRefundDialog
                 transactionToRefund={refundTransactionDialog.data}
                 openDialog={refundTransactionDialog.open}
                 closeDialog={refundTransactionDialog.closeDialog}
-                accountContext={accountContext}
-                transactionContext={transactionContext}
-                products={productContext.products}
+                accounts={accounts}
+                products={products}
             />
         </>
     );

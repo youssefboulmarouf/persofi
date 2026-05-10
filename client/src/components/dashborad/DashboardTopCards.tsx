@@ -1,8 +1,8 @@
-import {Grid} from "@mui/material";
+import { Grid, Typography, Box } from "@mui/material";
 import DashboardCard from "./DashboardCard";
-import {FC} from "react";
-import {AccountJson, AccountTypeEnum, BalanceJson} from "../../model/PersofiModels";
-import {getCurrentMonthKey, getPastMonthKey} from "../common/Utilities";
+import { FC } from "react";
+import { AccountJson, AccountTypeEnum, BalanceJson } from "../../model/PersofiModels";
+import { getCurrentMonthKey, getPastMonthKey } from "../common/Utilities";
 
 interface DashboardTopCardsProps {
     accounts: AccountJson[];
@@ -59,7 +59,7 @@ const DashboardTopCards: FC<DashboardTopCardsProps> = ({ accounts, balances }) =
 
     const now = new Date();
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
-    const endOfLastMonth   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
 
     const currentMonthKey = getCurrentMonthKey();
     const pastMonthKey = getPastMonthKey();
@@ -74,20 +74,44 @@ const DashboardTopCards: FC<DashboardTopCardsProps> = ({ accounts, balances }) =
         }
     }
 
+    // Group accounts by type
+    const accountTypes = [AccountTypeEnum.CASH, AccountTypeEnum.DEBIT, AccountTypeEnum.CREDIT, AccountTypeEnum.SAVING];
+
+    const typeSummaries = accountTypes.map(type => {
+        const typeAccounts = accounts.filter(a => a.accountType === type);
+        let currentTotal = 0;
+        let pastTotal = 0;
+
+        typeAccounts.forEach(acc => {
+            currentTotal += getLastBalanceAmount(balancesByAccount, acc.id);
+            pastTotal += getLatestBalanceAmountInWindow(balancesByAccount, acc.id, startOfLastMonth, endOfLastMonth);
+        });
+
+        return {
+            type,
+            currentTotal,
+            pastTotal,
+            accounts: typeAccounts
+        };
+    });
+
     return (
         <>
-            {accounts.map((acc) => (
-                <Grid size={{ xs: 12, sm: 6, md: 3, lg: 3 }} key={acc.id}>
-                    <DashboardCard
-                        title={acc.name}
-                        currentMonth={currentMonthKey}
-                        currentMonthStats={getLastBalanceAmount(balancesByAccount, acc.id)}
-                        pastMonth={pastMonthKey}
-                        pastMonthStats={getLatestBalanceAmountInWindow(balancesByAccount, acc.id, startOfLastMonth, endOfLastMonth)}
-                        color={deduceCardColor(acc)}
-                    />
-                </Grid>
-            ))}
+            {/* Top Summaries */}
+            <Grid container spacing={3} sx={{ width: '100%', mb: 4 }}>
+                {typeSummaries.map(summary => (
+                    <Grid size={{ xs: 12, sm: 6, md: 3 }} key={summary.type + "_summary"}>
+                        <DashboardCard
+                            title={`${summary.type} Total`}
+                            currentMonth={currentMonthKey}
+                            currentMonthStats={Number(summary.currentTotal).toFixed(2)}
+                            pastMonth={pastMonthKey}
+                            pastMonthStats={Number(summary.pastTotal).toFixed(2)}
+                            color={deduceCardColor({ accountType: summary.type } as any)}
+                        />
+                    </Grid>
+                ))}
+            </Grid>
         </>
     );
 };

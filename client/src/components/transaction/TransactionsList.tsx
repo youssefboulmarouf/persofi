@@ -1,13 +1,13 @@
-import React, {Fragment, useState} from "react";
+import React, { Fragment, useState } from "react";
 import Typography from "@mui/material/Typography";
-import {Collapse, IconButton, Table, TableBody, TableCell, TableHead, TableRow} from "@mui/material";
+import { Collapse, IconButton, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import EditButton from "../common/buttons/EditButton";
 import DeleteButton from "../common/buttons/DeleteButton";
-import {usePaginationController} from "../common/usePaginationController";
+import { usePaginationController } from "../common/usePaginationController";
 import Pagination from "../common/Pagination";
 import LoadingComponent from "../common/LoadingComponent";
 import {
@@ -49,9 +49,12 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
     const toggleRow = (id: number) => setOpenRows((prev) => ({ ...prev, [id]: !prev[id] }));
 
     const buildItemName = (item: TransactionItemJson): string => {
-        const variant = products.flatMap(pr => pr.variants).find(vr => vr.id === item.variantId);
-        const product =  products.find(pr => pr.id === variant?.productId)
-        return (product?.name + " (" + variant?.unitSize + " " + variant?.unitType + ")");
+        if (!item.variantId) return "—";
+        const variant = products.flatMap(pr => pr.variants || []).find(vr => vr.id === item.variantId);
+        if (!variant) return "—";
+        const product = products.find(pr => pr.id === variant.productId);
+        if (!product) return "—";
+        return `${product.name} (${variant.unitSize} ${variant.unitType})`;
     }
 
     const onSync = (tx: TransactionJson) => {
@@ -87,7 +90,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                                 </IconButton>
                             </TableCell>
                             <TableCell>{tx.id}</TableCell>
-                            <TableCell>{new Date(tx.date).toLocaleDateString()}</TableCell>
+                            <TableCell>{String(tx.date).slice(0, 10)}</TableCell>
                             <TableCell>{
                                 tx.type === TransactionTypeEnum.REFUND
                                     ? `${tx.type} [${tx.refundOfId}]`
@@ -96,12 +99,12 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                             <TableCell>{tx.notes}</TableCell>
                             <TableCell>{
                                 tx.payAccountId != null
-                                    ? accounts.find(a => a.id === tx.payAccountId)?.accountType
+                                    ? accounts.find(a => a.id === tx.payAccountId)?.name
                                     : "-"
                             }</TableCell>
                             <TableCell>{
                                 tx.counterpartyAccountId != null
-                                    ? accounts.find(a => a.id === tx.counterpartyAccountId)?.accountType
+                                    ? accounts.find(a => a.id === tx.counterpartyAccountId)?.name
                                     : "-"
                             }</TableCell>
                             <TableCell>
@@ -130,7 +133,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                                     ? (
                                         <ProcessTransactionButton
                                             tooltipText={"Process transaction"}
-                                            openDialogWithType={() => onSync(tx)}/>
+                                            openDialogWithType={() => onSync(tx)} />
                                     ) : ('')
                                 }
 
