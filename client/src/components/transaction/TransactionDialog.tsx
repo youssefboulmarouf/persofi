@@ -180,7 +180,7 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                 console.log("Transaction processed, cannot delete");
                 return;
             }
-            await deleteTransaction(tx);
+            await deleteTransaction({...tx, id: selectedTransaction.id});
         }
         setIsLoading(false);
         emptyForm();

@@ -213,8 +213,14 @@ export class TransactionService extends BaseService {
 
     async delete(id: number) {
         this.logger.log(`Delete transaction with [id=${id}]`);
+        const existingTransaction = await this.getById(id);
+        BadRequestError.throwIf(existingTransaction.isProcessed(), `Transaction is processed. Cannot be deleted.`);
+
+        // delete items first to avoid foreign key constraint violations
+        await this.transactionItemService.deleteByTransactionId(id);
+
         await this.prisma.transaction.delete({
             where: { id }
-        })
+        });
     }
 }

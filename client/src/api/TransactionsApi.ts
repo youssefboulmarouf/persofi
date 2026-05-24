@@ -22,7 +22,7 @@ export const createTransaction = async (transactionJson: TransactionJson): Promi
     return res.json();
 };
 
-export const updateTransaction = async (transactionJson: TransactionJson): Promise<TransactionJson> => {
+export const updateTransaction = async (transactionJson: TransactionJson): Promise<void> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/transactions/${transactionJson.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -32,7 +32,6 @@ export const updateTransaction = async (transactionJson: TransactionJson): Promi
         console.log(res);
         throw new Error('Failed to update transaction');
     }
-    return res.json();
 };
 
 export const deleteTransaction = async (transactionJson: TransactionJson): Promise<void> => {
