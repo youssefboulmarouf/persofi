@@ -87,21 +87,16 @@ The source and restored aggregate inventories matched exactly. Integrity checks 
 
 RPO and RTO are **not applicable to this disposable test baseline**. They must be selected before entering real production use, based on how much financial data loss and downtime the owner will accept.
 
-## Reproduction
+## Temporary tooling cleanup
 
-Create an unencrypted test-data baseline:
+The STAB-001 backup, restore, and standalone inventory scripts were removed
+after verification. They implemented an intentionally unencrypted test-data
+workflow and must not be mistaken for the production backup and recovery
+tooling planned under DEPLOY-003.
 
-```bash
-scripts/stab001-create-backup.sh LABEL OUTPUT_DIR
-```
-
-Verify it in an isolated database:
-
-```bash
-scripts/stab001-verify-restore.sh BACKUP EVIDENCE_DIR
-```
-
-Do not use this unencrypted mode after real production data is introduced.
+The two local checksummed baseline files remain ignored under
+`backups/stab001/` because STAB-002 uses one to test retained-data baseline
+resolution.
 
 ## Acceptance criteria
 
