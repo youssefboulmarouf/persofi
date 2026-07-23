@@ -43,7 +43,7 @@ Prisma migration metadata was retained. No migration, schema reset, seed, API st
 | TransactionItem | 0 |
 | `_prisma_migrations` | 1 |
 
-MySQL is version 8.0.45. The schema contains 12 tables and 16 foreign-key constraints. The recorded migration is `20260301185544_init`, although its migration file is not currently tracked by the repository; STAB-002 must address that without resetting this database.
+MySQL is version 8.0.45. The schema contains 12 tables and 16 foreign-key constraints. The recorded migration is `20260301185544_init`. STAB-002 tracks and verifies this migration baseline.
 
 No reference-data values, names, or descriptions are included in this report.
 
@@ -52,8 +52,8 @@ No reference-data values, names, or descriptions are included in this report.
 Two independent logical dumps of the cleaned test baseline were created:
 
 ```text
-backups/stab001/persofi-primary-clean-20260721T163620Z.sql
-backups/stab001/persofi-secondary-clean-20260721T163620Z.sql
+backups/clean-test-data-baseline/persofi-primary-clean-20260721T163620Z.sql
+backups/clean-test-data-baseline/persofi-secondary-clean-20260721T163620Z.sql
 ```
 
 Each has an adjacent `.sha256` checksum. The files are unencrypted and have mode `0600`; their parent directories have mode `0700`. The entire `backups/` directory and SQL/checksum extensions are ignored by Git.
@@ -95,7 +95,7 @@ workflow and must not be mistaken for the production backup and recovery
 tooling planned under DEPLOY-003.
 
 The two local checksummed baseline files remain ignored under
-`backups/stab001/` because STAB-002 uses one to test retained-data baseline
+`backups/clean-test-data-baseline/` because STAB-002 uses one to test retained-data baseline
 resolution.
 
 ## Acceptance criteria

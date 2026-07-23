@@ -3,7 +3,7 @@
 **Execution date:** 2026-07-23  
 **Status:** complete  
 **Database impact on retained source:** none; status and drift queries only  
-**STAB-001 backup ID:** `persofi-primary-clean-20260721T163620Z.sql`  
+**STAB-001 clean baseline backup:** `persofi-primary-clean-20260721T163620Z.sql`
 **Backup SHA-256:** `5ccc1b189cccd3d60798c2540ac11425d0ff313ffb71bef4914aab89a8622bb4`
 
 ## Decision
@@ -54,7 +54,7 @@ The disposable database, volume, and network were removed automatically.
 
 ## Retained-data clone verification
 
-The STAB-001 clean baseline was restored into a second disposable MySQL 8.0.45 database. On that clone only:
+The STAB-001 clean test-data baseline was restored into a second disposable MySQL 8.0.45 database. On that clone only:
 
 1. the `_prisma_migrations` rows were removed to simulate a pre-Prisma retained schema;
 2. aggregate domain row counts and integrity results were captured;
@@ -89,9 +89,9 @@ The retained source already contained the matching applied migration, so no `mig
 Run from the repository root:
 
 ```bash
-scripts/stab002-verify-migrations.sh \
-  backups/stab001/persofi-primary-clean-20260721T163620Z.sql \
-  /tmp/persofi-stab002-evidence
+scripts/verify-migrations.sh \
+  backups/clean-test-data-baseline/persofi-primary-clean-20260721T163620Z.sql \
+  /tmp/persofi-migration-verification-evidence
 ```
 
 The script:
@@ -159,5 +159,5 @@ Prisma also warns that the `package.json#prisma` seed configuration will be remo
 - [x] A retained-data clone can be baselined without domain-data changes.
 - [x] Fresh, clone, and retained-source drift checks report no difference.
 - [x] The drift-check and future migration procedures are documented.
-- [x] The STAB-001 backup ID and checksum are recorded.
+- [x] The STAB-001 clean baseline backup name and checksum are recorded.
 - [x] No retained-source reset, migration replay, seed, or domain mutation occurred.
