@@ -7,7 +7,6 @@ app/node_modules/
 app/logs/
 app/src/logs/
 app/dist/
-app/prisma/migrations/
 app/coverage/
 
 # Generated JS / source-map files (compiled from TypeScript)
@@ -28,3 +27,8 @@ backups/
 *.gpg
 *.sha256
 *.backup-key
+
+# Prisma migration history is source code and must remain tracked.
+# This exception intentionally overrides the generic SQL-artifact rule above.
+!app/prisma/migrations/
+!app/prisma/migrations/**
