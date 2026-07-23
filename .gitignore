@@ -20,3 +20,11 @@ app/**/*.d.ts
 client/.env
 client/node_modules/
 client/build/
+
+# Sensitive operational artifacts (STAB-001 and later recovery runs)
+backups/
+*.sql
+*.sql.gz
+*.gpg
+*.sha256
+*.backup-key
