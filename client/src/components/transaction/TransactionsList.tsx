@@ -1,6 +1,14 @@
 import React, { Fragment, useState } from "react";
 import Typography from "@mui/material/Typography";
-import { Collapse, IconButton, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import {
+    Collapse,
+    IconButton,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+} from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import CheckIcon from "@mui/icons-material/Check";
@@ -16,7 +24,7 @@ import {
     ProductJson,
     TransactionItemJson,
     TransactionJson,
-    TransactionTypeEnum
+    TransactionTypeEnum,
 } from "../../model/PersofiModels";
 import RefundExpenseButton from "../common/buttons/RefundExpenseButton";
 import ProcessTransactionButton from "../common/buttons/ProcessTransactionButton";
@@ -38,7 +46,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
     openTransactionDialogWithType,
     openRefundTransactionDialog,
     processTransaction,
-    isLoading
+    isLoading,
 }) => {
     const paginationController = usePaginationController<TransactionJson>(transactions);
     const [openRows, setOpenRows] = useState<Record<number, boolean>>({});
@@ -50,12 +58,14 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
 
     const buildItemName = (item: TransactionItemJson): string => {
         if (!item.variantId) return "—";
-        const variant = products.flatMap(pr => pr.variants || []).find(vr => vr.id === item.variantId);
+        const variant = products
+            .flatMap((pr) => pr.variants || [])
+            .find((vr) => vr.id === item.variantId);
         if (!variant) return "—";
-        const product = products.find(pr => pr.id === variant.productId);
+        const product = products.find((pr) => pr.id === variant.productId);
         if (!product) return "—";
         return `${product.name} (${variant.unitSize} ${variant.unitType})`;
-    }
+    };
 
     const onSync = (tx: TransactionJson) => {
         // As requested: just console.log for now
@@ -68,15 +78,51 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
             <TableHead>
                 <TableRow>
                     <TableCell />
-                    <TableCell><Typography variant="h6" fontSize="14px">Id</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Date</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Type</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Notes</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Source Account</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Destination Account</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Processed</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Total</Typography></TableCell>
-                    <TableCell align="right"><Typography variant="h6" fontSize="14px">Actions</Typography></TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Id
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Date
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Type
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Notes
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Source Account
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Destination Account
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Processed
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Total
+                        </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                        <Typography variant="h6" fontSize="14px">
+                            Actions
+                        </Typography>
+                    </TableCell>
                 </TableRow>
             </TableHead>
 
@@ -86,27 +132,31 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                         <TableRow>
                             <TableCell>
                                 <IconButton size="small" onClick={() => toggleRow(tx.id)}>
-                                    {openRows[tx.id] ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                                    {openRows[tx.id] ? (
+                                        <KeyboardArrowUpIcon />
+                                    ) : (
+                                        <KeyboardArrowDownIcon />
+                                    )}
                                 </IconButton>
                             </TableCell>
                             <TableCell>{tx.id}</TableCell>
                             <TableCell>{String(tx.date).slice(0, 10)}</TableCell>
-                            <TableCell>{
-                                tx.type === TransactionTypeEnum.REFUND
+                            <TableCell>
+                                {tx.type === TransactionTypeEnum.REFUND
                                     ? `${tx.type} [${tx.refundOfId}]`
-                                    : tx.type
-                            }</TableCell>
+                                    : tx.type}
+                            </TableCell>
                             <TableCell>{tx.notes}</TableCell>
-                            <TableCell>{
-                                tx.payAccountId != null
-                                    ? accounts.find(a => a.id === tx.payAccountId)?.name
-                                    : "-"
-                            }</TableCell>
-                            <TableCell>{
-                                tx.counterpartyAccountId != null
-                                    ? accounts.find(a => a.id === tx.counterpartyAccountId)?.name
-                                    : "-"
-                            }</TableCell>
+                            <TableCell>
+                                {tx.payAccountId != null
+                                    ? accounts.find((a) => a.id === tx.payAccountId)?.name
+                                    : "-"}
+                            </TableCell>
+                            <TableCell>
+                                {tx.counterpartyAccountId != null
+                                    ? accounts.find((a) => a.id === tx.counterpartyAccountId)?.name
+                                    : "-"}
+                            </TableCell>
                             <TableCell>
                                 <IconButton color={tx.processed ? "success" : "error"}>
                                     {tx.processed ? (
@@ -117,33 +167,40 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                                 </IconButton>
                             </TableCell>
 
-                            <TableCell>{(tx.grandTotal === 0) ? tx.amount : tx.grandTotal}</TableCell>
+                            <TableCell>{tx.grandTotal === 0 ? tx.amount : tx.grandTotal}</TableCell>
 
                             <TableCell align="right">
-                                {tx.type === TransactionTypeEnum.EXPENSE
-                                    ? (
-                                        <RefundExpenseButton
-                                            tooltipText={"Refund Transaction"}
-                                            openDialogWithType={() => openRefundTransactionDialog(ModalTypeEnum.ADD, tx)}
-                                        />
-                                    ) : ('')
-                                }
+                                {tx.type === TransactionTypeEnum.EXPENSE ? (
+                                    <RefundExpenseButton
+                                        tooltipText={"Refund Transaction"}
+                                        openDialogWithType={() =>
+                                            openRefundTransactionDialog(ModalTypeEnum.ADD, tx)
+                                        }
+                                    />
+                                ) : (
+                                    ""
+                                )}
 
-                                {!tx.processed
-                                    ? (
-                                        <ProcessTransactionButton
-                                            tooltipText={"Process transaction"}
-                                            openDialogWithType={() => onSync(tx)} />
-                                    ) : ('')
-                                }
+                                {!tx.processed ? (
+                                    <ProcessTransactionButton
+                                        tooltipText={"Process transaction"}
+                                        openDialogWithType={() => onSync(tx)}
+                                    />
+                                ) : (
+                                    ""
+                                )}
 
                                 <EditButton
                                     tooltipText={"Edit Transaction"}
-                                    openDialogWithType={() => openTransactionDialogWithType(ModalTypeEnum.UPDATE, tx)}
+                                    openDialogWithType={() =>
+                                        openTransactionDialogWithType(ModalTypeEnum.UPDATE, tx)
+                                    }
                                 />
                                 <DeleteButton
                                     tooltipText={"Delete Transaction"}
-                                    openDialogWithType={() => openTransactionDialogWithType(ModalTypeEnum.DELETE, tx)}
+                                    openDialogWithType={() =>
+                                        openTransactionDialogWithType(ModalTypeEnum.DELETE, tx)
+                                    }
                                 />
                             </TableCell>
                         </TableRow>
@@ -151,14 +208,35 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                         <TableRow>
                             <TableCell colSpan={8} sx={{ p: 0, border: 0 }}>
                                 <Collapse in={openRows[tx.id]} timeout="auto" unmountOnExit>
-                                    <Table size="small" sx={{ backgroundColor: "rgba(0,0,0,0.02)" }}>
+                                    <Table
+                                        size="small"
+                                        sx={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+                                    >
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell><Typography variant="subtitle2">Variation</Typography></TableCell>
-                                                <TableCell><Typography variant="subtitle2">Description</Typography></TableCell>
-                                                <TableCell><Typography variant="subtitle2">Qty</Typography></TableCell>
-                                                <TableCell><Typography variant="subtitle2">Unit Price</Typography></TableCell>
-                                                <TableCell><Typography variant="subtitle2">Line Total</Typography></TableCell>
+                                                <TableCell>
+                                                    <Typography variant="subtitle2">
+                                                        Variation
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="subtitle2">
+                                                        Description
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="subtitle2">Qty</Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="subtitle2">
+                                                        Unit Price
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Typography variant="subtitle2">
+                                                        Line Total
+                                                    </Typography>
+                                                </TableCell>
                                             </TableRow>
                                         </TableHead>
 

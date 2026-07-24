@@ -13,19 +13,19 @@ const balanceService = new BalanceService();
 
 async function createAccount(name: string, type: "Debit" | "Credit" | "Cash" | "Saving") {
     return prisma.account.create({
-        data: { name, accountType: type, currency: "CAD", active: true }
+        data: { name, accountType: type, currency: "CAD", active: true },
     });
 }
 
 async function purgeAccount(id: number) {
     await prisma.balance.deleteMany({ where: { accountId: id } });
     await prisma.transactionItem.deleteMany({
-        where: { transaction: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] } }
+        where: { transaction: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] } },
     });
     await prisma.transaction.deleteMany({
-        where: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] }
+        where: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] },
     });
-    await prisma.account.delete({ where: { id } }).catch(() => { });
+    await prisma.account.delete({ where: { id } }).catch(() => {});
 }
 
 // ─── BalanceService ─────────────────────────────────────────────────────────
@@ -43,23 +43,45 @@ describe("BalanceService", () => {
     });
 
     it("getLatestBalanceOfAccount throws when account has no balance", async () => {
-        await expect(
-            balanceService.getLatestBalanceOfAccount(accountId)
-        ).rejects.toThrow(/try to initialize it first/i);
+        await expect(balanceService.getLatestBalanceOfAccount(accountId)).rejects.toThrow(
+            /try to initialize it first/i,
+        );
     });
 
     it("getLatestBalanceOfAccount returns the most recent balance by date (not insertion order)", async () => {
         // Insert an older balance first
         const oldTx = await prisma.transaction.create({
-            data: { date: new Date("2021-01-01"), type: "Init_Balance", processed: true, counterpartyAccountId: accountId, subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 100 }
+            data: {
+                date: new Date("2021-01-01"),
+                type: "Init_Balance",
+                processed: true,
+                counterpartyAccountId: accountId,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+                amount: 100,
+            },
         });
-        await prisma.balance.create({ data: { amount: 100, date: new Date("2021-01-01"), accountId, transactionId: oldTx.id } });
+        await prisma.balance.create({
+            data: { amount: 100, date: new Date("2021-01-01"), accountId, transactionId: oldTx.id },
+        });
 
         // Insert a newer balance
         const newTx = await prisma.transaction.create({
-            data: { date: new Date("2023-06-01"), type: "Init_Balance", processed: true, counterpartyAccountId: accountId, subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 999 }
+            data: {
+                date: new Date("2023-06-01"),
+                type: "Init_Balance",
+                processed: true,
+                counterpartyAccountId: accountId,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+                amount: 999,
+            },
         });
-        await prisma.balance.create({ data: { amount: 999, date: new Date("2023-06-01"), accountId, transactionId: newTx.id } });
+        await prisma.balance.create({
+            data: { amount: 999, date: new Date("2023-06-01"), accountId, transactionId: newTx.id },
+        });
 
         const latest = await balanceService.getLatestBalanceOfAccount(accountId);
         expect(Number(latest.getAmount())).toBe(999);
@@ -70,7 +92,16 @@ describe("BalanceService", () => {
 
         // Manufacture a tx to satisfy the FK
         const tx = await prisma.transaction.create({
-            data: { date: new Date(), type: "Init_Balance", processed: true, counterpartyAccountId: accountId, subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 0 }
+            data: {
+                date: new Date(),
+                type: "Init_Balance",
+                processed: true,
+                counterpartyAccountId: accountId,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+                amount: 0,
+            },
         });
         await balanceService.updateAccountBalance(500, new Date(), tx.id, accountId);
 
@@ -82,7 +113,7 @@ describe("BalanceService", () => {
         const rows = await balanceService.getByAccountId(accountId);
         // We've inserted 3 rows in this suite above
         expect(rows.length).toBeGreaterThanOrEqual(3);
-        expect(rows.every(r => r.getAccountId() === accountId)).toBe(true);
+        expect(rows.every((r) => r.getAccountId() === accountId)).toBe(true);
     });
 });
 
@@ -98,28 +129,45 @@ describe("Accounts API – delete account tied to a transaction", () => {
 
         // Give it a balance (needed to create a transaction)
         const initTx = await prisma.transaction.create({
-            data: { date: new Date(), type: "Init_Balance", processed: true, counterpartyAccountId: accountId, subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 500 }
+            data: {
+                date: new Date(),
+                type: "Init_Balance",
+                processed: true,
+                counterpartyAccountId: accountId,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+                amount: 500,
+            },
         });
-        await prisma.balance.create({ data: { amount: 500, date: new Date(), accountId, transactionId: initTx.id } });
+        await prisma.balance.create({
+            data: { amount: 500, date: new Date(), accountId, transactionId: initTx.id },
+        });
 
         // Create a transaction linked to this account
-        const txRes = await request(app)
-            .post("/api/transactions")
-            .send({
-                date: new Date().toISOString(),
-                type: "Expense", notes: "link", processed: false,
-                payAccountId: accountId, counterpartyAccountId: null,
-                storeId: null, personId: null, refundOfId: null,
-                subtotal: 10, taxTotal: 0, grandTotal: 10, amount: 0,
-                items: [],
-            });
+        const txRes = await request(app).post("/api/transactions").send({
+            date: new Date().toISOString(),
+            type: "Expense",
+            notes: "link",
+            processed: false,
+            payAccountId: accountId,
+            counterpartyAccountId: null,
+            storeId: null,
+            personId: null,
+            refundOfId: null,
+            subtotal: 10,
+            taxTotal: 0,
+            grandTotal: 10,
+            amount: 0,
+            items: [],
+        });
         txId = txRes.body.id;
     });
 
     afterAll(async () => {
         // Order: items → transaction → balance → account
         await prisma.transactionItem.deleteMany({ where: { transactionId: txId } });
-        await prisma.transaction.delete({ where: { id: txId } }).catch(() => { });
+        await prisma.transaction.delete({ where: { id: txId } }).catch(() => {});
         await purgeAccount(accountId);
     });
 
@@ -139,14 +187,16 @@ describe("Products API", () => {
 
     beforeAll(async () => {
         // Need a category first
-        const cat = await prisma.category.create({ data: { name: `Test Cat ${Date.now()}`, active: true } });
+        const cat = await prisma.category.create({
+            data: { name: `Test Cat ${Date.now()}`, active: true },
+        });
         categoryId = cat.id;
     });
 
     afterAll(async () => {
-        await prisma.productVariant.deleteMany({ where: { productId } }).catch(() => { });
-        await prisma.product.delete({ where: { id: productId } }).catch(() => { });
-        await prisma.category.delete({ where: { id: categoryId } }).catch(() => { });
+        await prisma.productVariant.deleteMany({ where: { productId } }).catch(() => {});
+        await prisma.product.delete({ where: { id: productId } }).catch(() => {});
+        await prisma.category.delete({ where: { id: categoryId } }).catch(() => {});
     });
 
     it("POST /api/products → creates a product and returns 201", async () => {
@@ -171,9 +221,13 @@ describe("Products API", () => {
     });
 
     it("POST /api/variants → creates a variant for the product", async () => {
-        const res = await request(app)
-            .post(`/api/variants`)
-            .send({ productId, unitSize: 1.0, unitType: "Kg", description: "1kg bag", active: true });
+        const res = await request(app).post(`/api/variants`).send({
+            productId,
+            unitSize: 1.0,
+            unitType: "Kg",
+            description: "1kg bag",
+            active: true,
+        });
 
         expect(res.status).toBe(201);
         expect(res.body.productId).toBe(productId);
@@ -196,8 +250,8 @@ describe("Categories API", () => {
     let childId: number;
 
     afterAll(async () => {
-        await prisma.category.delete({ where: { id: childId } }).catch(() => { });
-        await prisma.category.delete({ where: { id: parentId } }).catch(() => { });
+        await prisma.category.delete({ where: { id: childId } }).catch(() => {});
+        await prisma.category.delete({ where: { id: parentId } }).catch(() => {});
     });
 
     it("POST /api/categories → creates a parent category", async () => {
@@ -229,18 +283,22 @@ describe("Categories API", () => {
 
 describe("API Error Response Shape", () => {
     it("400 responses include { name, message } body", async () => {
-        const res = await request(app)
-            .post("/api/transactions")
-            .send({
-                date: new Date().toISOString(),
-                type: "Expense", notes: "bad",
-                processed: false,
-                payAccountId: null,       // invalid — triggers 400
-                counterpartyAccountId: null,
-                storeId: null, personId: null, refundOfId: null,
-                subtotal: 10, taxTotal: 0, grandTotal: 10, amount: 0,
-                items: [],
-            });
+        const res = await request(app).post("/api/transactions").send({
+            date: new Date().toISOString(),
+            type: "Expense",
+            notes: "bad",
+            processed: false,
+            payAccountId: null, // invalid — triggers 400
+            counterpartyAccountId: null,
+            storeId: null,
+            personId: null,
+            refundOfId: null,
+            subtotal: 10,
+            taxTotal: 0,
+            grandTotal: 10,
+            amount: 0,
+            items: [],
+        });
 
         expect(res.status).toBe(400);
         expect(res.body).toHaveProperty("name");
@@ -261,9 +319,20 @@ describe("API Error Response Shape", () => {
         // We create and immediately try to delete one tied to a balance directly
         const acc = await createAccount("500 Test", "Cash");
         const tx = await prisma.transaction.create({
-            data: { date: new Date(), type: "Init_Balance", processed: true, counterpartyAccountId: acc.id, subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 0 }
+            data: {
+                date: new Date(),
+                type: "Init_Balance",
+                processed: true,
+                counterpartyAccountId: acc.id,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+                amount: 0,
+            },
         });
-        await prisma.balance.create({ data: { amount: 0, date: new Date(), accountId: acc.id, transactionId: tx.id } });
+        await prisma.balance.create({
+            data: { amount: 0, date: new Date(), accountId: acc.id, transactionId: tx.id },
+        });
 
         const res = await request(app).delete(`/api/accounts/${acc.id}`);
         expect(res.status).toBe(500);

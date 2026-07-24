@@ -22,11 +22,6 @@ export class PersonJson {
     }
 
     public static from(body: any): PersonJson {
-        return new PersonJson(
-            Number(body.id),
-            body.name,
-            body.active
-        )
+        return new PersonJson(Number(body.id), body.name, body.active);
     }
-
 }

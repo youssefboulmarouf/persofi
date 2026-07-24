@@ -1,5 +1,5 @@
 import { useState } from "react";
-import {ModalTypeEnum} from "../../model/PersofiModels";
+import { ModalTypeEnum } from "../../model/PersofiModels";
 
 export interface DialogController<T> {
     open: boolean;

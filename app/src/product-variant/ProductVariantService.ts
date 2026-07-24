@@ -1,5 +1,5 @@
-import {BaseService} from "../utilities/BaseService";
-import {ProductVariantJson} from "./ProductVariantJson";
+import { BaseService } from "../utilities/BaseService";
+import { ProductVariantJson } from "./ProductVariantJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
 
@@ -17,7 +17,7 @@ export class ProductVariantService extends BaseService {
         this.logger.log(`Get product variant by [id:${id}]`);
 
         const data = await this.prisma.productVariant.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Product variant with [id:${id}] not found`);
@@ -29,7 +29,7 @@ export class ProductVariantService extends BaseService {
         this.logger.log(`Get product variant by [productId:${productId}]`);
 
         const data = await this.prisma.productVariant.findMany({
-            where: { productId }
+            where: { productId },
         });
 
         return data.map(ProductVariantJson.from);
@@ -44,9 +44,9 @@ export class ProductVariantService extends BaseService {
                     active: true,
                     unitSize: variant.getUnitSize(),
                     unitType: variant.getUnitType(),
-                    productId: variant.getProductId()
-                }
-            })
+                    productId: variant.getProductId(),
+                },
+            }),
         );
     }
 
@@ -69,16 +69,16 @@ export class ProductVariantService extends BaseService {
                     active: variant.isActive(),
                     unitSize: variant.getUnitSize(),
                     unitType: variant.getUnitType(),
-                    productId: variant.getProductId()
-                }
-            })
+                    productId: variant.getProductId(),
+                },
+            }),
         );
     }
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete product variant with [id=${id}]`);
         await this.prisma.productVariant.delete({
-            where: { id }
+            where: { id },
         });
     }
 }

@@ -5,20 +5,22 @@ import BadRequestError from "../src/utilities/errors/BadRequestError";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
-function makeTx(overrides: Partial<{
-    id: number;
-    type: TransactionTypeEnum;
-    payAccountId: number | null;
-    counterpartyAccountId: number | null;
-    storeId: number | null;
-    personId: number | null;
-    refundOfId: number | null;
-    subtotal: number;
-    taxTotal: number;
-    grandTotal: number;
-    amount: number;
-    processed: boolean;
-}>): TransactionJson {
+function makeTx(
+    overrides: Partial<{
+        id: number;
+        type: TransactionTypeEnum;
+        payAccountId: number | null;
+        counterpartyAccountId: number | null;
+        storeId: number | null;
+        personId: number | null;
+        refundOfId: number | null;
+        subtotal: number;
+        taxTotal: number;
+        grandTotal: number;
+        amount: number;
+        processed: boolean;
+    }>,
+): TransactionJson {
     const defaults = {
         id: 1,
         type: TransactionTypeEnum.EXPENSE,
@@ -35,10 +37,21 @@ function makeTx(overrides: Partial<{
     };
     const d = { ...defaults, ...overrides };
     return new TransactionJson(
-        d.id, new Date(), d.type, "test", d.processed, [],
-        d.payAccountId, d.counterpartyAccountId, d.storeId,
-        d.refundOfId, d.personId,
-        d.subtotal, d.taxTotal, d.grandTotal, d.amount
+        d.id,
+        new Date(),
+        d.type,
+        "test",
+        d.processed,
+        [],
+        d.payAccountId,
+        d.counterpartyAccountId,
+        d.storeId,
+        d.refundOfId,
+        d.personId,
+        d.subtotal,
+        d.taxTotal,
+        d.grandTotal,
+        d.amount,
     );
 }
 
@@ -50,45 +63,37 @@ describe("TransactionValidator – EXPENSE", () => {
     });
 
     it("throws if payAccountId is null", () => {
-        expect(() =>
-            TransactionValidator.validate(makeTx({ payAccountId: null }))
-        ).toThrow();
+        expect(() => TransactionValidator.validate(makeTx({ payAccountId: null }))).toThrow();
     });
 
     it("throws if counterpartyAccountId is not null", () => {
-        expect(() =>
-            TransactionValidator.validate(makeTx({ counterpartyAccountId: 2 }))
-        ).toThrow();
+        expect(() => TransactionValidator.validate(makeTx({ counterpartyAccountId: 2 }))).toThrow();
     });
 
     it("throws if grandTotal != subtotal + taxTotal", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ subtotal: 10, taxTotal: 2, grandTotal: 11 }))
+            TransactionValidator.validate(makeTx({ subtotal: 10, taxTotal: 2, grandTotal: 11 })),
         ).toThrow();
     });
 
     it("throws if amount is not 0", () => {
-        expect(() =>
-            TransactionValidator.validate(makeTx({ amount: 5 }))
-        ).toThrow();
+        expect(() => TransactionValidator.validate(makeTx({ amount: 5 }))).toThrow();
     });
 
     it("throws if subtotal is 0 or negative", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ subtotal: 0, grandTotal: 0 }))
+            TransactionValidator.validate(makeTx({ subtotal: 0, grandTotal: 0 })),
         ).toThrow();
     });
 
     it("throws if taxTotal is negative", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ taxTotal: -1, grandTotal: 9 }))
+            TransactionValidator.validate(makeTx({ taxTotal: -1, grandTotal: 9 })),
         ).toThrow();
     });
 
     it("throws if refundOfId is not null", () => {
-        expect(() =>
-            TransactionValidator.validate(makeTx({ refundOfId: 5 }))
-        ).toThrow();
+        expect(() => TransactionValidator.validate(makeTx({ refundOfId: 5 }))).toThrow();
     });
 });
 
@@ -114,31 +119,31 @@ describe("TransactionValidator – INCOME", () => {
 
     it("throws if payAccountId is not null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validIncome, payAccountId: 1 }))
+            TransactionValidator.validate(makeTx({ ...validIncome, payAccountId: 1 })),
         ).toThrow();
     });
 
     it("throws if counterpartyAccountId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validIncome, counterpartyAccountId: null }))
+            TransactionValidator.validate(makeTx({ ...validIncome, counterpartyAccountId: null })),
         ).toThrow();
     });
 
     it("throws if amount is <= 0", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validIncome, amount: 0 }))
+            TransactionValidator.validate(makeTx({ ...validIncome, amount: 0 })),
         ).toThrow();
     });
 
     it("throws if storeId is not null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validIncome, storeId: 3 }))
+            TransactionValidator.validate(makeTx({ ...validIncome, storeId: 3 })),
         ).toThrow();
     });
 
     it("throws if personId is not null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validIncome, personId: 4 }))
+            TransactionValidator.validate(makeTx({ ...validIncome, personId: 4 })),
         ).toThrow();
     });
 });
@@ -165,19 +170,21 @@ describe("TransactionValidator – CREDIT_PAYMENT", () => {
 
     it("throws if payAccountId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validCreditPayment, payAccountId: null }))
+            TransactionValidator.validate(makeTx({ ...validCreditPayment, payAccountId: null })),
         ).toThrow();
     });
 
     it("throws if counterpartyAccountId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validCreditPayment, counterpartyAccountId: null }))
+            TransactionValidator.validate(
+                makeTx({ ...validCreditPayment, counterpartyAccountId: null }),
+            ),
         ).toThrow();
     });
 
     it("throws if amount is <= 0", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validCreditPayment, amount: 0 }))
+            TransactionValidator.validate(makeTx({ ...validCreditPayment, amount: 0 })),
         ).toThrow();
     });
 });
@@ -204,13 +211,15 @@ describe("TransactionValidator – TRANSFER", () => {
 
     it("throws if payAccountId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validTransfer, payAccountId: null }))
+            TransactionValidator.validate(makeTx({ ...validTransfer, payAccountId: null })),
         ).toThrow();
     });
 
     it("throws if counterpartyAccountId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validTransfer, counterpartyAccountId: null }))
+            TransactionValidator.validate(
+                makeTx({ ...validTransfer, counterpartyAccountId: null }),
+            ),
         ).toThrow();
     });
 });
@@ -237,25 +246,25 @@ describe("TransactionValidator – REFUND", () => {
 
     it("throws if refundOfId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validRefund, refundOfId: null }))
+            TransactionValidator.validate(makeTx({ ...validRefund, refundOfId: null })),
         ).toThrow();
     });
 
     it("throws if counterpartyAccountId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validRefund, counterpartyAccountId: null }))
+            TransactionValidator.validate(makeTx({ ...validRefund, counterpartyAccountId: null })),
         ).toThrow();
     });
 
     it("throws if payAccountId is not null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validRefund, payAccountId: 1 }))
+            TransactionValidator.validate(makeTx({ ...validRefund, payAccountId: 1 })),
         ).toThrow();
     });
 
     it("throws if subtotal is 0", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validRefund, subtotal: 0, grandTotal: 1 }))
+            TransactionValidator.validate(makeTx({ ...validRefund, subtotal: 0, grandTotal: 1 })),
         ).toThrow();
     });
 });
@@ -282,19 +291,17 @@ describe("TransactionValidator – INIT_BALANCE", () => {
 
     it("throws if counterpartyAccountId is null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validInit, counterpartyAccountId: null }))
+            TransactionValidator.validate(makeTx({ ...validInit, counterpartyAccountId: null })),
         ).toThrow();
     });
 
     it("throws if amount is <= 0", () => {
-        expect(() =>
-            TransactionValidator.validate(makeTx({ ...validInit, amount: 0 }))
-        ).toThrow();
+        expect(() => TransactionValidator.validate(makeTx({ ...validInit, amount: 0 }))).toThrow();
     });
 
     it("throws if payAccountId is not null", () => {
         expect(() =>
-            TransactionValidator.validate(makeTx({ ...validInit, payAccountId: 1 }))
+            TransactionValidator.validate(makeTx({ ...validInit, payAccountId: 1 })),
         ).toThrow();
     });
 });

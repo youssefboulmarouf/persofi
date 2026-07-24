@@ -1,4 +1,4 @@
-import React, {FC, useEffect, useState} from "react";
+import React, { FC, useEffect, useState } from "react";
 import {
     Chip,
     Dialog,
@@ -7,32 +7,39 @@ import {
     DialogTitle,
     Stack,
     Tabs,
-    TextField
+    TextField,
 } from "@mui/material";
 import Button from "@mui/material/Button";
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
-import {getActionButton} from "../common/Utilities";
+import { getActionButton } from "../common/Utilities";
 import {
     AccountJson,
-    ModalTypeEnum, PersonJson, StoreJson,
+    ModalTypeEnum,
+    PersonJson,
+    StoreJson,
     TransactionItemJson,
     TransactionJson,
-    TransactionTypeEnum
+    TransactionTypeEnum,
 } from "../../model/PersofiModels";
-import { useTransactions, useAddTransaction, useUpdateTransaction, useDeleteTransaction } from "../../hooks/useTransactions";
+import {
+    useTransactions,
+    useAddTransaction,
+    useUpdateTransaction,
+    useDeleteTransaction,
+} from "../../hooks/useTransactions";
 import { useAccounts } from "../../hooks/useAccounts";
 import { useStores } from "../../hooks/useStores";
 import { usePersons } from "../../hooks/usePersons";
-import {TabContext, TabPanel} from "@mui/lab";
+import { TabContext, TabPanel } from "@mui/lab";
 import Tab from "@mui/material/Tab";
 import Box from "@mui/material/Box";
-import {IncomeForm} from "./transaction-forms/IncomeForm";
-import {TransferForm} from "./transaction-forms/TransferForm";
-import {CreditPaymentForm} from "./transaction-forms/CreditPaymentForm";
-import {TransactionItemDialog} from "./TransactionItemDialog";
-import {useDialogController} from "../common/useDialogController";
-import {ExpenseForm} from "./transaction-forms/ExpenseForm";
+import { IncomeForm } from "./transaction-forms/IncomeForm";
+import { TransferForm } from "./transaction-forms/TransferForm";
+import { CreditPaymentForm } from "./transaction-forms/CreditPaymentForm";
+import { TransactionItemDialog } from "./TransactionItemDialog";
+import { useDialogController } from "../common/useDialogController";
+import { ExpenseForm } from "./transaction-forms/ExpenseForm";
 
 interface TransactionDialogProps {
     selectedTransaction: TransactionJson;
@@ -96,10 +103,12 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
         setDateStr(
             selectedTransaction?.date
                 ? new Date(selectedTransaction.date).toISOString().slice(0, 10)
-                : new Date().toISOString().slice(0, 10)
+                : new Date().toISOString().slice(0, 10),
         );
-        setPayAccount(accounts.find(a => a.id === selectedTransaction.payAccountId) ?? null);
-        setCounterPartyAccount(accounts.find(a => a.id === selectedTransaction.counterpartyAccountId) ?? null);
+        setPayAccount(accounts.find((a) => a.id === selectedTransaction.payAccountId) ?? null);
+        setCounterPartyAccount(
+            accounts.find((a) => a.id === selectedTransaction.counterpartyAccountId) ?? null,
+        );
         setType(selectedTransaction.type);
         setNotes(selectedTransaction.notes);
         setProcessed(selectedTransaction.processed);
@@ -108,9 +117,11 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
         setTaxTotal(selectedTransaction.taxTotal);
         setGrandTotal(selectedTransaction.grandTotal);
         setAmount(selectedTransaction.amount);
-        setStore(stores.filter(st => st.id === selectedTransaction.storeId)[0] ?? null);
-        setPerson(persons.filter(pr => pr.id === selectedTransaction.personId)[0] ?? null);
-        setRefundOf(transactions.filter(tr => tr.id === selectedTransaction.refundOfId)[0] ?? null);
+        setStore(stores.filter((st) => st.id === selectedTransaction.storeId)[0] ?? null);
+        setPerson(persons.filter((pr) => pr.id === selectedTransaction.personId)[0] ?? null);
+        setRefundOf(
+            transactions.filter((tr) => tr.id === selectedTransaction.refundOfId)[0] ?? null,
+        );
     }, [openDialog, selectedTransaction, accounts, stores, persons, transactions]);
 
     useEffect(() => {
@@ -125,11 +136,11 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
 
     const handleRemoveItem = (itemToRemove: TransactionItemJson) => {
         setItems((prev) => prev.filter((item) => item !== itemToRemove));
-    }
+    };
 
     const handleAddItem = (itemToAdd: TransactionItemJson) => {
         setItems((prev) => [...prev, itemToAdd]);
-    }
+    };
 
     const emptyForm = () => {
         setDateStr(new Date().toISOString().slice(0, 10));
@@ -143,7 +154,7 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
         setAmount(0);
 
         closeDialog();
-    }
+    };
 
     const onConfirm = async () => {
         if (processed || type === null) return;
@@ -164,7 +175,7 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
             subtotal,
             taxTotal,
             grandTotal,
-            amount
+            amount,
         };
 
         if (dialogType === ModalTypeEnum.ADD) {
@@ -174,79 +185,89 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                 console.log("Transaction processed, cannot update");
                 return;
             }
-            await updateTransaction({...tx, id: selectedTransaction.id});
+            await updateTransaction({ ...tx, id: selectedTransaction.id });
         } else if (dialogType === ModalTypeEnum.DELETE) {
             if (selectedTransaction.processed) {
                 console.log("Transaction processed, cannot delete");
                 return;
             }
-            await deleteTransaction({...tx, id: selectedTransaction.id});
+            await deleteTransaction({ ...tx, id: selectedTransaction.id });
         }
         setIsLoading(false);
         emptyForm();
-    }
+    };
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: TransactionTypeEnum) => {
         setType(newValue);
-    }
+    };
 
     const validateForm = (): boolean => {
         if (processed) return false;
 
         switch (type) {
             case TransactionTypeEnum.EXPENSE:
-                return payAccount !== null
-                    && counterPartyAccount === null
-                    && subtotal > 0
-                    && taxTotal >= 0
-                    && grandTotal === subtotal + taxTotal
-                    && amount === 0
-                    && refundOf === null;
+                return (
+                    payAccount !== null &&
+                    counterPartyAccount === null &&
+                    subtotal > 0 &&
+                    taxTotal >= 0 &&
+                    grandTotal === subtotal + taxTotal &&
+                    amount === 0 &&
+                    refundOf === null
+                );
             case TransactionTypeEnum.INCOME:
-                return payAccount == null
-                    && counterPartyAccount !== null
-                    && subtotal === 0
-                    && taxTotal === 0
-                    && grandTotal === 0
-                    && amount > 0
-                    && refundOf === null;
+                return (
+                    payAccount == null &&
+                    counterPartyAccount !== null &&
+                    subtotal === 0 &&
+                    taxTotal === 0 &&
+                    grandTotal === 0 &&
+                    amount > 0 &&
+                    refundOf === null
+                );
             case TransactionTypeEnum.CREDIT_PAYMENT:
             case TransactionTypeEnum.TRANSFER:
-                return payAccount !== null
-                    && counterPartyAccount !== null
-                    && subtotal === 0
-                    && taxTotal === 0
-                    && grandTotal === 0
-                    && amount > 0
-                    && refundOf === null;
-                case TransactionTypeEnum.REFUND:
-                    return payAccount == null
-                        && counterPartyAccount !== null
-                        && subtotal > 0
-                        && taxTotal >= 0
-                        && grandTotal === subtotal + taxTotal
-                        && amount === 0
-                        && refundOf !== null;
-            default: return false;
+                return (
+                    payAccount !== null &&
+                    counterPartyAccount !== null &&
+                    subtotal === 0 &&
+                    taxTotal === 0 &&
+                    grandTotal === 0 &&
+                    amount > 0 &&
+                    refundOf === null
+                );
+            case TransactionTypeEnum.REFUND:
+                return (
+                    payAccount == null &&
+                    counterPartyAccount !== null &&
+                    subtotal > 0 &&
+                    taxTotal >= 0 &&
+                    grandTotal === subtotal + taxTotal &&
+                    amount === 0 &&
+                    refundOf !== null
+                );
+            default:
+                return false;
         }
-    }
+    };
 
     return (
         <>
-            <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '900px', maxWidth: '900px'}}}>
-                <DialogTitle sx={{ mt: 2, pb: 0 }}>
-                    {dialogType} Transaction
-                </DialogTitle>
+            <Dialog
+                open={openDialog}
+                onClose={() => emptyForm()}
+                PaperProps={{ sx: { width: "900px", maxWidth: "900px" } }}
+            >
+                <DialogTitle sx={{ mt: 2, pb: 0 }}>{dialogType} Transaction</DialogTitle>
 
                 <DialogContent>
                     {isLoading ? (
                         <LoadingComponent message={"Processing..."} />
                     ) : (
                         <Stack spacing={2} sx={{ mt: 1 }}>
-
                             {/* ── Date + Notes side by side ── */}
                             <Stack direction="row" spacing={2}>
-                                <Box sx={{ width: '35%' }}>
+                                <Box sx={{ width: "35%" }}>
                                     <FormLabel>Date</FormLabel>
                                     <TextField
                                         fullWidth
@@ -258,7 +279,18 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                                     />
                                 </Box>
                                 <Box sx={{ flex: 1 }}>
-                                    <FormLabel>Notes <span style={{ fontWeight: 400, opacity: 0.55, fontSize: '0.8em' }}>(optional)</span></FormLabel>
+                                    <FormLabel>
+                                        Notes{" "}
+                                        <span
+                                            style={{
+                                                fontWeight: 400,
+                                                opacity: 0.55,
+                                                fontSize: "0.8em",
+                                            }}
+                                        >
+                                            (optional)
+                                        </span>
+                                    </FormLabel>
                                     <TextField
                                         fullWidth
                                         value={notes}
@@ -272,7 +304,7 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
 
                             {/* ── Type tabs ── */}
                             <TabContext value={type ?? TransactionTypeEnum.EXPENSE}>
-                                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                                <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                                     <Tabs
                                         value={type}
                                         onChange={handleTabChange}
@@ -282,22 +314,34 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
                                         <Tab
                                             label="🛒 Expense"
                                             value={TransactionTypeEnum.EXPENSE}
-                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                            disabled={
+                                                dialogType === ModalTypeEnum.UPDATE ||
+                                                dialogType === ModalTypeEnum.DELETE
+                                            }
                                         />
                                         <Tab
                                             label="💰 Income"
                                             value={TransactionTypeEnum.INCOME}
-                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                            disabled={
+                                                dialogType === ModalTypeEnum.UPDATE ||
+                                                dialogType === ModalTypeEnum.DELETE
+                                            }
                                         />
                                         <Tab
                                             label="↔️ Transfer"
                                             value={TransactionTypeEnum.TRANSFER}
-                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                            disabled={
+                                                dialogType === ModalTypeEnum.UPDATE ||
+                                                dialogType === ModalTypeEnum.DELETE
+                                            }
                                         />
                                         <Tab
                                             label="💳 Credit Payment"
                                             value={TransactionTypeEnum.CREDIT_PAYMENT}
-                                            disabled={dialogType === ModalTypeEnum.UPDATE || dialogType === ModalTypeEnum.DELETE}
+                                            disabled={
+                                                dialogType === ModalTypeEnum.UPDATE ||
+                                                dialogType === ModalTypeEnum.DELETE
+                                            }
                                         />
                                     </Tabs>
                                 </Box>
@@ -358,28 +402,29 @@ export const TransactionDialog: FC<TransactionDialogProps> = ({
 
                             {/* ── Live total summary ── */}
                             {validateForm() && (
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 1 }}>
+                                <Box sx={{ display: "flex", justifyContent: "flex-end", pt: 1 }}>
                                     <Chip
                                         label={`Total: ${(grandTotal > 0 ? grandTotal : amount).toFixed(2)}`}
                                         color="primary"
                                         variant="outlined"
-                                        sx={{ fontWeight: 700, fontSize: '1rem', px: 1 }}
+                                        sx={{ fontWeight: 700, fontSize: "1rem", px: 1 }}
                                     />
                                 </Box>
                             )}
-
                         </Stack>
                     )}
                 </DialogContent>
 
-                <DialogActions>{
-                    getActionButton(
+                <DialogActions>
+                    {getActionButton(
                         dialogType,
                         onConfirm,
                         `${dialogType} Transaction`,
-                        !validateForm())
-                    }
-                    <Button variant="outlined" onClick={emptyForm}>Cancel</Button>
+                        !validateForm(),
+                    )}
+                    <Button variant="outlined" onClick={emptyForm}>
+                        Cancel
+                    </Button>
                 </DialogActions>
             </Dialog>
 

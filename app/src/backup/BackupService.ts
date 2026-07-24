@@ -1,4 +1,4 @@
-import {BaseService} from "../utilities/BaseService";
+import { BaseService } from "../utilities/BaseService";
 import BadRequestError from "../utilities/errors/BadRequestError";
 
 export interface BackupData {
@@ -18,7 +18,6 @@ export interface BackupData {
 }
 
 export class BackupService extends BaseService {
-
     constructor() {
         super(BackupService.name);
     }
@@ -70,7 +69,10 @@ export class BackupService extends BaseService {
     }
 
     async importAll(data: BackupData): Promise<void> {
-        BadRequestError.throwIf(!data || data.version !== 1, "Invalid backup format: missing or unsupported version.");
+        BadRequestError.throwIf(
+            !data || data.version !== 1,
+            "Invalid backup format: missing or unsupported version.",
+        );
 
         this.logger.log("Starting full database restore — deleting existing data");
 
@@ -90,17 +92,22 @@ export class BackupService extends BaseService {
         this.logger.log("Inserting backup data");
 
         // Insert in parent-first order
-        if (data.categories?.length)         await this.prisma.category.createMany({ data: data.categories });
-        if (data.brands?.length)             await this.prisma.brand.createMany({ data: data.brands });
-        if (data.persons?.length)            await this.prisma.person.createMany({ data: data.persons });
-        if (data.stores?.length)             await this.prisma.store.createMany({ data: data.stores });
-        if (data.accounts?.length)           await this.prisma.account.createMany({ data: data.accounts });
-        if (data.products?.length)           await this.prisma.product.createMany({ data: data.products });
-        if (data.variants?.length)           await this.prisma.productVariant.createMany({ data: data.variants });
-        if (data.productVariantBrands?.length) await this.prisma.productVariantBrand.createMany({ data: data.productVariantBrands });
-        if (data.transactions?.length)       await this.prisma.transaction.createMany({ data: data.transactions });
-        if (data.transactionItems?.length)   await this.prisma.transactionItem.createMany({ data: data.transactionItems });
-        if (data.balances?.length)           await this.prisma.balance.createMany({ data: data.balances });
+        if (data.categories?.length)
+            await this.prisma.category.createMany({ data: data.categories });
+        if (data.brands?.length) await this.prisma.brand.createMany({ data: data.brands });
+        if (data.persons?.length) await this.prisma.person.createMany({ data: data.persons });
+        if (data.stores?.length) await this.prisma.store.createMany({ data: data.stores });
+        if (data.accounts?.length) await this.prisma.account.createMany({ data: data.accounts });
+        if (data.products?.length) await this.prisma.product.createMany({ data: data.products });
+        if (data.variants?.length)
+            await this.prisma.productVariant.createMany({ data: data.variants });
+        if (data.productVariantBrands?.length)
+            await this.prisma.productVariantBrand.createMany({ data: data.productVariantBrands });
+        if (data.transactions?.length)
+            await this.prisma.transaction.createMany({ data: data.transactions });
+        if (data.transactionItems?.length)
+            await this.prisma.transactionItem.createMany({ data: data.transactionItems });
+        if (data.balances?.length) await this.prisma.balance.createMany({ data: data.balances });
 
         this.logger.log("Restore complete");
     }

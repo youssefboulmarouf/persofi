@@ -16,10 +16,7 @@ interface FilterProps {
     active: boolean;
 }
 
-const bCrumb = [
-  {to: "/", title: "Home"},
-  {title: "Brands"},
-];
+const bCrumb = [{ to: "/", title: "Home" }, { title: "Brands" }];
 
 const emptyBrand: BrandJson = {
     id: 0,
@@ -37,7 +34,9 @@ export const Brands: FC = () => {
     const filteredBrands = useMemo(() => {
         const searchTerm = filters.searchTerm.toLowerCase();
         return brands.filter((b) => {
-            const nameMatches = filters.searchTerm ? b.name.toLowerCase().includes(searchTerm) : true;
+            const nameMatches = filters.searchTerm
+                ? b.name.toLowerCase().includes(searchTerm)
+                : true;
             const activeMatches = filters.active ? b.active : true;
             return nameMatches && activeMatches;
         });
@@ -47,24 +46,29 @@ export const Brands: FC = () => {
         <>
             <Breadcrumb title="Brands" items={bCrumb} />
             <Grid container mt={3}>
-                <Card sx={{padding: 0, borderColor: (theme) => theme.palette.divider}} variant="outlined">
-                      <CardContent>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center">
-                              <BrandsFilter filters={filters} setFilters={setFilters} />
-                              <TableCallToActionButton
-                                    callToActionText={"New Brand"}
-                                    callToActionFunction={() => brandDialog.openDialog(ModalTypeEnum.ADD, emptyBrand)}
-                                    fullwidth={false}
-                              />
-                          </Stack>
-                          <Box sx={{ overflowX: "auto" }} mt={3}>
-                              <BrandsList
-                                  brands={filteredBrands}
-                                  openDialogWithType={brandDialog.openDialog}
-                                  isLoading={isBrandsLoading}
-                              />
-                          </Box>
-                      </CardContent>
+                <Card
+                    sx={{ padding: 0, borderColor: (theme) => theme.palette.divider }}
+                    variant="outlined"
+                >
+                    <CardContent>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                            <BrandsFilter filters={filters} setFilters={setFilters} />
+                            <TableCallToActionButton
+                                callToActionText={"New Brand"}
+                                callToActionFunction={() =>
+                                    brandDialog.openDialog(ModalTypeEnum.ADD, emptyBrand)
+                                }
+                                fullwidth={false}
+                            />
+                        </Stack>
+                        <Box sx={{ overflowX: "auto" }} mt={3}>
+                            <BrandsList
+                                brands={filteredBrands}
+                                openDialogWithType={brandDialog.openDialog}
+                                isLoading={isBrandsLoading}
+                            />
+                        </Box>
+                    </CardContent>
                 </Card>
             </Grid>
 
@@ -74,6 +78,6 @@ export const Brands: FC = () => {
                 openDialog={brandDialog.open}
                 closeDialog={brandDialog.closeDialog}
             />
-      </>
+        </>
     );
 };

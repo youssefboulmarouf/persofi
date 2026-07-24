@@ -1,5 +1,5 @@
-import {BaseService} from "../utilities/BaseService";
-import {PersonJson} from "./PersonJson";
+import { BaseService } from "../utilities/BaseService";
+import { PersonJson } from "./PersonJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import AppError from "../utilities/errors/AppError";
@@ -18,7 +18,7 @@ export class PersonService extends BaseService {
         this.logger.log(`Get person by [id:${id}]`);
 
         const data = await this.prisma.person.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Person with [id:${id}] not found`);
@@ -33,9 +33,9 @@ export class PersonService extends BaseService {
             await this.prisma.person.create({
                 data: {
                     name: person.getName(),
-                    active: true
-                }
-            })
+                    active: true,
+                },
+            }),
         );
     }
 
@@ -54,9 +54,9 @@ export class PersonService extends BaseService {
                 where: { id },
                 data: {
                     name: person.getName(),
-                    active: person.isActive()
-                }
-            })
+                    active: person.isActive(),
+                },
+            }),
         );
     }
 
@@ -64,13 +64,13 @@ export class PersonService extends BaseService {
         this.logger.log(`Delete person with [id=${id}]`);
         try {
             await this.prisma.person.delete({
-                where: { id }
+                where: { id },
             });
         } catch (e: any) {
             throw new AppError(
                 "Runtime Error",
                 500,
-                `Unable to delete person that is tied to other entities: ${e.message}.`
+                `Unable to delete person that is tied to other entities: ${e.message}.`,
             );
         }
     }

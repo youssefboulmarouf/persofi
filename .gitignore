@@ -15,6 +15,7 @@ app/**/*.js.map
 app/**/*.d.ts
 # But keep config files that are intentionally JS
 !app/jest.config.js
+!app/eslint.config.js
 
 client/.env
 client/node_modules/

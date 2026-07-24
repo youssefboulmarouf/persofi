@@ -1,11 +1,25 @@
-import {FC, useEffect, useMemo, useState} from "react";
-import {CategoryJson, ModalTypeEnum} from "../../model/PersofiModels";
-import {getActionButton} from "../common/Utilities";
-import {Autocomplete, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Switch, TextField} from "@mui/material";
+import { FC, useEffect, useMemo, useState } from "react";
+import { CategoryJson, ModalTypeEnum } from "../../model/PersofiModels";
+import { getActionButton } from "../common/Utilities";
+import {
+    Autocomplete,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Stack,
+    Switch,
+    TextField,
+} from "@mui/material";
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import Button from "@mui/material/Button";
-import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from "../../hooks/useCategories";
+import {
+    useCategories,
+    useAddCategory,
+    useUpdateCategory,
+    useDeleteCategory,
+} from "../../hooks/useCategories";
 import { useTransactions } from "../../hooks/useTransactions";
 
 interface CategoryDialogProps {
@@ -32,15 +46,15 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
 
     const { data: categoriesData } = useCategories();
     const categories = categoriesData || [];
-    
+
     const { data: transactionsData } = useTransactions();
     const transactions = transactionsData || [];
 
     const parentOptions = useMemo(() => {
         // Allow selecting no parent (null) or any other category (excluding self when updating)
         const options = categories
-            .filter(c => dialogType !== ModalTypeEnum.UPDATE || c.id !== selectedCategory.id)
-            .map(c => ({ label: c.name + ` (#${c.id})`, value: c.id }));
+            .filter((c) => dialogType !== ModalTypeEnum.UPDATE || c.id !== selectedCategory.id)
+            .map((c) => ({ label: c.name + ` (#${c.id})`, value: c.id }));
         return [{ label: "No Parent", value: null }, ...options];
     }, [categories, dialogType, selectedCategory.id]);
 
@@ -71,11 +85,13 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
                 });
             } else if (dialogType === ModalTypeEnum.DELETE) {
                 const categoryTransactions = transactions
-                    .flatMap(tr => tr.items)
-                    .filter(item => item.categoryId === selectedCategory.id);
+                    .flatMap((tr) => tr.items)
+                    .filter((item) => item.categoryId === selectedCategory.id);
 
                 if (categoryTransactions.length > 1) {
-                    console.log(`Category with [id=${selectedCategory.id}] have ${categoryTransactions.length} transactions, deactivate instead of delete`)
+                    console.log(
+                        `Category with [id=${selectedCategory.id}] have ${categoryTransactions.length} transactions, deactivate instead of delete`,
+                    );
                     await updateCategory({
                         id: selectedCategory.id,
                         name: categoryName.trim(),
@@ -100,11 +116,17 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
         setIsActive(true);
 
         closeDialog();
-    }
+    };
 
     return (
-        <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '500px', maxWidth: '500px'}}}>
-            <DialogTitle sx={{ mt: 2 }}>{dialogType} Account: {selectedCategory.name}</DialogTitle>
+        <Dialog
+            open={openDialog}
+            onClose={() => emptyForm()}
+            PaperProps={{ sx: { width: "500px", maxWidth: "500px" } }}
+        >
+            <DialogTitle sx={{ mt: 2 }}>
+                {dialogType} Account: {selectedCategory.name}
+            </DialogTitle>
 
             <DialogContent>
                 {isLoading ? (
@@ -126,7 +148,8 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
                             value={
                                 parent === null
                                     ? parentOptions[0]
-                                    : parentOptions.find(o => o.value === parent) ?? parentOptions[0]
+                                    : (parentOptions.find((o) => o.value === parent) ??
+                                      parentOptions[0])
                             }
                             onChange={(e, newValue) => setParent(newValue?.value ?? null)}
                             renderInput={(params) => <TextField {...params} fullWidth />}
@@ -134,20 +157,22 @@ export const CategoryDialog: FC<CategoryDialogProps> = ({
 
                         <FormLabel>Active</FormLabel>
                         <Stack direction="row" alignItems="center" spacing={1}>
-                            <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                            <Switch
+                                checked={isActive}
+                                onChange={(e) => setIsActive(e.target.checked)}
+                            />
                         </Stack>
                     </Stack>
                 )}
             </DialogContent>
 
             <DialogActions>
-                {
-                    getActionButton(
-                        dialogType,
-                        handleSubmit,
-                        `${dialogType} Category`,
-                        categoryName === "" || isLoading)
-                }
+                {getActionButton(
+                    dialogType,
+                    handleSubmit,
+                    `${dialogType} Category`,
+                    categoryName === "" || isLoading,
+                )}
                 <Button variant="outlined" onClick={emptyForm}>
                     Cancel
                 </Button>

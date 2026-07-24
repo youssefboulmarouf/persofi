@@ -1,18 +1,23 @@
-import React, {FC} from "react";
-import {AccountJson, AccountTypeEnum, ModalTypeEnum, TransactionJson} from "../../../model/PersofiModels";
+import React, { FC } from "react";
+import {
+    AccountJson,
+    AccountTypeEnum,
+    ModalTypeEnum,
+    TransactionJson,
+} from "../../../model/PersofiModels";
 import FormLabel from "../../common/FormLabel";
-import {Autocomplete, TextField} from "@mui/material";
+import { Autocomplete, TextField } from "@mui/material";
 import { useAccounts } from "../../../hooks/useAccounts";
 
 interface CreditPaymentFormProps {
-    selectedTransaction: TransactionJson,
-    payAccount: AccountJson | null,
-    setPayAccount: (account: AccountJson | null) => void,
-    counterPartyAccount: AccountJson | null,
-    setCounterPartyAccount: (account: AccountJson | null) => void,
-    amount: number,
-    setAmount: (amount: number) => void,
-    dialogType: ModalTypeEnum,
+    selectedTransaction: TransactionJson;
+    payAccount: AccountJson | null;
+    setPayAccount: (account: AccountJson | null) => void;
+    counterPartyAccount: AccountJson | null;
+    setCounterPartyAccount: (account: AccountJson | null) => void;
+    amount: number;
+    setAmount: (amount: number) => void;
+    dialogType: ModalTypeEnum;
 }
 
 export const CreditPaymentForm: FC<CreditPaymentFormProps> = ({
@@ -23,7 +28,7 @@ export const CreditPaymentForm: FC<CreditPaymentFormProps> = ({
     setCounterPartyAccount,
     amount,
     setAmount,
-    dialogType
+    dialogType,
 }) => {
     const { data: accountsData } = useAccounts();
     const accounts = accountsData || [];
@@ -34,7 +39,7 @@ export const CreditPaymentForm: FC<CreditPaymentFormProps> = ({
         <>
             <FormLabel>Paying with (Debit / Cash / Saving)</FormLabel>
             <Autocomplete
-                options={accounts.filter(acc => acc.accountType !== AccountTypeEnum.CREDIT)}
+                options={accounts.filter((acc) => acc.accountType !== AccountTypeEnum.CREDIT)}
                 getOptionLabel={(opt: AccountJson) => `${opt.name} (${opt.accountType})`}
                 getOptionKey={(opt: AccountJson) => opt.id}
                 value={payAccount}
@@ -48,7 +53,7 @@ export const CreditPaymentForm: FC<CreditPaymentFormProps> = ({
 
             <FormLabel>Credit card to pay off</FormLabel>
             <Autocomplete
-                options={accounts.filter(acc => acc.accountType === AccountTypeEnum.CREDIT)}
+                options={accounts.filter((acc) => acc.accountType === AccountTypeEnum.CREDIT)}
                 getOptionLabel={(opt: AccountJson) => opt.name}
                 getOptionKey={(opt: AccountJson) => opt.id}
                 value={counterPartyAccount}
@@ -73,4 +78,4 @@ export const CreditPaymentForm: FC<CreditPaymentFormProps> = ({
             />
         </>
     );
-}
+};

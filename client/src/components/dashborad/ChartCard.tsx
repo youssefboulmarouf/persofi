@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from '@mui/material';
-import Chart from 'react-apexcharts';
+import { Card, CardContent, CardHeader } from "@mui/material";
+import Chart from "react-apexcharts";
 
 type Series = { name: string; data: number[] };
 
@@ -14,9 +14,9 @@ export default function ChartCard({ title, categories, series, height = 300 }: P
     const options: ApexCharts.ApexOptions = {
         chart: { toolbar: { show: false }, animations: { enabled: true } },
         xaxis: { categories },
-        stroke: { width: 2, curve: 'smooth' },
+        stroke: { width: 2, curve: "smooth" },
         dataLabels: { enabled: false },
-        grid: { strokeDashArray: 4 }
+        grid: { strokeDashArray: 4 },
     };
 
     return (

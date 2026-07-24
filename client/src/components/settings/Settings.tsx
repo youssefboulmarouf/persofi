@@ -21,10 +21,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Breadcrumb from "../common/Breadcrumb";
 import { downloadBackup, restoreBackup } from "../../hooks/useBackup";
 
-const bCrumb = [
-    { to: "/", title: "Home" },
-    { title: "Settings" },
-];
+const bCrumb = [{ to: "/", title: "Home" }, { title: "Settings" }];
 
 export const Settings: FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +29,11 @@ export const Settings: FC = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [backupLoading, setBackupLoading] = useState(false);
     const [restoreLoading, setRestoreLoading] = useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: "success" | "error";
+    }>({
         open: false,
         message: "",
         severity: "success",
@@ -86,7 +87,6 @@ export const Settings: FC = () => {
             <Breadcrumb title="Settings" items={bCrumb} />
 
             <Stack spacing={3} mt={3} sx={{ maxWidth: 700 }}>
-
                 {/* ── Backup Section ── */}
                 <Card variant="outlined">
                     <CardContent>
@@ -95,12 +95,18 @@ export const Settings: FC = () => {
                             <Typography variant="h6">Database Backup</Typography>
                         </Stack>
                         <Typography variant="body2" color="text.secondary" mb={2}>
-                            Download a complete snapshot of all your data as a JSON file.
-                            Keep this file safe — you can use it to restore your data at any time.
+                            Download a complete snapshot of all your data as a JSON file. Keep this
+                            file safe — you can use it to restore your data at any time.
                         </Typography>
                         <Button
                             variant="contained"
-                            startIcon={backupLoading ? <CircularProgress size={18} color="inherit" /> : <DownloadIcon />}
+                            startIcon={
+                                backupLoading ? (
+                                    <CircularProgress size={18} color="inherit" />
+                                ) : (
+                                    <DownloadIcon />
+                                )
+                            }
                             onClick={handleDownload}
                             disabled={backupLoading}
                         >
@@ -120,8 +126,9 @@ export const Settings: FC = () => {
                         </Stack>
 
                         <Alert severity="warning" sx={{ mb: 2 }}>
-                            <strong>Warning:</strong> Restoring will permanently delete <strong>all current data</strong> and
-                            replace it with the contents of the backup file. Make sure you have a recent backup before proceeding.
+                            <strong>Warning:</strong> Restoring will permanently delete{" "}
+                            <strong>all current data</strong> and replace it with the contents of
+                            the backup file. Make sure you have a recent backup before proceeding.
                         </Alert>
 
                         <Stack direction="row" spacing={2} alignItems="center">
@@ -152,7 +159,13 @@ export const Settings: FC = () => {
                             <Button
                                 variant="contained"
                                 color="warning"
-                                startIcon={restoreLoading ? <CircularProgress size={18} color="inherit" /> : <WarningAmberIcon />}
+                                startIcon={
+                                    restoreLoading ? (
+                                        <CircularProgress size={18} color="inherit" />
+                                    ) : (
+                                        <WarningAmberIcon />
+                                    )
+                                }
                                 onClick={handleRestoreClick}
                                 disabled={!selectedFile || restoreLoading}
                             >
@@ -168,15 +181,17 @@ export const Settings: FC = () => {
                 <DialogTitle>Confirm Restore</DialogTitle>
                 <DialogContent>
                     <Alert severity="error" sx={{ mb: 2 }}>
-                        This will <strong>delete all existing data</strong> and replace it with the backup.
-                        This action cannot be undone.
+                        This will <strong>delete all existing data</strong> and replace it with the
+                        backup. This action cannot be undone.
                     </Alert>
                     <Typography>
                         Are you sure you want to restore from <strong>{selectedFile?.name}</strong>?
                     </Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setConfirmOpen(false)} variant="outlined">Cancel</Button>
+                    <Button onClick={() => setConfirmOpen(false)} variant="outlined">
+                        Cancel
+                    </Button>
                     <Button onClick={handleRestoreConfirm} color="error" variant="contained">
                         Yes, Restore
                     </Button>
@@ -187,12 +202,12 @@ export const Settings: FC = () => {
             <Snackbar
                 open={snackbar.open}
                 autoHideDuration={6000}
-                onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                 anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
             >
                 <Alert
                     severity={snackbar.severity}
-                    onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                     sx={{ width: "100%" }}
                 >
                     {snackbar.message}

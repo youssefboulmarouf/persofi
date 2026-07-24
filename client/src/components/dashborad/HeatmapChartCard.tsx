@@ -1,5 +1,5 @@
-import {Card, CardHeader, CardContent, Divider} from '@mui/material';
-import Chart from 'react-apexcharts';
+import { Card, CardHeader, CardContent, Divider } from "@mui/material";
+import Chart from "react-apexcharts";
 import React from "react";
 
 type Point = { x: string | number; y: number };
@@ -34,11 +34,11 @@ export default function HeatmapChartCard({ title, series, height = 360 }: Props)
             heatmap: {
                 shadeIntensity: 0.45,
                 radius: 2,
-                useFillColorAsStroke: false
-            }
+                useFillColorAsStroke: false,
+            },
         },
         dataLabels: { enabled: false },
-        xaxis: { type: 'category' },
+        xaxis: { type: "category" },
         markers: {
             size: 3,
             strokeOpacity: 0.9,
@@ -59,7 +59,10 @@ export default function HeatmapChartCard({ title, series, height = 360 }: Props)
     };
 
     return (
-        <Card sx={{ p: 0, borderColor: (t) => t.palette.divider, width: "100%",}} variant="outlined">
+        <Card
+            sx={{ p: 0, borderColor: (t) => t.palette.divider, width: "100%" }}
+            variant="outlined"
+        >
             <CardHeader title={title} />
             <Divider />
             <CardContent>

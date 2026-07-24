@@ -1,16 +1,15 @@
-
-import {FC, useMemo, useState} from "react";
+import { FC, useMemo, useState } from "react";
 import Breadcrumb from "../common/Breadcrumb";
-import {Card, CardContent, Grid} from "@mui/material";
-import {Stack} from "@mui/system";
-import {useDialogController} from "../common/useDialogController";
-import {CategoryJson, ModalTypeEnum} from "../../model/PersofiModels";
+import { Card, CardContent, Grid } from "@mui/material";
+import { Stack } from "@mui/system";
+import { useDialogController } from "../common/useDialogController";
+import { CategoryJson, ModalTypeEnum } from "../../model/PersofiModels";
 import TableCallToActionButton from "../common/TableCallToActionButton";
 import Box from "@mui/material/Box";
 import CategoriesFilter from "./CategoriesFilter";
-import {CategoriesList} from "./CategoriesList";
-import {CategoryDialog} from "./CategoryDialog";
-import {useCategories} from "../../hooks/useCategories";
+import { CategoriesList } from "./CategoriesList";
+import { CategoryDialog } from "./CategoryDialog";
+import { useCategories } from "../../hooks/useCategories";
 
 interface FilterProps {
     searchTerm: string;
@@ -18,10 +17,7 @@ interface FilterProps {
     active: boolean;
 }
 
-const bCrumb = [
-    {to: "/", title: "Home"},
-    {title: "Categories"},
-];
+const bCrumb = [{ to: "/", title: "Home" }, { title: "Categories" }];
 
 const emptyCategory: CategoryJson = {
     id: 0,
@@ -31,7 +27,11 @@ const emptyCategory: CategoryJson = {
 };
 
 export const Categories: FC = () => {
-    const [filters, setFilters] = useState<FilterProps>({searchTerm: "", parentCategoryName: null, active: true});
+    const [filters, setFilters] = useState<FilterProps>({
+        searchTerm: "",
+        parentCategoryName: null,
+        active: true,
+    });
     const categoryDialog = useDialogController<CategoryJson>(emptyCategory);
     const { data: categoriesData, isLoading: isCategoriesLoading } = useCategories();
     const categories = categoriesData || [];
@@ -41,29 +41,46 @@ export const Categories: FC = () => {
 
         // resolve selected parent by name (must be a top-level category: parentCategoryId === null)
         const selectedParent = filters.parentCategoryName
-            ? categories.find(c => c.parentCategoryId === null && c.name === filters.parentCategoryName)
+            ? categories.find(
+                  (c) => c.parentCategoryId === null && c.name === filters.parentCategoryName,
+              )
             : null;
 
-        return categories.filter(category => {
-            const nameMatch = filters.searchTerm ? category.name.toLowerCase().includes(searchLower) : true;
-            const activeMatch = filters.active ? category.active : true;
-            const parentMatch = selectedParent ? category.parentCategoryId === selectedParent.id : true;
-            return nameMatch && activeMatch && parentMatch;
-        }) || [];
+        return (
+            categories.filter((category) => {
+                const nameMatch = filters.searchTerm
+                    ? category.name.toLowerCase().includes(searchLower)
+                    : true;
+                const activeMatch = filters.active ? category.active : true;
+                const parentMatch = selectedParent
+                    ? category.parentCategoryId === selectedParent.id
+                    : true;
+                return nameMatch && activeMatch && parentMatch;
+            }) || []
+        );
     }, [categories, filters]);
 
     return (
         <>
             <Breadcrumb title="Categories" items={bCrumb} />
             <Grid container mt={3}>
-                <Card sx={{padding: 0, borderColor: (theme) => theme.palette.divider}} variant="outlined">
+                <Card
+                    sx={{ padding: 0, borderColor: (theme) => theme.palette.divider }}
+                    variant="outlined"
+                >
                     <CardContent>
-                        <Stack justifyContent="space-between" direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 2, md: 4 }}>
+                        <Stack
+                            justifyContent="space-between"
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={{ xs: 1, sm: 2, md: 4 }}
+                        >
                             <CategoriesFilter filters={filters} setFilters={setFilters} />
                             <TableCallToActionButton
                                 fullwidth={false}
                                 callToActionText="Add Category"
-                                callToActionFunction={() => categoryDialog.openDialog(ModalTypeEnum.ADD, emptyCategory)}
+                                callToActionFunction={() =>
+                                    categoryDialog.openDialog(ModalTypeEnum.ADD, emptyCategory)
+                                }
                             />
                         </Stack>
                         <Box sx={{ overflowX: "auto" }} mt={3}>
@@ -85,4 +102,4 @@ export const Categories: FC = () => {
             />
         </>
     );
-}
+};

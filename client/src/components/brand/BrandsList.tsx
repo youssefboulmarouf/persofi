@@ -17,7 +17,11 @@ interface BrandsListProps {
     isLoading: boolean;
 }
 
-export const BrandsList: React.FC<BrandsListProps> = ({ brands, openDialogWithType, isLoading }) => {
+export const BrandsList: React.FC<BrandsListProps> = ({
+    brands,
+    openDialogWithType,
+    isLoading,
+}) => {
     const paginationController = usePaginationController<BrandJson>(brands);
 
     if (isLoading) return <LoadingComponent message="Loading Brands" />;
@@ -27,11 +31,21 @@ export const BrandsList: React.FC<BrandsListProps> = ({ brands, openDialogWithTy
         <Table>
             <TableHead>
                 <TableRow>
-                    <TableCell><Typography>ID</Typography></TableCell>
-                    <TableCell><Typography>Name</Typography></TableCell>
-                    <TableCell><Typography>URL</Typography></TableCell>
-                    <TableCell><Typography>Active</Typography></TableCell>
-                    <TableCell align="right"><Typography>Actions</Typography></TableCell>
+                    <TableCell>
+                        <Typography>ID</Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography>Name</Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography>URL</Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography>Active</Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                        <Typography>Actions</Typography>
+                    </TableCell>
                 </TableRow>
             </TableHead>
 
@@ -43,21 +57,21 @@ export const BrandsList: React.FC<BrandsListProps> = ({ brands, openDialogWithTy
                         <TableCell>{brand.url}</TableCell>
                         <TableCell>
                             <IconButton color={brand.active ? "success" : "error"}>
-                                {brand.active ? (
-                                    <CheckIcon width={22} />
-                                ) : (
-                                    <ClearIcon width={22} />
-                                )}
+                                {brand.active ? <CheckIcon width={22} /> : <ClearIcon width={22} />}
                             </IconButton>
                         </TableCell>
                         <TableCell align="right">
                             <EditButton
                                 tooltipText={"Edit Brand"}
-                                openDialogWithType={() => openDialogWithType(ModalTypeEnum.UPDATE, brand)}
+                                openDialogWithType={() =>
+                                    openDialogWithType(ModalTypeEnum.UPDATE, brand)
+                                }
                             />
                             <DeleteButton
                                 tooltipText={"Delete Brand"}
-                                openDialogWithType={() => openDialogWithType(ModalTypeEnum.DELETE, brand)}
+                                openDialogWithType={() =>
+                                    openDialogWithType(ModalTypeEnum.DELETE, brand)
+                                }
                             />
                         </TableCell>
                     </TableRow>

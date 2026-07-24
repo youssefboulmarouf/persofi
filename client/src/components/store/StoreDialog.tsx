@@ -1,7 +1,15 @@
-import {FC, useEffect, useState} from "react";
-import {ModalTypeEnum, StoreJson} from "../../model/PersofiModels";
-import {getActionButton} from "../common/Utilities";
-import {Dialog, DialogActions, DialogContent, DialogTitle, Stack, Switch, TextField} from "@mui/material";
+import { FC, useEffect, useState } from "react";
+import { ModalTypeEnum, StoreJson } from "../../model/PersofiModels";
+import { getActionButton } from "../common/Utilities";
+import {
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Stack,
+    Switch,
+    TextField,
+} from "@mui/material";
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import Button from "@mui/material/Button";
@@ -19,7 +27,7 @@ export const StoreDialog: FC<StoreDialogProps> = ({
     selectedStore,
     dialogType,
     openDialog,
-    closeDialog
+    closeDialog,
 }) => {
     const [storeName, setStoreName] = useState<string>("");
     const [storeUrl, setStoreUrl] = useState<string>("");
@@ -29,7 +37,7 @@ export const StoreDialog: FC<StoreDialogProps> = ({
     const { mutateAsync: addStore } = useAddStore();
     const { mutateAsync: updateStore } = useUpdateStore();
     const { mutateAsync: deleteStore } = useDeleteStore();
-    
+
     const { data: transactionsData } = useTransactions();
     const transactions = transactionsData || [];
 
@@ -47,26 +55,29 @@ export const StoreDialog: FC<StoreDialogProps> = ({
                     id: 0,
                     name: storeName.trim(),
                     url: storeUrl.trim(),
-                    active: isActive
+                    active: isActive,
                 });
             } else if (dialogType === ModalTypeEnum.UPDATE) {
                 await updateStore({
                     id: selectedStore.id,
                     name: storeName.trim(),
                     url: storeUrl.trim(),
-                    active: isActive
+                    active: isActive,
                 });
             } else if (dialogType === ModalTypeEnum.DELETE) {
-                const storeTransactions = transactions
-                    .filter(tr => tr.storeId === selectedStore.id);
+                const storeTransactions = transactions.filter(
+                    (tr) => tr.storeId === selectedStore.id,
+                );
 
                 if (storeTransactions.length > 1) {
-                    console.log(`Store with [id=${selectedStore.id}] have ${storeTransactions.length} transactions, deactivate instead of delete`)
+                    console.log(
+                        `Store with [id=${selectedStore.id}] have ${storeTransactions.length} transactions, deactivate instead of delete`,
+                    );
                     await updateStore({
                         id: selectedStore.id,
                         name: selectedStore.name,
                         url: selectedStore.url,
-                        active: false
+                        active: false,
                     });
                 } else {
                     await deleteStore(selectedStore);
@@ -86,11 +97,16 @@ export const StoreDialog: FC<StoreDialogProps> = ({
         setIsActive(true);
 
         closeDialog();
-    }
+    };
     return (
-        <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '500px', maxWidth: '500px'}}}>
-            <DialogTitle sx={{ mt: 2 }}>{dialogType} Store: {selectedStore.name}</DialogTitle>
-
+        <Dialog
+            open={openDialog}
+            onClose={() => emptyForm()}
+            PaperProps={{ sx: { width: "500px", maxWidth: "500px" } }}
+        >
+            <DialogTitle sx={{ mt: 2 }}>
+                {dialogType} Store: {selectedStore.name}
+            </DialogTitle>
 
             <DialogContent>
                 {isLoading ? (
@@ -115,20 +131,22 @@ export const StoreDialog: FC<StoreDialogProps> = ({
 
                         <FormLabel>Active</FormLabel>
                         <Stack direction="row" alignItems="center" spacing={1}>
-                            <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                            <Switch
+                                checked={isActive}
+                                onChange={(e) => setIsActive(e.target.checked)}
+                            />
                         </Stack>
                     </Stack>
                 )}
             </DialogContent>
 
             <DialogActions>
-                {
-                    getActionButton(
-                        dialogType,
-                        handleSubmit,
-                        `${dialogType} Store`,
-                        storeName === "" || isLoading)
-                }
+                {getActionButton(
+                    dialogType,
+                    handleSubmit,
+                    `${dialogType} Store`,
+                    storeName === "" || isLoading,
+                )}
                 <Button variant="outlined" onClick={closeDialog}>
                     Cancel
                 </Button>

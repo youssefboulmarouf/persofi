@@ -1,4 +1,4 @@
-import {AccountTypeEnum, accountTypeFromString} from "./AccountType";
+import { AccountTypeEnum, accountTypeFromString } from "./AccountType";
 
 export class AccountJson {
     private readonly id: number;
@@ -7,14 +7,19 @@ export class AccountJson {
     private readonly currency: string;
     private readonly active: boolean;
 
-    constructor(id: number, name: string, accountType: AccountTypeEnum, currency: string, active: boolean) {
+    constructor(
+        id: number,
+        name: string,
+        accountType: AccountTypeEnum,
+        currency: string,
+        active: boolean,
+    ) {
         this.id = id;
         this.name = name;
         this.accountType = accountType;
         this.currency = currency;
         this.active = active;
     }
-
 
     public getId(): number {
         return this.id;
@@ -42,7 +47,7 @@ export class AccountJson {
             body.name,
             accountTypeFromString(body.accountType),
             body.currency,
-            body.active
-        )
+            body.active,
+        );
     }
 }

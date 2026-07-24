@@ -81,10 +81,9 @@ export class TransactionItemJson {
             Number(body.quantity),
             Number(body.unitPrice),
             Number(body.lineTotal),
-            (body.variantId === null) ? null : Number(body.variantId),
-            (body.brandId === null) ? null : Number(body.brandId),
-            (body.categoryId === null) ? null : Number(body.categoryId),
-        )
+            body.variantId === null ? null : Number(body.variantId),
+            body.brandId === null ? null : Number(body.brandId),
+            body.categoryId === null ? null : Number(body.categoryId),
+        );
     }
-
 }

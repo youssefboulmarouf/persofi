@@ -8,7 +8,11 @@ type Props = {
     disable?: boolean;
 };
 
-const ProcessTransactionButton: React.FC<Props> = ({ tooltipText, openDialogWithType, disable = false }) => (
+const ProcessTransactionButton: React.FC<Props> = ({
+    tooltipText,
+    openDialogWithType,
+    disable = false,
+}) => (
     <IconActionButton
         tooltip={tooltipText}
         onClick={openDialogWithType}

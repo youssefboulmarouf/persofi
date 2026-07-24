@@ -1,11 +1,25 @@
-import {FC, useEffect, useMemo, useState} from "react";
-import {ModalTypeEnum, ProductVariantJson, UintTypeEnum} from "../../model/PersofiModels";
-import {getActionButton} from "../common/Utilities";
-import {Autocomplete, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Switch, TextField} from "@mui/material";
+import { FC, useEffect, useMemo, useState } from "react";
+import { ModalTypeEnum, ProductVariantJson, UintTypeEnum } from "../../model/PersofiModels";
+import { getActionButton } from "../common/Utilities";
+import {
+    Autocomplete,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Stack,
+    Switch,
+    TextField,
+} from "@mui/material";
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import Button from "@mui/material/Button";
-import { useProducts, useAddVariant, useUpdateVariant, useDeleteVariant } from "../../hooks/useProducts";
+import {
+    useProducts,
+    useAddVariant,
+    useUpdateVariant,
+    useDeleteVariant,
+} from "../../hooks/useProducts";
 import { useTransactions } from "../../hooks/useTransactions";
 
 interface ProductVariantDialogProps {
@@ -19,7 +33,7 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
     selectedVariant,
     dialogType,
     openDialog,
-    closeDialog
+    closeDialog,
 }) => {
     const [productId, setProductId] = useState<number | null>(null);
     const [unitSize, setUnitSize] = useState<number>(0);
@@ -34,14 +48,12 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
 
     const { data: productsData } = useProducts();
     const products = productsData || [];
-    
+
     const { data: transactionsData } = useTransactions();
     const transactions = transactionsData || [];
 
     const productOptions = useMemo(() => {
-        return products
-            .filter(p => p.active)
-            .map(p => ({ label: p.name, value: p.id }));
+        return products.filter((p) => p.active).map((p) => ({ label: p.name, value: p.id }));
     }, [products]);
 
     useEffect(() => {
@@ -64,7 +76,7 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
                     unitSize,
                     unitType,
                     description,
-                    active: isActive
+                    active: isActive,
                 });
             } else if (dialogType === ModalTypeEnum.UPDATE) {
                 await updateVariant({
@@ -73,22 +85,24 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
                     unitSize,
                     unitType,
                     description,
-                    active: isActive
+                    active: isActive,
                 });
             } else if (dialogType === ModalTypeEnum.DELETE) {
                 const variantTransactions = transactions
-                    .flatMap(tr => tr.items)
-                    .filter(item => item.variantId && selectedVariant.id === item.variantId)
+                    .flatMap((tr) => tr.items)
+                    .filter((item) => item.variantId && selectedVariant.id === item.variantId);
 
                 if (variantTransactions.length > 0) {
-                    console.log(`Variant with [id=${selectedVariant.id}] have ${variantTransactions.length} transactions, deactivate instead of delete`)
+                    console.log(
+                        `Variant with [id=${selectedVariant.id}] have ${variantTransactions.length} transactions, deactivate instead of delete`,
+                    );
                     await updateVariant({
                         id: selectedVariant.id,
                         productId: selectedVariant.productId,
                         unitSize: selectedVariant.unitSize,
                         unitType: selectedVariant.unitType,
                         description: selectedVariant.description,
-                        active: false
+                        active: false,
                     });
                 } else {
                     await deleteVariant(selectedVariant);
@@ -119,14 +133,10 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
                         <Autocomplete
                             options={productOptions}
                             getOptionLabel={(opt) => opt.label}
-                            value={productOptions.find(o => o.value === productId) ?? null}
+                            value={productOptions.find((o) => o.value === productId) ?? null}
                             onChange={(e, nv) => setProductId(nv?.value ?? null)}
                             renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    fullWidth
-                                    placeholder="Search product..."
-                                />
+                                <TextField {...params} fullWidth placeholder="Search product..." />
                             )}
                         />
 
@@ -142,10 +152,17 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
                         <FormLabel>Unit Type</FormLabel>
                         <Autocomplete
                             fullWidth
-                            options={[UintTypeEnum.KG, UintTypeEnum.L, UintTypeEnum.PACK, UintTypeEnum.PIECE]}
+                            options={[
+                                UintTypeEnum.KG,
+                                UintTypeEnum.L,
+                                UintTypeEnum.PACK,
+                                UintTypeEnum.PIECE,
+                            ]}
                             getOptionLabel={(opt) => opt}
                             value={unitType}
-                            onChange={(event: React.SyntheticEvent, nv: UintTypeEnum | null) => setUnitType(nv)}
+                            onChange={(event: React.SyntheticEvent, nv: UintTypeEnum | null) =>
+                                setUnitType(nv)
+                            }
                             renderInput={(params) => <TextField {...params} fullWidth />}
                         />
 
@@ -159,20 +176,22 @@ export const ProductVariantDialog: FC<ProductVariantDialogProps> = ({
 
                         <FormLabel>Active</FormLabel>
                         <Stack direction="row" alignItems="center" spacing={1}>
-                            <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                            <Switch
+                                checked={isActive}
+                                onChange={(e) => setIsActive(e.target.checked)}
+                            />
                         </Stack>
                     </Stack>
                 )}
             </DialogContent>
 
             <DialogActions>
-                {
-                    getActionButton(
-                        dialogType,
-                        handleSubmit,
-                        `${dialogType} Variant`,
-                        unitSize === 0 || isLoading)
-                }
+                {getActionButton(
+                    dialogType,
+                    handleSubmit,
+                    `${dialogType} Variant`,
+                    unitSize === 0 || isLoading,
+                )}
                 <Button variant="outlined" onClick={closeDialog}>
                     Cancel
                 </Button>

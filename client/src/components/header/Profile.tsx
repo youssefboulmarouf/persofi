@@ -1,18 +1,17 @@
-import React, { useState } from 'react';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import Typography from '@mui/material/Typography';
+import React, { useState } from "react";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import Typography from "@mui/material/Typography";
 
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import EmailIcon from '@mui/icons-material/Email';
-import { Stack } from '@mui/system';
-import {profileMenuItem} from "../common/Menu";
-
+import EmailIcon from "@mui/icons-material/Email";
+import { Stack } from "@mui/system";
+import { profileMenuItem } from "../common/Menu";
 
 const Profile: React.FC = () => {
     const [anchorEl2, setAnchorEl2] = useState(null);
@@ -32,15 +31,15 @@ const Profile: React.FC = () => {
                 aria-controls="msgs-menu"
                 aria-haspopup="true"
                 sx={{
-                    ...(typeof anchorEl2 === 'object' && {
-                        color: 'primary.main',
+                    ...(typeof anchorEl2 === "object" && {
+                        color: "primary.main",
                     }),
                 }}
                 onClick={handleClick2}
             >
                 <Avatar
                     src={"/images/profile/user-1.jpg"}
-                    alt={'ProfileImg'}
+                    alt={"ProfileImg"}
                     sx={{
                         width: 35,
                         height: 35,
@@ -53,18 +52,22 @@ const Profile: React.FC = () => {
                 keepMounted
                 open={Boolean(anchorEl2)}
                 onClose={handleClose2}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                transformOrigin={{ horizontal: "right", vertical: "top" }}
                 sx={{
-                    '& .MuiMenu-paper': {
-                        width: '360px',
+                    "& .MuiMenu-paper": {
+                        width: "360px",
                         p: 4,
                     },
                 }}
             >
                 <Typography variant="h5">User Profile</Typography>
                 <Stack direction="row" py={3} spacing={2} alignItems="center">
-                    <Avatar src={"/images/profile/user-1.jpg"} alt={"ProfileImg"} sx={{ width: 95, height: 95 }} />
+                    <Avatar
+                        src={"/images/profile/user-1.jpg"}
+                        alt={"ProfileImg"}
+                        sx={{ width: 95, height: 95 }}
+                    />
                     <Box>
                         <Typography variant="subtitle2" color="textPrimary" fontWeight={600}>
                             Mathew Anderson
@@ -93,7 +96,8 @@ const Profile: React.FC = () => {
                                         bgcolor="primary.light"
                                         display="flex"
                                         alignItems="center"
-                                        justifyContent="center" flexShrink="0"
+                                        justifyContent="center"
+                                        flexShrink="0"
                                     >
                                         <Avatar
                                             src={profile.icon}
@@ -113,7 +117,7 @@ const Profile: React.FC = () => {
                                             className="text-hover"
                                             noWrap
                                             sx={{
-                                                width: '240px',
+                                                width: "240px",
                                             }}
                                         >
                                             {profile.title}
@@ -122,7 +126,7 @@ const Profile: React.FC = () => {
                                             color="textSecondary"
                                             variant="subtitle2"
                                             sx={{
-                                                width: '240px',
+                                                width: "240px",
                                             }}
                                             noWrap
                                         >

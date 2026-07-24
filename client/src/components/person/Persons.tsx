@@ -12,19 +12,16 @@ import { ModalTypeEnum, PersonJson } from "../../model/PersofiModels";
 import { usePersons } from "../../hooks/usePersons";
 
 interface FilterProps {
-  searchTerm: string;
-  active: boolean;
+    searchTerm: string;
+    active: boolean;
 }
 
-const bCrumb = [
-  {to: "/", title: "Home"},
-  {title: "Persons"},
-];
+const bCrumb = [{ to: "/", title: "Home" }, { title: "Persons" }];
 
 const emptyPerson: PersonJson = {
-  id: 0,
-  name: "",
-  active: true,
+    id: 0,
+    name: "",
+    active: true,
 };
 
 export const Persons: FC = () => {
@@ -36,7 +33,9 @@ export const Persons: FC = () => {
     const filteredPersons = useMemo(() => {
         const searchTerm = filters.searchTerm.toLowerCase();
         return persons.filter((person) => {
-            const nameMatches = filters.searchTerm ? person.name.toLowerCase().includes(searchTerm) : true;
+            const nameMatches = filters.searchTerm
+                ? person.name.toLowerCase().includes(searchTerm)
+                : true;
             const activeMatches = filters.active ? person.active : true;
             return nameMatches && activeMatches;
         });
@@ -46,15 +45,24 @@ export const Persons: FC = () => {
         <>
             <Breadcrumb title="Accounts" items={bCrumb} />
             <Grid container spacing={1}>
-                <Card sx={{padding: 0, borderColor: (theme) => theme.palette.divider}} variant="outlined">
+                <Card
+                    sx={{ padding: 0, borderColor: (theme) => theme.palette.divider }}
+                    variant="outlined"
+                >
                     <CardContent>
                         <Stack spacing={2}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <PersonsFilter filters={filters} setFilters={setFilters}/>
+                            <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                            >
+                                <PersonsFilter filters={filters} setFilters={setFilters} />
                                 <TableCallToActionButton
                                     fullwidth={false}
                                     callToActionText="Add Account"
-                                    callToActionFunction={() => personDialog.openDialog(ModalTypeEnum.ADD, emptyPerson)}
+                                    callToActionFunction={() =>
+                                        personDialog.openDialog(ModalTypeEnum.ADD, emptyPerson)
+                                    }
                                 />
                             </Stack>
 

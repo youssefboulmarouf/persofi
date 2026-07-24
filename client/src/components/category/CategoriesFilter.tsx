@@ -14,15 +14,13 @@ interface CategoryFiltersProps {
     setFilters: (filters: FilterProps) => void;
 }
 
-const CategoriesFilter: React.FC<CategoryFiltersProps> = ({filters, setFilters}) => {
+const CategoriesFilter: React.FC<CategoryFiltersProps> = ({ filters, setFilters }) => {
     const { data: categoriesData } = useCategories();
     const categories = categoriesData || [];
 
     // Only names of *parent* categories (top-level: parentCategoryId === null), sorted
     const parentNames = useMemo(() => {
-        const names = categories
-            .filter(c => c.parentCategoryId === null)
-            .map(c => c.name);
+        const names = categories.filter((c) => c.parentCategoryId === null).map((c) => c.name);
         return Array.from(new Set(names)).sort((a, b) => a.localeCompare(b));
     }, [categories]);
 
@@ -30,13 +28,13 @@ const CategoriesFilter: React.FC<CategoryFiltersProps> = ({filters, setFilters})
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <TableSearch
                 searchTerm={filters.searchTerm}
-                setSearchTerm={(term: string) => setFilters({...filters, searchTerm: term})}
+                setSearchTerm={(term: string) => setFilters({ ...filters, searchTerm: term })}
             />
 
             <Autocomplete
                 options={parentNames}
                 value={filters.parentCategoryName}
-                onChange={(e, newValue) => setFilters({...filters, parentCategoryName: newValue})}
+                onChange={(e, newValue) => setFilters({ ...filters, parentCategoryName: newValue })}
                 renderInput={(params) => <TextField {...params} label="Type Produit" />}
                 sx={{ minWidth: 180 }}
                 size="small"
@@ -47,7 +45,7 @@ const CategoriesFilter: React.FC<CategoryFiltersProps> = ({filters, setFilters})
                     <Checkbox
                         checked={filters.active}
                         onChange={(e) => {
-                            setFilters({...filters, active: e.target.checked})
+                            setFilters({ ...filters, active: e.target.checked });
                         }}
                     />
                 }
@@ -55,6 +53,6 @@ const CategoriesFilter: React.FC<CategoryFiltersProps> = ({filters, setFilters})
             />
         </Stack>
     );
-}
+};
 
 export default CategoriesFilter;

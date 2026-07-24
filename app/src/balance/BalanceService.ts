@@ -1,10 +1,9 @@
-import {BaseService} from "../utilities/BaseService";
+import { BaseService } from "../utilities/BaseService";
 import NotFoundError from "../utilities/errors/NotFoundError";
-import {BalanceJson} from "./BalanceJson";
+import { BalanceJson } from "./BalanceJson";
 import BadRequestError from "../utilities/errors/BadRequestError";
 
 export class BalanceService extends BaseService {
-
     constructor() {
         super(BalanceService.name);
     }
@@ -18,7 +17,7 @@ export class BalanceService extends BaseService {
         this.logger.log(`Get balance by [id:${id}]`);
 
         const data = await this.prisma.balance.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Balance with [id:${id}] not found`);
@@ -30,7 +29,7 @@ export class BalanceService extends BaseService {
         this.logger.log(`Get balance by [accountI:${accountId}]`);
 
         const data = await this.prisma.balance.findMany({
-            where: { accountId }
+            where: { accountId },
         });
 
         return data.map(BalanceJson.from);
@@ -41,23 +40,33 @@ export class BalanceService extends BaseService {
 
         const data = await this.prisma.balance.findFirst({
             where: { accountId },
-            orderBy: [{ date: 'desc' }]
+            orderBy: [{ date: "desc" }],
         });
 
-        BadRequestError.throwIf(!data, `Balance for account with [id:${accountId}] not found, try to initialize it first`);
+        BadRequestError.throwIf(
+            !data,
+            `Balance for account with [id:${accountId}] not found, try to initialize it first`,
+        );
 
         return BalanceJson.from(data);
     }
 
-    async updateAccountBalance(newBalance: number, date: Date, transactionId: number, accountId: number) : Promise<void> {
-        this.logger.log(`Update balance for account with [accountId:${accountId}] and transaction with [transactionId:${transactionId}]`);
+    async updateAccountBalance(
+        newBalance: number,
+        date: Date,
+        transactionId: number,
+        accountId: number,
+    ): Promise<void> {
+        this.logger.log(
+            `Update balance for account with [accountId:${accountId}] and transaction with [transactionId:${transactionId}]`,
+        );
         await this.prisma.balance.create({
             data: {
                 amount: newBalance,
                 date,
                 accountId,
-                transactionId
-            }
+                transactionId,
+            },
         });
     }
 
@@ -65,8 +74,8 @@ export class BalanceService extends BaseService {
         this.logger.log(`Deleting balance with [id:${id}]`);
         await this.prisma.balance.delete({
             where: {
-                id
-            }
-        })
+                id,
+            },
+        });
     }
 }

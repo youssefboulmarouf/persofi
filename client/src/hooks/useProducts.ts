@@ -1,19 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchProducts, fetchVariants, createProduct, updateProduct, deleteProduct, createProductVariant, updateProductVariant, deleteProductVariant } from "../api/ProductsApi";
+import {
+    fetchProducts,
+    fetchVariants,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    createProductVariant,
+    updateProductVariant,
+    deleteProductVariant,
+} from "../api/ProductsApi";
 import { ProductJson } from "../model/PersofiModels";
 
 export const useProducts = () => {
     return useQuery({
         queryKey: ["products"],
         queryFn: async () => {
-            const [products, variants] = await Promise.all([
-                fetchProducts(),
-                fetchVariants()
-            ]);
-            
-            return products.map(pr => ({
+            const [products, variants] = await Promise.all([fetchProducts(), fetchVariants()]);
+
+            return products.map((pr) => ({
                 ...pr,
-                variants: variants.filter(vr => vr.productId === pr.id)
+                variants: variants.filter((vr) => vr.productId === pr.id),
             })) as ProductJson[];
         },
     });

@@ -1,14 +1,14 @@
 import React from "react";
 import Typography from "@mui/material/Typography";
-import {Table, TableBody, TableCell, TableHead, TableRow} from "@mui/material";
+import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import EditButton from "../common/buttons/EditButton";
 import DeleteButton from "../common/buttons/DeleteButton";
-import {usePaginationController} from "../common/usePaginationController";
+import { usePaginationController } from "../common/usePaginationController";
 import Pagination from "../common/Pagination";
 import IconButton from "@mui/material/IconButton";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
-import {AccountJson, BalanceJson, ModalTypeEnum} from "../../model/PersofiModels";
+import { AccountJson, BalanceJson, ModalTypeEnum } from "../../model/PersofiModels";
 import LoadingComponent from "../common/LoadingComponent";
 
 interface AccountsListProps {
@@ -22,7 +22,7 @@ export const AccountsList: React.FC<AccountsListProps> = ({
     accounts,
     balances,
     openDialogWithType,
-    isLoading
+    isLoading,
 }) => {
     const paginationController = usePaginationController<AccountJson>(accounts);
 
@@ -30,7 +30,7 @@ export const AccountsList: React.FC<AccountsListProps> = ({
     if (accounts.length === 0) return <Typography>No Account Found</Typography>;
 
     const getBalance = (accountId: number) => {
-        const accBalances = balances.filter(b => b.accountId === accountId);
+        const accBalances = balances.filter((b) => b.accountId === accountId);
         if (accBalances.length === 0) return 0;
         // Sort by id DESC — balance rows are append-only, highest id = most recent
         accBalances.sort((a, b) => b.id - a.id);
@@ -41,13 +41,41 @@ export const AccountsList: React.FC<AccountsListProps> = ({
         <Table>
             <TableHead>
                 <TableRow>
-                    <TableCell><Typography variant="h6" fontSize="14px">Id</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Account Name</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Account Type</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Currency</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Current Balance</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Active</Typography></TableCell>
-                    <TableCell align="right"><Typography variant="h6" fontSize="14px">Actions</Typography></TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Id
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Account Name
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Account Type
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Currency
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Current Balance
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Active
+                        </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                        <Typography variant="h6" fontSize="14px">
+                            Actions
+                        </Typography>
+                    </TableCell>
                 </TableRow>
             </TableHead>
             <TableBody>
@@ -70,11 +98,15 @@ export const AccountsList: React.FC<AccountsListProps> = ({
                         <TableCell align="right">
                             <EditButton
                                 tooltipText={"Update Account"}
-                                openDialogWithType={() => openDialogWithType(ModalTypeEnum.UPDATE, account)}
+                                openDialogWithType={() =>
+                                    openDialogWithType(ModalTypeEnum.UPDATE, account)
+                                }
                             />
                             <DeleteButton
                                 tooltipText={"Delete Account"}
-                                openDialogWithType={() => openDialogWithType(ModalTypeEnum.DELETE, account)}
+                                openDialogWithType={() =>
+                                    openDialogWithType(ModalTypeEnum.DELETE, account)
+                                }
                             />
                         </TableCell>
                     </TableRow>
@@ -83,4 +115,4 @@ export const AccountsList: React.FC<AccountsListProps> = ({
             <Pagination paginationController={paginationController} />
         </Table>
     );
-}
+};

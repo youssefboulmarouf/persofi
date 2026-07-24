@@ -17,7 +17,10 @@ const FormLabel: React.FC<FormLabelProps> = ({ children, htmlFor, required, hint
         htmlFor={htmlFor}
         sx={{ display: "flex", alignItems: "baseline", mt: 2, gap: 1, ...sx }}
     >
-        <span>{children}{required ? " *" : ""}</span>
+        <span>
+            {children}
+            {required ? " *" : ""}
+        </span>
         {hint ? (
             <Typography component="span" variant="caption" color="text.secondary">
                 {hint}

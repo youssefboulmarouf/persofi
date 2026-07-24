@@ -6,7 +6,9 @@ export const downloadBackup = async (): Promise<void> => {
 
     const contentDisposition = response.headers.get("content-disposition") ?? "";
     const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
-    const filename = filenameMatch ? filenameMatch[1] : `persofi-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = filenameMatch
+        ? filenameMatch[1]
+        : `persofi-backup-${new Date().toISOString().slice(0, 10)}.json`;
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);

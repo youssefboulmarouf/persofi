@@ -1,12 +1,12 @@
-import {BaseService} from "../utilities/BaseService";
-import {TransactionJson} from "./TransactionJson";
+import { BaseService } from "../utilities/BaseService";
+import { TransactionJson } from "./TransactionJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
-import {TransactionItemService} from "../transaction-item/TransactionItemService";
-import {TransactionTypeEnum} from "./TransactionType";
+import { TransactionItemService } from "../transaction-item/TransactionItemService";
+import { TransactionTypeEnum } from "./TransactionType";
 import BadRequestError from "../utilities/errors/BadRequestError";
-import {TransactionProcessorService} from "./TransactionProcessorService";
-import {TransactionValidator} from "./TransactionValidator";
-import {AccountService} from "../account/AccountService";
+import { TransactionProcessorService } from "./TransactionProcessorService";
+import { TransactionValidator } from "./TransactionValidator";
+import { AccountService } from "../account/AccountService";
 import AppError from "../utilities/errors/AppError";
 
 export class TransactionService extends BaseService {
@@ -23,9 +23,11 @@ export class TransactionService extends BaseService {
 
     async get(): Promise<TransactionJson[]> {
         this.logger.log(`Get all Transactions`);
-        return (await this.prisma.transaction.findMany({
-            include: { items: true }
-        })).map(TransactionJson.from);
+        return (
+            await this.prisma.transaction.findMany({
+                include: { items: true },
+            })
+        ).map(TransactionJson.from);
     }
 
     async getById(id: number): Promise<TransactionJson> {
@@ -33,7 +35,7 @@ export class TransactionService extends BaseService {
 
         const data = await this.prisma.transaction.findUnique({
             where: { id },
-            include: { items: true }
+            include: { items: true },
         });
 
         NotFoundError.throwIf(!data, `Transaction with [id:${id}] not found`);
@@ -88,7 +90,10 @@ export class TransactionService extends BaseService {
     async update(transactionId: number, transaction: TransactionJson): Promise<void> {
         TransactionValidator.validate(transaction);
         BadRequestError.throwIf(transactionId != transaction.getId(), `Transaction id mismatch`);
-        BadRequestError.throwIf(transaction.isProcessed(), `Transaction is processed. Cannot be updated.`);
+        BadRequestError.throwIf(
+            transaction.isProcessed(),
+            `Transaction is processed. Cannot be updated.`,
+        );
 
         // delete items
         await this.transactionItemService.deleteByTransactionId(transactionId);
@@ -114,31 +119,37 @@ export class TransactionService extends BaseService {
         });
 
         // insert items
-        await this.transactionItemService.createManyForTrnasaction(transactionId, transaction.getItems());
+        await this.transactionItemService.createManyForTrnasaction(
+            transactionId,
+            transaction.getItems(),
+        );
     }
 
     async processTransaction(transactionId: number): Promise<void> {
         const existingTransaction = await this.getById(transactionId);
 
-        BadRequestError
-            .throwIf(
-                existingTransaction.isProcessed(),
-                `Transaction with [id=${existingTransaction.getTransactionType()}] is already processed. Cannot be processed again.`
-            );
+        BadRequestError.throwIf(
+            existingTransaction.isProcessed(),
+            `Transaction with [id=${existingTransaction.getTransactionType()}] is already processed. Cannot be processed again.`,
+        );
 
         switch (existingTransaction.getTransactionType()) {
             case TransactionTypeEnum.EXPENSE:
                 this.validatePayAccountId(existingTransaction);
                 await this.transactionProcessor.processExpenseTransaction(
                     existingTransaction,
-                    await this.accountService.getById(Number(existingTransaction.getPayAccountId()))
+                    await this.accountService.getById(
+                        Number(existingTransaction.getPayAccountId()),
+                    ),
                 );
                 break;
             case TransactionTypeEnum.INCOME:
                 this.validateCounterpartyAccount(existingTransaction);
                 await this.transactionProcessor.processIncomeTransaction(
                     existingTransaction,
-                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                    await this.accountService.getById(
+                        Number(existingTransaction.getCounterpartyAccountId()),
+                    ),
                 );
                 break;
             case TransactionTypeEnum.CREDIT_PAYMENT:
@@ -146,15 +157,21 @@ export class TransactionService extends BaseService {
                 this.validateCounterpartyAccount(existingTransaction);
                 await this.transactionProcessor.processCreditPaymentTransaction(
                     existingTransaction,
-                    await this.accountService.getById(Number(existingTransaction.getPayAccountId())),
-                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                    await this.accountService.getById(
+                        Number(existingTransaction.getPayAccountId()),
+                    ),
+                    await this.accountService.getById(
+                        Number(existingTransaction.getCounterpartyAccountId()),
+                    ),
                 );
                 break;
             case TransactionTypeEnum.REFUND:
                 this.validateCounterpartyAccount(existingTransaction);
                 await this.transactionProcessor.processRefundTransaction(
                     existingTransaction,
-                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                    await this.accountService.getById(
+                        Number(existingTransaction.getCounterpartyAccountId()),
+                    ),
                 );
                 break;
             case TransactionTypeEnum.TRANSFER:
@@ -162,23 +179,28 @@ export class TransactionService extends BaseService {
                 this.validateCounterpartyAccount(existingTransaction);
                 await this.transactionProcessor.processTransferTransaction(
                     existingTransaction,
-                    await this.accountService.getById(Number(existingTransaction.getPayAccountId())),
-                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                    await this.accountService.getById(
+                        Number(existingTransaction.getPayAccountId()),
+                    ),
+                    await this.accountService.getById(
+                        Number(existingTransaction.getCounterpartyAccountId()),
+                    ),
                 );
                 break;
             case TransactionTypeEnum.INIT_BALANCE:
                 this.validateCounterpartyAccount(existingTransaction);
                 await this.transactionProcessor.processInitBalanceTransaction(
                     existingTransaction,
-                    await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+                    await this.accountService.getById(
+                        Number(existingTransaction.getCounterpartyAccountId()),
+                    ),
                 );
                 break;
             default:
-                BadRequestError
-                    .throwIf(
-                        true,
-                        `Transaction Type [{${existingTransaction.getTransactionType()}] is not supported`
-                    );
+                BadRequestError.throwIf(
+                    true,
+                    `Transaction Type [{${existingTransaction.getTransactionType()}] is not supported`,
+                );
         }
 
         // update transaction
@@ -190,13 +212,12 @@ export class TransactionService extends BaseService {
         });
     }
 
-
     private validateCounterpartyAccount(existingTransaction: TransactionJson) {
         if (existingTransaction.getCounterpartyAccountId() == null) {
             throw new AppError(
                 "Runtime Error",
                 500,
-                `Counter Party Account is required for Expense transaction [id=${existingTransaction.getId()}]. `
+                `Counter Party Account is required for Expense transaction [id=${existingTransaction.getId()}]. `,
             );
         }
     }
@@ -206,7 +227,7 @@ export class TransactionService extends BaseService {
             throw new AppError(
                 "Runtime Error",
                 500,
-                `Pay Account is required for Expense transaction [id=${existingTransaction.getId()}]. `
+                `Pay Account is required for Expense transaction [id=${existingTransaction.getId()}]. `,
             );
         }
     }
@@ -214,13 +235,16 @@ export class TransactionService extends BaseService {
     async delete(id: number) {
         this.logger.log(`Delete transaction with [id=${id}]`);
         const existingTransaction = await this.getById(id);
-        BadRequestError.throwIf(existingTransaction.isProcessed(), `Transaction is processed. Cannot be deleted.`);
+        BadRequestError.throwIf(
+            existingTransaction.isProcessed(),
+            `Transaction is processed. Cannot be deleted.`,
+        );
 
         // delete items first to avoid foreign key constraint violations
         await this.transactionItemService.deleteByTransactionId(id);
 
         await this.prisma.transaction.delete({
-            where: { id }
+            where: { id },
         });
     }
 }

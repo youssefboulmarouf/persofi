@@ -28,16 +28,16 @@ const Breadcrumb = ({ items, title }: BreadCrumbType) => (
             >
                 {items
                     ? items.map((item) => (
-                        <div key={item.title}>
-                            {item.to ? (
-                                <Link to={item.to}>
-                                    <Typography color="textSecondary">{item.title}</Typography>
-                                </Link>
-                            ) : (
-                                <Typography color="textPrimary">{item.title}</Typography>
-                            )}
-                        </div>
-                    ))
+                          <div key={item.title}>
+                              {item.to ? (
+                                  <Link to={item.to}>
+                                      <Typography color="textSecondary">{item.title}</Typography>
+                                  </Link>
+                              ) : (
+                                  <Typography color="textPrimary">{item.title}</Typography>
+                              )}
+                          </div>
+                      ))
                     : ""}
             </Breadcrumbs>
         </Grid>

@@ -1,13 +1,13 @@
-import {PersonJson} from "../model/PersofiModels";
+import { PersonJson } from "../model/PersofiModels";
 
 export const fetchPersons = async (): Promise<PersonJson[]> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/persons`);
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to fetch person');
+        throw new Error("Failed to fetch person");
     }
     return res.json();
-}
+};
 
 export const createPerson = async (personJson: PersonJson): Promise<PersonJson> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/persons`, {
@@ -17,7 +17,7 @@ export const createPerson = async (personJson: PersonJson): Promise<PersonJson> 
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to create person');
+        throw new Error("Failed to create person");
     }
     return res.json();
 };
@@ -30,7 +30,7 @@ export const updatePerson = async (personJson: PersonJson): Promise<PersonJson> 
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to update person');
+        throw new Error("Failed to update person");
     }
     return res.json();
 };
@@ -41,6 +41,6 @@ export const deletePerson = async (personJson: PersonJson): Promise<void> => {
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to delete person');
+        throw new Error("Failed to delete person");
     }
 };

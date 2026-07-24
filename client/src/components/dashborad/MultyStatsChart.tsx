@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, Divider } from "@mui/material";
 interface MultyStatsChartProps {
     title: string;
     categories: string[];
-    series: {name: string, data: number[]}[];
+    series: { name: string; data: number[] }[];
 }
 
-const MultyStatsChart: React.FC<MultyStatsChartProps> = ({title, categories, series}) => {
+const MultyStatsChart: React.FC<MultyStatsChartProps> = ({ title, categories, series }) => {
     const options: ApexOptions = {
         chart: {
             height: 350,

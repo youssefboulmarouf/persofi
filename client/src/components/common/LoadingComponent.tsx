@@ -4,7 +4,7 @@ interface LoadingComponentProps {
     message: string;
 }
 
-const LoadingComponent: React.FC<LoadingComponentProps> = ({message}) => {
+const LoadingComponent: React.FC<LoadingComponentProps> = ({ message }) => {
     return (
         <Box sx={{ textAlign: "center" }}>
             <CircularProgress />

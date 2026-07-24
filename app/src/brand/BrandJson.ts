@@ -11,7 +11,6 @@ export class BrandJson {
         this.active = active;
     }
 
-
     public getId(): number {
         return this.id;
     }
@@ -29,11 +28,6 @@ export class BrandJson {
     }
 
     public static from(body: any): BrandJson {
-        return new BrandJson(
-            Number(body.id),
-            body.name,
-            body.url,
-            body.active
-        )
+        return new BrandJson(Number(body.id), body.name, body.url, body.active);
     }
 }

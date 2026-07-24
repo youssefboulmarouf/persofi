@@ -1,10 +1,9 @@
-import {BaseService} from "../utilities/BaseService";
-import {BrandJson} from "./BrandJson";
+import { BaseService } from "../utilities/BaseService";
+import { BrandJson } from "./BrandJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
 
 export class BrandService extends BaseService {
-
     constructor() {
         super(BrandService.name);
     }
@@ -18,7 +17,7 @@ export class BrandService extends BaseService {
         this.logger.log(`Get brand by [id:${id}]`);
 
         const data = await this.prisma.brand.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Brand with [id:${id}] not found`);
@@ -33,12 +32,10 @@ export class BrandService extends BaseService {
             data: {
                 name: brand.getName(),
                 url: brand.getUrl(),
-                active: true
-            }
+                active: true,
+            },
         });
-        return BrandJson.from(
-            data
-        );
+        return BrandJson.from(data);
     }
 
     async update(id: number, brand: BrandJson): Promise<BrandJson> {
@@ -57,16 +54,16 @@ export class BrandService extends BaseService {
                 data: {
                     name: brand.getName(),
                     url: brand.getUrl(),
-                    active: brand.isActive()
-                }
-            })
+                    active: brand.isActive(),
+                },
+            }),
         );
     }
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete brand with [id=${id}]`);
         await this.prisma.brand.delete({
-            where: { id }
-        })
+            where: { id },
+        });
     }
 }

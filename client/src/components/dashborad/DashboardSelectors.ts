@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
-import { useAccounts } from '../../hooks/useAccounts';
-import { useBalances } from '../../hooks/useBalances';
-import { useTransactions } from '../../hooks/useTransactions';
-import { useCategories } from '../../hooks/useCategories';
-import { useStores } from '../../hooks/useStores';
-import { usePersons } from '../../hooks/usePersons';
-import { useProducts } from '../../hooks/useProducts';
-import { useBrands } from '../../hooks/useBrands';
+import { useMemo } from "react";
+import { useAccounts } from "../../hooks/useAccounts";
+import { useBalances } from "../../hooks/useBalances";
+import { useTransactions } from "../../hooks/useTransactions";
+import { useCategories } from "../../hooks/useCategories";
+import { useStores } from "../../hooks/useStores";
+import { usePersons } from "../../hooks/usePersons";
+import { useProducts } from "../../hooks/useProducts";
+import { useBrands } from "../../hooks/useBrands";
 
 import {
     AccountJson,
@@ -15,15 +15,15 @@ import {
     TransactionJson,
     TransactionTypeEnum,
     TransactionItemJson,
-    CategoryJson
-} from '../../model/PersofiModels';
-import {DateRange, inRangeInclusive, normalizeRange, round2} from "../common/Utilities";
+    CategoryJson,
+} from "../../model/PersofiModels";
+import { DateRange, inRangeInclusive, normalizeRange, round2 } from "../common/Utilities";
 
 /* --------------------------
    Date helpers (MTD, DMY key)
 ---------------------------*/
 const dayKey = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 function startOfMonth(d = new Date()) {
     return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
@@ -36,7 +36,7 @@ function isInRange(x: Date, gte: Date, lt: Date) {
 }
 function fmtDM(d: Date) {
     // returns '01', '02', ... for chart x-axis
-    return String(d.getDate()).padStart(2, '0');
+    return String(d.getDate()).padStart(2, "0");
 }
 
 /* ------------------------------------------
@@ -69,7 +69,12 @@ export function useKpisInRange(range?: DateRange) {
         const txDates = transactions.map((t) => new Date(t.date));
         const { start, end } = normalizeRange(range, txDates);
 
-        let spend = 0, income = 0, refunds = 0, creditPayments = 0, transfer = 0, processed = 0;
+        let spend = 0,
+            income = 0,
+            refunds = 0,
+            creditPayments = 0,
+            transfer = 0,
+            processed = 0;
 
         for (const t of transactions) {
             const ts = new Date(t.date).getTime();
@@ -77,11 +82,21 @@ export function useKpisInRange(range?: DateRange) {
             if (t.processed) processed += 1;
 
             switch (t.type) {
-                case TransactionTypeEnum.EXPENSE: spend += Number(t.grandTotal ?? 0); break;
-                case TransactionTypeEnum.INCOME: income += Number(t.amount ?? 0); break;
-                case TransactionTypeEnum.REFUND: refunds += Number(t.amount ?? 0); break;
-                case TransactionTypeEnum.TRANSFER: transfer += Number(t.amount ?? 0); break;
-                case TransactionTypeEnum.CREDIT_PAYMENT: creditPayments += Number(t.amount ?? 0); break;
+                case TransactionTypeEnum.EXPENSE:
+                    spend += Number(t.grandTotal ?? 0);
+                    break;
+                case TransactionTypeEnum.INCOME:
+                    income += Number(t.amount ?? 0);
+                    break;
+                case TransactionTypeEnum.REFUND:
+                    refunds += Number(t.amount ?? 0);
+                    break;
+                case TransactionTypeEnum.TRANSFER:
+                    transfer += Number(t.amount ?? 0);
+                    break;
+                case TransactionTypeEnum.CREDIT_PAYMENT:
+                    creditPayments += Number(t.amount ?? 0);
+                    break;
             }
         }
 
@@ -92,7 +107,7 @@ export function useKpisInRange(range?: DateRange) {
             spend: round2(spend),
             income: round2(income),
             netCashFlow: round2(netCashFlow),
-            processedPct
+            processedPct,
         };
     }, [transactions, range?.start, range?.end]);
 }
@@ -115,7 +130,8 @@ export function useCashFlowDailyInRange(range?: DateRange) {
         const incomeMap = new Map<string, number>();
         const expenseMap = new Map<string, number>();
 
-        if (start == null || end == null || start > end) return { dates: [], income: [], expense: [] };
+        if (start == null || end == null || start > end)
+            return { dates: [], income: [], expense: [] };
 
         const cur = new Date(start);
         while (cur.getTime() <= end) {
@@ -141,7 +157,7 @@ export function useCashFlowDailyInRange(range?: DateRange) {
         return {
             dates,
             income: dates.map((k) => round2(incomeMap.get(k) ?? 0)),
-            expense: dates.map((k) => round2(expenseMap.get(k) ?? 0))
+            expense: dates.map((k) => round2(expenseMap.get(k) ?? 0)),
         };
     }, [transactions, range?.start, range?.end]);
 }
@@ -172,15 +188,18 @@ export function useCategoryBreakdownInRange(range?: DateRange) {
         const sumByCat = new Map<number, number>();
         for (const it of items) {
             if (it.categoryId == null) continue;
-            sumByCat.set(it.categoryId, (sumByCat.get(it.categoryId) ?? 0) + Number(it.lineTotal ?? 0));
+            sumByCat.set(
+                it.categoryId,
+                (sumByCat.get(it.categoryId) ?? 0) + Number(it.lineTotal ?? 0),
+            );
         }
 
         const nameById = new Map(categories.map((c) => [c.id, c.name]));
         const rows = Array.from(sumByCat.entries())
             .map(([categoryId, total]) => ({
                 categoryId,
-                categoryName: nameById.get(categoryId) ?? 'Uncategorized',
-                total: round2(total)
+                categoryName: nameById.get(categoryId) ?? "Uncategorized",
+                total: round2(total),
             }))
             .sort((a, b) => b.total - a.total);
 
@@ -213,7 +232,11 @@ export function useTopStoresInRange(limit = 10, range?: DateRange) {
 
         const nameById = new Map(stores.map((s) => [s.id, s.name]));
         return Array.from(sumByStore.entries())
-            .map(([storeId, total]) => ({ storeId, storeName: nameById.get(storeId) ?? 'Unknown', total: round2(total) }))
+            .map(([storeId, total]) => ({
+                storeId,
+                storeName: nameById.get(storeId) ?? "Unknown",
+                total: round2(total),
+            }))
             .sort((a, b) => b.total - a.total)
             .slice(0, limit);
     }, [transactions, stores, limit, range?.start, range?.end]);
@@ -235,12 +258,19 @@ export function useSpendByPersonInRange(limit = 10, range?: DateRange) {
             if (t.type !== TransactionTypeEnum.EXPENSE || t.personId == null) continue;
             const ts = new Date(t.date).getTime();
             if (!inRangeInclusive(ts, start, end)) continue;
-            sumByPerson.set(t.personId, (sumByPerson.get(t.personId) ?? 0) + Number(t.grandTotal ?? 0));
+            sumByPerson.set(
+                t.personId,
+                (sumByPerson.get(t.personId) ?? 0) + Number(t.grandTotal ?? 0),
+            );
         }
 
         const nameById = new Map(persons.map((p) => [p.id, p.name]));
         return Array.from(sumByPerson.entries())
-            .map(([personId, total]) => ({ personId, personName: nameById.get(personId) ?? 'Unknown', total: round2(total) }))
+            .map(([personId, total]) => ({
+                personId,
+                personName: nameById.get(personId) ?? "Unknown",
+                total: round2(total),
+            }))
             .sort((a, b) => b.total - a.total)
             .slice(0, limit);
     }, [transactions, persons, limit, range?.start, range?.end]);
@@ -265,13 +295,19 @@ export function useNetWorthByCurrency() {
         for (const acc of accounts) {
             const last = latestByAcc.get(acc.id);
             if (!last) continue;
-            const amt = parseFloat(String(last.amount ?? '0')); // BalanceJson.amount is string
+            const amt = parseFloat(String(last.amount ?? "0")); // BalanceJson.amount is string
             const signed = amt * getSign(acc.accountType);
-            sumByCurrency.set(acc.currency, round2((sumByCurrency.get(acc.currency) ?? 0) + signed));
+            sumByCurrency.set(
+                acc.currency,
+                round2((sumByCurrency.get(acc.currency) ?? 0) + signed),
+            );
         }
 
         // { currency: 'CAD', value: 1234.56 }[]
-        return Array.from(sumByCurrency.entries()).map(([currency, value]) => ({ currency, value }));
+        return Array.from(sumByCurrency.entries()).map(([currency, value]) => ({
+            currency,
+            value,
+        }));
     }, [accounts, latestByAcc]);
 }
 
@@ -298,7 +334,7 @@ export function useSpendByTransactionTypeInRange(range?: DateRange) {
             TransactionTypeEnum.INCOME,
             TransactionTypeEnum.CREDIT_PAYMENT,
             TransactionTypeEnum.REFUND,
-            TransactionTypeEnum.TRANSFER
+            TransactionTypeEnum.TRANSFER,
         ];
 
         const totals = new Map<TransactionTypeEnum, number>();
@@ -320,7 +356,7 @@ export function useSpendByTransactionTypeInRange(range?: DateRange) {
         const rows = includeTypes.map((ty) => ({
             type: ty,
             total: round2(totals.get(ty) ?? 0),
-            count: counts.get(ty) ?? 0
+            count: counts.get(ty) ?? 0,
         }));
 
         return { rows, totalsMap: totals, countsMap: counts };
@@ -375,11 +411,15 @@ export function useWeekdaySpendDistributionInRange(range?: DateRange) {
     const transactions = transactionsData || [];
     return useMemo(() => {
         const txDates = transactions.map((t) => new Date(t.date));
-        if (!txDates.length) return { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], series: [0,0,0,0,0,0,0] };
+        if (!txDates.length)
+            return {
+                labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+                series: [0, 0, 0, 0, 0, 0, 0],
+            };
         const { start, end } = normalizeRange(range, txDates);
 
         const order = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun
-        const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
         const sums = new Map<number, number>(order.map((w) => [w, 0]));
 
         for (const t of transactions) {
@@ -410,8 +450,8 @@ export function useWeekdayHourHeatmap(opts?: HeatmapOptions) {
         const { start, end } = normalizeRange(opts?.range, txDates);
 
         const weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
-        const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const hours = Array.from({ length: 24 }, (_, h) => h.toString().padStart(2, '0'));
+        const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        const hours = Array.from({ length: 24 }, (_, h) => h.toString().padStart(2, "0"));
 
         const matrix = new Map<number, Map<number, number>>();
         for (const w of weekdayOrder) {
@@ -429,7 +469,9 @@ export function useWeekdayHourHeatmap(opts?: HeatmapOptions) {
             const weekday = d.getDay();
             const hour = d.getHours();
             const amount =
-                t.type === TransactionTypeEnum.EXPENSE ? Number(t.grandTotal ?? 0) : Number(t.amount ?? 0);
+                t.type === TransactionTypeEnum.EXPENSE
+                    ? Number(t.grandTotal ?? 0)
+                    : Number(t.amount ?? 0);
 
             const row = matrix.get(weekday);
             if (!row) continue;
@@ -438,7 +480,10 @@ export function useWeekdayHourHeatmap(opts?: HeatmapOptions) {
 
         const series = weekdayOrder.map((w, idx) => ({
             name: weekdayLabels[idx],
-            data: hours.map((h, hourIdx) => ({ x: h, y: round2(matrix.get(w)?.get(hourIdx) ?? 0) }))
+            data: hours.map((h, hourIdx) => ({
+                x: h,
+                y: round2(matrix.get(w)?.get(hourIdx) ?? 0),
+            })),
         }));
 
         return { series, hours, weekdayLabels };

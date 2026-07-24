@@ -1,5 +1,5 @@
-import {BaseService} from "../utilities/BaseService";
-import {StoreJson} from "./StoreJson";
+import { BaseService } from "../utilities/BaseService";
+import { StoreJson } from "./StoreJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
 
@@ -17,7 +17,7 @@ export class StoreService extends BaseService {
         this.logger.log(`Get store by [id:${id}]`);
 
         const data = await this.prisma.store.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Store with [id:${id}] not found`);
@@ -32,9 +32,9 @@ export class StoreService extends BaseService {
                 data: {
                     name: store.getName(),
                     url: store.getUrl(),
-                    active: true
-                }
-            })
+                    active: true,
+                },
+            }),
         );
     }
 
@@ -55,15 +55,15 @@ export class StoreService extends BaseService {
                     name: store.getName(),
                     url: store.getUrl(),
                     active: store.isActive(),
-                }
-            })
+                },
+            }),
         );
     }
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete store with [id=${id}]`);
         await this.prisma.store.delete({
-            where: { id }
+            where: { id },
         });
     }
 }

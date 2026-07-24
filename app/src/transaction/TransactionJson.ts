@@ -1,5 +1,5 @@
-import {TransactionTypeEnum, TransactionTypeFromString} from "./TransactionType";
-import {TransactionItemJson} from "../transaction-item/TransactionItemJson";
+import { TransactionTypeEnum, TransactionTypeFromString } from "./TransactionType";
+import { TransactionItemJson } from "../transaction-item/TransactionItemJson";
 
 export class TransactionJson {
     private readonly id: number;
@@ -38,7 +38,7 @@ export class TransactionJson {
         subtotal: number,
         taxTotal: number,
         grandTotal: number,
-        amount: number
+        amount: number,
     ) {
         this.id = id;
         this.date = date;
@@ -125,15 +125,15 @@ export class TransactionJson {
             body.notes,
             Boolean(body.processed),
             body.items.map(TransactionItemJson.from),
-            (body.payAccountId === null) ? null : Number(body.payAccountId),
-            (body.counterpartyAccountId === null) ? null : Number(body.counterpartyAccountId),
-            (body.storeId === null) ? null : Number(body.storeId),
-            (body.refundOfId === null) ? null : Number(body.refundOfId),
-            (body.personId === null) ? null : Number(body.personId),
+            body.payAccountId === null ? null : Number(body.payAccountId),
+            body.counterpartyAccountId === null ? null : Number(body.counterpartyAccountId),
+            body.storeId === null ? null : Number(body.storeId),
+            body.refundOfId === null ? null : Number(body.refundOfId),
+            body.personId === null ? null : Number(body.personId),
             Number(body.subtotal),
             Number(body.taxTotal),
             Number(body.grandTotal),
             Number(body.amount),
-        )
+        );
     }
 }

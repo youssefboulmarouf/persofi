@@ -10,9 +10,9 @@ interface DashboardTopCardsProps {
 }
 
 const indexBalancesByAccount = (balances: BalanceJson[]): Map<number, BalanceJson[]> => {
-    const sortedBalances = balances.slice().sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+    const sortedBalances = balances
+        .slice()
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     const byAcc = new Map<number, BalanceJson[]>();
 
@@ -23,7 +23,7 @@ const indexBalancesByAccount = (balances: BalanceJson[]): Map<number, BalanceJso
     }
 
     return byAcc;
-}
+};
 
 const getLastBalanceAmount = (byAcc: Map<number, BalanceJson[]>, accountId: number): number => {
     const accountBalances = byAcc.get(accountId);
@@ -31,9 +31,14 @@ const getLastBalanceAmount = (byAcc: Map<number, BalanceJson[]>, accountId: numb
     if (!accountBalances || accountBalances.length === 0) return 0;
 
     return accountBalances[accountBalances.length - 1].amount;
-}
+};
 
-const getLatestBalanceAmountInWindow = (byAcc: Map<number, BalanceJson[]>, accountId: number, start: Date, end: Date): number => {
+const getLatestBalanceAmountInWindow = (
+    byAcc: Map<number, BalanceJson[]>,
+    accountId: number,
+    start: Date,
+    end: Date,
+): number => {
     const accountBalances = byAcc.get(accountId);
     if (!accountBalances || accountBalances.length === 0) return 0;
 
@@ -52,7 +57,7 @@ const getLatestBalanceAmountInWindow = (byAcc: Map<number, BalanceJson[]>, accou
         }
     }
     return latestAmount;
-}
+};
 
 const DashboardTopCards: FC<DashboardTopCardsProps> = ({ accounts, balances }) => {
     const balancesByAccount = indexBalancesByAccount(balances);
@@ -66,40 +71,55 @@ const DashboardTopCards: FC<DashboardTopCardsProps> = ({ accounts, balances }) =
 
     const deduceCardColor = (account: AccountJson): string => {
         switch (account.accountType) {
-            case AccountTypeEnum.CASH: return "secondary";
-            case AccountTypeEnum.DEBIT: return "primary";
-            case AccountTypeEnum.CREDIT: return "error";
-            case AccountTypeEnum.SAVING: return "success";
-            default: return "info";
+            case AccountTypeEnum.CASH:
+                return "secondary";
+            case AccountTypeEnum.DEBIT:
+                return "primary";
+            case AccountTypeEnum.CREDIT:
+                return "error";
+            case AccountTypeEnum.SAVING:
+                return "success";
+            default:
+                return "info";
         }
-    }
+    };
 
     // Group accounts by type
-    const accountTypes = [AccountTypeEnum.CASH, AccountTypeEnum.DEBIT, AccountTypeEnum.CREDIT, AccountTypeEnum.SAVING];
+    const accountTypes = [
+        AccountTypeEnum.CASH,
+        AccountTypeEnum.DEBIT,
+        AccountTypeEnum.CREDIT,
+        AccountTypeEnum.SAVING,
+    ];
 
-    const typeSummaries = accountTypes.map(type => {
-        const typeAccounts = accounts.filter(a => a.accountType === type);
+    const typeSummaries = accountTypes.map((type) => {
+        const typeAccounts = accounts.filter((a) => a.accountType === type);
         let currentTotal = 0;
         let pastTotal = 0;
 
-        typeAccounts.forEach(acc => {
+        typeAccounts.forEach((acc) => {
             currentTotal += getLastBalanceAmount(balancesByAccount, acc.id);
-            pastTotal += getLatestBalanceAmountInWindow(balancesByAccount, acc.id, startOfLastMonth, endOfLastMonth);
+            pastTotal += getLatestBalanceAmountInWindow(
+                balancesByAccount,
+                acc.id,
+                startOfLastMonth,
+                endOfLastMonth,
+            );
         });
 
         return {
             type,
             currentTotal,
             pastTotal,
-            accounts: typeAccounts
+            accounts: typeAccounts,
         };
     });
 
     return (
         <>
             {/* Top Summaries */}
-            <Grid container spacing={3} sx={{ width: '100%', mb: 4 }}>
-                {typeSummaries.map(summary => (
+            <Grid container spacing={3} sx={{ width: "100%", mb: 4 }}>
+                {typeSummaries.map((summary) => (
                     <Grid size={{ xs: 12, sm: 6, md: 3 }} key={summary.type + "_summary"}>
                         <DashboardCard
                             title={`${summary.type} Total`}

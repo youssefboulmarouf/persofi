@@ -1,12 +1,12 @@
-import {PaginationController} from "./usePaginationController";
-import {TableFooter, TablePagination, TableRow} from "@mui/material";
+import { PaginationController } from "./usePaginationController";
+import { TableFooter, TablePagination, TableRow } from "@mui/material";
 import React from "react";
 
 interface PaginationProps {
     paginationController: PaginationController<any>;
 }
 
-const Pagination: React.FC<PaginationProps> = ({paginationController}) => {
+const Pagination: React.FC<PaginationProps> = ({ paginationController }) => {
     return (
         <TableFooter>
             <TableRow>
@@ -21,5 +21,5 @@ const Pagination: React.FC<PaginationProps> = ({paginationController}) => {
             </TableRow>
         </TableFooter>
     );
-}
+};
 export default Pagination;

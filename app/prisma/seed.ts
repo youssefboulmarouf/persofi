@@ -64,11 +64,16 @@ async function main() {
 
     // 3) Parent categories
     const parentNames = [
-        "Groceries", "Shopping", "Household", "Transport",
-        "Health", "Dining & Leisure", "Other",
+        "Groceries",
+        "Shopping",
+        "Household",
+        "Transport",
+        "Health",
+        "Dining & Leisure",
+        "Other",
     ];
     await prisma.category.createMany({
-        data: parentNames.map(name => ({ name, active: true })),
+        data: parentNames.map((name) => ({ name, active: true })),
         skipDuplicates: true,
     });
 
@@ -77,10 +82,10 @@ async function main() {
         where: { name: { in: parentNames } },
         select: { id: true, name: true },
     });
-    const byName = Object.fromEntries(parents.map(c => [c.name, c.id]));
+    const byName = Object.fromEntries(parents.map((c) => [c.name, c.id]));
 
     // 4) Children under parents
-    const children: Array<{ name: string; parent: string, active: boolean }> = [
+    const children: Array<{ name: string; parent: string; active: boolean }> = [
         { name: "Dairy", parent: "Groceries", active: true },
         { name: "Vegetables", parent: "Groceries", active: true },
         { name: "Fruits", parent: "Groceries", active: true },
@@ -107,10 +112,10 @@ async function main() {
     ];
 
     await prisma.category.createMany({
-        data: children.map(c => ({
+        data: children.map((c) => ({
             name: c.name,
             parentCategoryId: byName[c.parent],
-            active: c.active
+            active: c.active,
         })),
         skipDuplicates: true,
     });
@@ -144,42 +149,58 @@ async function main() {
 
     // 7) Products (look up category IDs you need)
     const leafs = await prisma.category.findMany({
-        where: { name: { in: ["Dairy","Vegetables","Fruits","Meat & Poultry","Grains & Pasta","Bread & Bakery","Beverages","Condiments & Spices","Cleaning","Toiletries & Hygiene","Baby Care"] } },
+        where: {
+            name: {
+                in: [
+                    "Dairy",
+                    "Vegetables",
+                    "Fruits",
+                    "Meat & Poultry",
+                    "Grains & Pasta",
+                    "Bread & Bakery",
+                    "Beverages",
+                    "Condiments & Spices",
+                    "Cleaning",
+                    "Toiletries & Hygiene",
+                    "Baby Care",
+                ],
+            },
+        },
         select: { id: true, name: true },
     });
-    const cat = Object.fromEntries(leafs.map(c => [c.name, c.id]));
+    const cat = Object.fromEntries(leafs.map((c) => [c.name, c.id]));
 
     await prisma.product.createMany({
         data: [
-            { name: "Milk",              categoryId: cat["Dairy"],                  active: true },
-            { name: "Yogurt",            categoryId: cat["Dairy"],                  active: true },
-            { name: "Cheese",            categoryId: cat["Dairy"],                  active: true },
-            { name: "Potatoes",          categoryId: cat["Vegetables"],             active: true },
-            { name: "Tomatoes",          categoryId: cat["Vegetables"],             active: true },
-            { name: "Onions",            categoryId: cat["Vegetables"],             active: true },
-            { name: "Carrots",           categoryId: cat["Vegetables"],             active: true },
-            { name: "Bananas",           categoryId: cat["Fruits"],                 active: true },
-            { name: "Apples",            categoryId: cat["Fruits"],                 active: true },
-            { name: "Oranges",           categoryId: cat["Fruits"],                 active: true },
-            { name: "Chicken",           categoryId: cat["Meat & Poultry"],         active: true },
-            { name: "Beef",              categoryId: cat["Meat & Poultry"],         active: true },
-            { name: "Rice",              categoryId: cat["Grains & Pasta"],         active: true },
-            { name: "Pasta",             categoryId: cat["Grains & Pasta"],         active: true },
-            { name: "Baguette",          categoryId: cat["Bread & Bakery"],         active: true },
-            { name: "Water",             categoryId: cat["Beverages"],              active: true },
-            { name: "Coffee",            categoryId: cat["Beverages"],              active: true },
-            { name: "Juice",             categoryId: cat["Beverages"],              active: true },
-            { name: "Olive Oil",         categoryId: cat["Condiments & Spices"],    active: true },
-            { name: "Salt",              categoryId: cat["Condiments & Spices"],    active: true },
-            { name: "Sugar",             categoryId: cat["Condiments & Spices"],    active: true },
-            { name: "Dish Soap",         categoryId: cat["Cleaning"],               active: true },
-            { name: "Laundry Detergent", categoryId: cat["Cleaning"],               active: true },
-            { name: "Surface Cleaner",   categoryId: cat["Cleaning"],               active: true },
-            { name: "Shampoo",           categoryId: cat["Toiletries & Hygiene"],   active: true },
-            { name: "Soap Bar",          categoryId: cat["Toiletries & Hygiene"],   active: true },
-            { name: "Toothpaste",        categoryId: cat["Toiletries & Hygiene"],   active: true },
-            { name: "Diapers",           categoryId: cat["Baby Care"],              active: true },
-            { name: "Baby Wipes",        categoryId: cat["Baby Care"],              active: true },
+            { name: "Milk", categoryId: cat["Dairy"], active: true },
+            { name: "Yogurt", categoryId: cat["Dairy"], active: true },
+            { name: "Cheese", categoryId: cat["Dairy"], active: true },
+            { name: "Potatoes", categoryId: cat["Vegetables"], active: true },
+            { name: "Tomatoes", categoryId: cat["Vegetables"], active: true },
+            { name: "Onions", categoryId: cat["Vegetables"], active: true },
+            { name: "Carrots", categoryId: cat["Vegetables"], active: true },
+            { name: "Bananas", categoryId: cat["Fruits"], active: true },
+            { name: "Apples", categoryId: cat["Fruits"], active: true },
+            { name: "Oranges", categoryId: cat["Fruits"], active: true },
+            { name: "Chicken", categoryId: cat["Meat & Poultry"], active: true },
+            { name: "Beef", categoryId: cat["Meat & Poultry"], active: true },
+            { name: "Rice", categoryId: cat["Grains & Pasta"], active: true },
+            { name: "Pasta", categoryId: cat["Grains & Pasta"], active: true },
+            { name: "Baguette", categoryId: cat["Bread & Bakery"], active: true },
+            { name: "Water", categoryId: cat["Beverages"], active: true },
+            { name: "Coffee", categoryId: cat["Beverages"], active: true },
+            { name: "Juice", categoryId: cat["Beverages"], active: true },
+            { name: "Olive Oil", categoryId: cat["Condiments & Spices"], active: true },
+            { name: "Salt", categoryId: cat["Condiments & Spices"], active: true },
+            { name: "Sugar", categoryId: cat["Condiments & Spices"], active: true },
+            { name: "Dish Soap", categoryId: cat["Cleaning"], active: true },
+            { name: "Laundry Detergent", categoryId: cat["Cleaning"], active: true },
+            { name: "Surface Cleaner", categoryId: cat["Cleaning"], active: true },
+            { name: "Shampoo", categoryId: cat["Toiletries & Hygiene"], active: true },
+            { name: "Soap Bar", categoryId: cat["Toiletries & Hygiene"], active: true },
+            { name: "Toothpaste", categoryId: cat["Toiletries & Hygiene"], active: true },
+            { name: "Diapers", categoryId: cat["Baby Care"], active: true },
+            { name: "Baby Wipes", categoryId: cat["Baby Care"], active: true },
         ],
         skipDuplicates: true,
     });
@@ -187,5 +208,8 @@ async function main() {
 
 main()
     .then(() => console.log("Seeding completed successfully!"))
-    .catch(e => { console.error(e); process.exit(1); })
+    .catch((e) => {
+        console.error(e);
+        process.exit(1);
+    })
     .finally(() => prisma.$disconnect());

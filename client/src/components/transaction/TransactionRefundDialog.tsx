@@ -4,10 +4,10 @@ import {
     ProductJson,
     TransactionItemJson,
     TransactionJson,
-    TransactionTypeEnum
+    TransactionTypeEnum,
 } from "../../model/PersofiModels";
 import { useAddTransaction, useProcessTransaction } from "../../hooks/useTransactions";
-import React, {FC, useEffect, useState} from "react";
+import React, { FC, useEffect, useState } from "react";
 import {
     Autocomplete,
     Dialog,
@@ -20,13 +20,13 @@ import {
     TableCell,
     TableHead,
     TableRow,
-    TextField
+    TextField,
 } from "@mui/material";
 import Typography from "@mui/material/Typography";
 import FormLabel from "../common/FormLabel";
 import Box from "@mui/material/Box";
 import LoadingComponent from "../common/LoadingComponent";
-import {getActionButton} from "../common/Utilities";
+import { getActionButton } from "../common/Utilities";
 import Button from "@mui/material/Button";
 
 interface TransactionRefundDialogProps {
@@ -38,11 +38,11 @@ interface TransactionRefundDialogProps {
 }
 
 export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
-    transactionToRefund, 
-    openDialog, 
-    closeDialog, 
+    transactionToRefund,
+    openDialog,
+    closeDialog,
     accounts,
-    products
+    products,
 }) => {
     const { mutateAsync: addTransaction } = useAddTransaction();
     const { mutateAsync: processTx } = useProcessTransaction();
@@ -56,16 +56,20 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
 
     const buildItemName = (item: TransactionItemJson): string => {
         if (!item.variantId) return "—";
-        const variant = products.flatMap(pr => pr.variants || []).find(vr => vr.id === item.variantId);
+        const variant = products
+            .flatMap((pr) => pr.variants || [])
+            .find((vr) => vr.id === item.variantId);
         if (!variant) return "—";
-        const product = products.find(pr => pr.id === variant.productId);
+        const product = products.find((pr) => pr.id === variant.productId);
         if (!product) return "—";
         return `${product.name} (${variant.unitSize} ${variant.unitType})`;
-    }
+    };
 
     useEffect(() => {
         setDateStr(new Date().toISOString().slice(0, 10));
-        setCounterPartyAccount(accounts.find(a => a.id === transactionToRefund.payAccountId) ?? null);
+        setCounterPartyAccount(
+            accounts.find((a) => a.id === transactionToRefund.payAccountId) ?? null,
+        );
     }, [openDialog, transactionToRefund, accounts]);
 
     const emptyForm = () => {
@@ -77,13 +81,16 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
         setGrandTotal(0);
 
         closeDialog();
-    }
+    };
 
     const processRefund = async () => {
-        if (subtotal > transactionToRefund.subtotal
-            || taxTotal > transactionToRefund.taxTotal
-            || grandTotal > transactionToRefund.grandTotal
-            || counterPartyAccount === null) return;
+        if (
+            subtotal > transactionToRefund.subtotal ||
+            taxTotal > transactionToRefund.taxTotal ||
+            grandTotal > transactionToRefund.grandTotal ||
+            counterPartyAccount === null
+        )
+            return;
 
         setIsLoading(true);
         const refundTx = await addTransaction({
@@ -101,7 +108,7 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
             subtotal,
             taxTotal,
             grandTotal,
-            amount: 0
+            amount: 0,
         });
 
         if (!refundTx) {
@@ -113,7 +120,7 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
 
         setIsLoading(false);
         emptyForm();
-    }
+    };
 
     useEffect(() => {
         const newGrand = (subtotal || 0) + (taxTotal || 0);
@@ -121,7 +128,11 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
     }, [subtotal, taxTotal]);
 
     return (
-        <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '900px', maxWidth: '900px'}}}>
+        <Dialog
+            open={openDialog}
+            onClose={() => emptyForm()}
+            PaperProps={{ sx: { width: "900px", maxWidth: "900px" } }}
+        >
             <DialogTitle sx={{ mt: 2 }}>Refund Transaction:</DialogTitle>
 
             <DialogContent>
@@ -129,14 +140,17 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
                     <LoadingComponent message={"Processing..."} />
                 ) : (
                     <Stack spacing={2} sx={{ mt: 1 }}>
-
                         <Stack direction="row" spacing={1} justifyContent="space-between">
-                            <Box sx={{ width: '100%' }} >
+                            <Box sx={{ width: "100%" }}>
                                 <FormLabel>Subtotal</FormLabel>
-                                <TextField fullWidth value={transactionToRefund.subtotal} disabled/>
+                                <TextField
+                                    fullWidth
+                                    value={transactionToRefund.subtotal}
+                                    disabled
+                                />
                             </Box>
 
-                            <Box sx={{ width: '100%' }} >
+                            <Box sx={{ width: "100%" }}>
                                 <FormLabel>Tax Total</FormLabel>
                                 <TextField
                                     type="number"
@@ -147,20 +161,34 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
                                 />
                             </Box>
 
-                            <Box sx={{ width: '100%' }} >
+                            <Box sx={{ width: "100%" }}>
                                 <FormLabel>Grand Total</FormLabel>
-                                <TextField fullWidth value={transactionToRefund.grandTotal} disabled/>
+                                <TextField
+                                    fullWidth
+                                    value={transactionToRefund.grandTotal}
+                                    disabled
+                                />
                             </Box>
                         </Stack>
 
                         <Table size="small" sx={{ backgroundColor: "rgba(0,0,0,0.02)" }}>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell><Typography variant="subtitle2">Variation</Typography></TableCell>
-                                    <TableCell><Typography variant="subtitle2">Description</Typography></TableCell>
-                                    <TableCell><Typography variant="subtitle2">Qty</Typography></TableCell>
-                                    <TableCell><Typography variant="subtitle2">Unit Price</Typography></TableCell>
-                                    <TableCell><Typography variant="subtitle2">Line Total</Typography></TableCell>
+                                    <TableCell>
+                                        <Typography variant="subtitle2">Variation</Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="subtitle2">Description</Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="subtitle2">Qty</Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="subtitle2">Unit Price</Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="subtitle2">Line Total</Typography>
+                                    </TableCell>
                                 </TableRow>
                             </TableHead>
 
@@ -200,21 +228,22 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
                             getOptionKey={(opt: AccountJson) => opt.id}
                             value={counterPartyAccount}
                             onChange={(e, nv) => setCounterPartyAccount(nv)}
-                            renderInput={(params) => <TextField {...params} fullWidth/>}
+                            renderInput={(params) => <TextField {...params} fullWidth />}
                             size="small"
                         />
 
                         <Stack direction="row" spacing={1} justifyContent="space-between">
-                            <Box sx={{ width: '100%' }} >
+                            <Box sx={{ width: "100%" }}>
                                 <FormLabel>Refund Subtotal</FormLabel>
                                 <TextField
                                     type={"number"}
                                     fullWidth
                                     value={subtotal}
-                                    onChange={(e) => setSubtotal(parseFloat(e.target.value))}/>
+                                    onChange={(e) => setSubtotal(parseFloat(e.target.value))}
+                                />
                             </Box>
 
-                            <Box sx={{ width: '100%' }} >
+                            <Box sx={{ width: "100%" }}>
                                 <FormLabel>Refund Tax Total</FormLabel>
                                 <TextField
                                     type="number"
@@ -224,23 +253,24 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
                                 />
                             </Box>
 
-                            <Box sx={{ width: '100%' }} >
+                            <Box sx={{ width: "100%" }}>
                                 <FormLabel>Refund Grand Total</FormLabel>
-                                <TextField fullWidth value={grandTotal} disabled/>
+                                <TextField fullWidth value={grandTotal} disabled />
                             </Box>
                         </Stack>
                     </Stack>
                 )}
             </DialogContent>
-            <DialogActions>{
-                getActionButton(
+            <DialogActions>
+                {getActionButton(
                     ModalTypeEnum.ADD, // the modal type is driving the color of the button
                     processRefund,
-                    `Refund Transaction`
-                    )
-                }
-                <Button variant="outlined" onClick={emptyForm}>Cancel</Button>
+                    `Refund Transaction`,
+                )}
+                <Button variant="outlined" onClick={emptyForm}>
+                    Cancel
+                </Button>
             </DialogActions>
         </Dialog>
     );
-}
+};

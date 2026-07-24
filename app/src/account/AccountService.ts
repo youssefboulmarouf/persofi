@@ -1,11 +1,10 @@
-import {BaseService} from "../utilities/BaseService";
-import {AccountJson} from "./AccountJson";
+import { BaseService } from "../utilities/BaseService";
+import { AccountJson } from "./AccountJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import AppError from "../utilities/errors/AppError";
 
 export class AccountService extends BaseService {
-
     constructor() {
         super(AccountService.name);
     }
@@ -19,7 +18,7 @@ export class AccountService extends BaseService {
         this.logger.log(`Get account by [id:${id}]`);
 
         const data = await this.prisma.account.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Account with [id:${id}] not found`);
@@ -36,9 +35,9 @@ export class AccountService extends BaseService {
                     name: account.getName(),
                     accountType: account.getAccountType(),
                     currency: account.getCurrency(),
-                    active: account.isActive()
-                }
-            })
+                    active: account.isActive(),
+                },
+            }),
         );
     }
 
@@ -60,8 +59,8 @@ export class AccountService extends BaseService {
                     accountType: account.getAccountType(),
                     currency: account.getCurrency(),
                     active: account.isActive(),
-                }
-            })
+                },
+            }),
         );
     }
 
@@ -70,13 +69,13 @@ export class AccountService extends BaseService {
 
         try {
             await this.prisma.account.delete({
-                where: { id }
-            })
+                where: { id },
+            });
         } catch (e: any) {
             throw new AppError(
                 "Runtime Error",
                 500,
-                `Unable to delete account that is tied to other entities: ${e.message}.`
+                `Unable to delete account that is tied to other entities: ${e.message}.`,
             );
         }
     }

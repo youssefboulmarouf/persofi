@@ -14,6 +14,6 @@ export function unitTypeFromString(type: string): UnitTypeEnum {
     throw new AppError(
         "Runtime Error",
         500,
-        `Invalid UnitTypeEnum value: ${type}. Expected 'L', 'Kg', 'Piece', 'Pack'.`
+        `Invalid UnitTypeEnum value: ${type}. Expected 'L', 'Kg', 'Piece', 'Pack'.`,
     );
 }

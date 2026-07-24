@@ -1,5 +1,5 @@
-import {BaseService} from "../utilities/BaseService";
-import {CategoryJson} from "./CategoryJson";
+import { BaseService } from "../utilities/BaseService";
+import { CategoryJson } from "./CategoryJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import AppError from "../utilities/errors/AppError";
@@ -18,7 +18,7 @@ export class CategoryService extends BaseService {
         this.logger.log(`Get category by [id:${id}]`);
 
         const data = await this.prisma.category.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Category with [id:${id}] not found`);
@@ -34,9 +34,9 @@ export class CategoryService extends BaseService {
                 data: {
                     name: category.getName(),
                     parentCategoryId: category.getParentCategory(),
-                    active: true
-                }
-            })
+                    active: true,
+                },
+            }),
         );
     }
 
@@ -55,45 +55,43 @@ export class CategoryService extends BaseService {
                 data: {
                     name: category.getName(),
                     parentCategoryId: category.getParentCategory(),
-                    active: category.isActive()
-                }
-            })
+                    active: category.isActive(),
+                },
+            }),
         );
     }
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete category with [id=${id}]`);
         const childrenCount = await this.prisma.category.findMany({
-            where: { parentCategoryId: id }
-        })
+            where: { parentCategoryId: id },
+        });
 
         if (childrenCount.length > 0) {
-            this.logger.log(`Category with [id=${id}] have [id=${childrenCount.length}] children, will deactivate instead of deleting`);
+            this.logger.log(
+                `Category with [id=${id}] have [id=${childrenCount.length}] children, will deactivate instead of deleting`,
+            );
             await this.prisma.category.updateMany({
                 where: {
-                    OR: [
-                        { id },
-                        { parentCategoryId: id }
-                    ],
+                    OR: [{ id }, { parentCategoryId: id }],
                 },
                 data: {
-                    active: false
-                }
+                    active: false,
+                },
             });
         } else {
             this.logger.log(`Deleting category with [id=${id}]`);
             try {
                 await this.prisma.category.delete({
-                    where: { id }
-                })
+                    where: { id },
+                });
             } catch (e: any) {
                 throw new AppError(
                     "Runtime Error",
                     500,
-                    `Unable to delete category that is tied to other entities: ${e.message}.`
+                    `Unable to delete category that is tied to other entities: ${e.message}.`,
                 );
             }
-
         }
     }
 }

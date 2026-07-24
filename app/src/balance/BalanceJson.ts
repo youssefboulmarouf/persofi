@@ -13,7 +13,6 @@ export class BalanceJson {
         this.transactionId = transactionId;
     }
 
-
     public getId(): number {
         return this.id;
     }
@@ -40,7 +39,7 @@ export class BalanceJson {
             Number(body.amount),
             new Date(body.date),
             Number(body.accountId),
-            Number(body.transactionId)
-        )
+            Number(body.transactionId),
+        );
     }
 }

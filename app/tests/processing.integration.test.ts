@@ -11,20 +11,26 @@ const prisma = new PrismaClient();
 
 async function createAccount(name: string, type: "Debit" | "Credit" | "Cash" | "Saving") {
     return prisma.account.create({
-        data: { name, accountType: type, currency: "CAD", active: true }
+        data: { name, accountType: type, currency: "CAD", active: true },
     });
 }
 
 async function initBalance(accountId: number, amount: number) {
     const tx = await prisma.transaction.create({
         data: {
-            date: new Date(), type: "Init_Balance", processed: true,
+            date: new Date(),
+            type: "Init_Balance",
+            processed: true,
             counterpartyAccountId: accountId,
-            subtotal: 0, taxTotal: 0, grandTotal: 0, amount, notes: "init"
-        }
+            subtotal: 0,
+            taxTotal: 0,
+            grandTotal: 0,
+            amount,
+            notes: "init",
+        },
     });
     await prisma.balance.create({
-        data: { amount, date: new Date(), accountId, transactionId: tx.id }
+        data: { amount, date: new Date(), accountId, transactionId: tx.id },
     });
     return tx;
 }
@@ -32,21 +38,29 @@ async function initBalance(accountId: number, amount: number) {
 async function purgeAccount(id: number) {
     await prisma.balance.deleteMany({ where: { accountId: id } });
     await prisma.transactionItem.deleteMany({
-        where: { transaction: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] } }
+        where: { transaction: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] } },
     });
     await prisma.transaction.deleteMany({
-        where: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] }
+        where: { OR: [{ payAccountId: id }, { counterpartyAccountId: id }] },
     });
-    await prisma.account.delete({ where: { id } }).catch(() => { });
+    await prisma.account.delete({ where: { id } }).catch(() => {});
 }
 
 function expenseBody(payAccountId: number, overrides: object = {}) {
     return {
         date: new Date().toISOString(),
-        type: "Expense", notes: "test", processed: false,
-        payAccountId, counterpartyAccountId: null,
-        storeId: null, personId: null, refundOfId: null,
-        subtotal: 20, taxTotal: 0, grandTotal: 20, amount: 0,
+        type: "Expense",
+        notes: "test",
+        processed: false,
+        payAccountId,
+        counterpartyAccountId: null,
+        storeId: null,
+        personId: null,
+        refundOfId: null,
+        subtotal: 20,
+        taxTotal: 0,
+        grandTotal: 20,
+        amount: 0,
         items: [],
         ...overrides,
     };
@@ -68,9 +82,7 @@ describe("Transactions – REFUND processing", () => {
         await initBalance(creditId, 200);
 
         // Create the original expense that will be refunded
-        const expenseRes = await request(app)
-            .post("/api/transactions")
-            .send(expenseBody(debitId));
+        const expenseRes = await request(app).post("/api/transactions").send(expenseBody(debitId));
         originalExpenseTxId = expenseRes.body.id;
         await request(app).post(`/api/transactions/${originalExpenseTxId}/process`);
     });
@@ -82,22 +94,27 @@ describe("Transactions – REFUND processing", () => {
 
     it("processes REFUND on Debit account → balance increases", async () => {
         const balanceBefore = await prisma.balance.findFirst({
-            where: { accountId: debitId }, orderBy: { date: "desc" }
+            where: { accountId: debitId },
+            orderBy: { date: "desc" },
         });
         const amountBefore = Number(balanceBefore!.amount);
 
-        const createRes = await request(app)
-            .post("/api/transactions")
-            .send({
-                date: new Date().toISOString(),
-                type: "Refund", notes: "refund", processed: false,
-                payAccountId: null,
-                counterpartyAccountId: debitId,
-                storeId: null, personId: null,
-                refundOfId: originalExpenseTxId,
-                subtotal: 10, taxTotal: 0, grandTotal: 10, amount: 0,
-                items: [],
-            });
+        const createRes = await request(app).post("/api/transactions").send({
+            date: new Date().toISOString(),
+            type: "Refund",
+            notes: "refund",
+            processed: false,
+            payAccountId: null,
+            counterpartyAccountId: debitId,
+            storeId: null,
+            personId: null,
+            refundOfId: originalExpenseTxId,
+            subtotal: 10,
+            taxTotal: 0,
+            grandTotal: 10,
+            amount: 0,
+            items: [],
+        });
         expect(createRes.status).toBe(201);
         const txId = createRes.body.id;
 
@@ -105,7 +122,8 @@ describe("Transactions – REFUND processing", () => {
         expect(processRes.status).toBe(201);
 
         const balanceAfter = await prisma.balance.findFirst({
-            where: { accountId: debitId }, orderBy: { date: "desc" }
+            where: { accountId: debitId },
+            orderBy: { date: "desc" },
         });
         expect(Number(balanceAfter!.amount)).toBe(amountBefore + 10);
 
@@ -121,22 +139,27 @@ describe("Transactions – REFUND processing", () => {
         await request(app).post(`/api/transactions/${expRes.body.id}/process`);
 
         const balanceBefore = await prisma.balance.findFirst({
-            where: { accountId: creditId }, orderBy: { date: "desc" }
+            where: { accountId: creditId },
+            orderBy: { date: "desc" },
         });
         const amountBefore = Number(balanceBefore!.amount);
 
-        const createRes = await request(app)
-            .post("/api/transactions")
-            .send({
-                date: new Date().toISOString(),
-                type: "Refund", notes: "credit refund", processed: false,
-                payAccountId: null,
-                counterpartyAccountId: creditId,
-                storeId: null, personId: null,
-                refundOfId: expRes.body.id,
-                subtotal: 15, taxTotal: 0, grandTotal: 15, amount: 0,
-                items: [],
-            });
+        const createRes = await request(app).post("/api/transactions").send({
+            date: new Date().toISOString(),
+            type: "Refund",
+            notes: "credit refund",
+            processed: false,
+            payAccountId: null,
+            counterpartyAccountId: creditId,
+            storeId: null,
+            personId: null,
+            refundOfId: expRes.body.id,
+            subtotal: 15,
+            taxTotal: 0,
+            grandTotal: 15,
+            amount: 0,
+            items: [],
+        });
         expect(createRes.status).toBe(201);
         const txId = createRes.body.id;
 
@@ -144,12 +167,15 @@ describe("Transactions – REFUND processing", () => {
         expect(processRes.status).toBe(201);
 
         const balanceAfter = await prisma.balance.findFirst({
-            where: { accountId: creditId }, orderBy: { date: "desc" }
+            where: { accountId: creditId },
+            orderBy: { date: "desc" },
         });
         expect(Number(balanceAfter!.amount)).toBe(amountBefore - 15);
 
         // cleanup expense + refund
-        await prisma.balance.deleteMany({ where: { transactionId: { in: [expRes.body.id, txId] } } });
+        await prisma.balance.deleteMany({
+            where: { transactionId: { in: [expRes.body.id, txId] } },
+        });
         await prisma.transaction.delete({ where: { id: txId } });
         await prisma.transaction.delete({ where: { id: expRes.body.id } });
     });
@@ -179,16 +205,22 @@ describe("Transactions – INIT_BALANCE processing", () => {
         const countBefore = await prisma.balance.count({ where: { accountId: freshAccountId } });
         expect(countBefore).toBe(0);
 
-        const createRes = await request(app)
-            .post("/api/transactions")
-            .send({
-                date: new Date().toISOString(),
-                type: "Init_Balance", notes: "opening", processed: false,
-                payAccountId: null, counterpartyAccountId: freshAccountId,
-                storeId: null, personId: null, refundOfId: null,
-                subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 250,
-                items: [],
-            });
+        const createRes = await request(app).post("/api/transactions").send({
+            date: new Date().toISOString(),
+            type: "Init_Balance",
+            notes: "opening",
+            processed: false,
+            payAccountId: null,
+            counterpartyAccountId: freshAccountId,
+            storeId: null,
+            personId: null,
+            refundOfId: null,
+            subtotal: 0,
+            taxTotal: 0,
+            grandTotal: 0,
+            amount: 250,
+            items: [],
+        });
         expect(createRes.status).toBe(201);
         const txId = createRes.body.id;
 
@@ -201,16 +233,22 @@ describe("Transactions – INIT_BALANCE processing", () => {
     });
 
     it("rejects INIT_BALANCE on account that already has a balance", async () => {
-        const createRes = await request(app)
-            .post("/api/transactions")
-            .send({
-                date: new Date().toISOString(),
-                type: "Init_Balance", notes: "second init", processed: false,
-                payAccountId: null, counterpartyAccountId: preInitAccountId,
-                storeId: null, personId: null, refundOfId: null,
-                subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 999,
-                items: [],
-            });
+        const createRes = await request(app).post("/api/transactions").send({
+            date: new Date().toISOString(),
+            type: "Init_Balance",
+            notes: "second init",
+            processed: false,
+            payAccountId: null,
+            counterpartyAccountId: preInitAccountId,
+            storeId: null,
+            personId: null,
+            refundOfId: null,
+            subtotal: 0,
+            taxTotal: 0,
+            grandTotal: 0,
+            amount: 999,
+            items: [],
+        });
         expect(createRes.status).toBe(201);
         const txId = createRes.body.id;
 
@@ -258,10 +296,19 @@ describe("Balance – append-only pattern", () => {
         // Add an older balance directly with a past date
         const pastDate = new Date("2020-01-01");
         const futureTx = await prisma.transaction.create({
-            data: { date: pastDate, type: "Init_Balance", processed: true, counterpartyAccountId: accountId, subtotal: 0, taxTotal: 0, grandTotal: 0, amount: 9999 }
+            data: {
+                date: pastDate,
+                type: "Init_Balance",
+                processed: true,
+                counterpartyAccountId: accountId,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+                amount: 9999,
+            },
         });
         await prisma.balance.create({
-            data: { amount: 9999, date: pastDate, accountId, transactionId: futureTx.id }
+            data: { amount: 9999, date: pastDate, accountId, transactionId: futureTx.id },
         });
 
         // The API's process should use the latest balance (1000), not the "old" 9999 entry
@@ -271,13 +318,16 @@ describe("Balance – append-only pattern", () => {
         await request(app).post(`/api/transactions/${expRes.body.id}/process`);
 
         const latest = await prisma.balance.findFirst({
-            where: { accountId }, orderBy: { date: "desc" }
+            where: { accountId },
+            orderBy: { date: "desc" },
         });
         // Should be 1000 - 100 = 900, not 9999 - 100
         expect(Number(latest!.amount)).toBe(900);
 
         // Cleanup
-        await prisma.balance.deleteMany({ where: { transactionId: { in: [futureTx.id, expRes.body.id] } } });
+        await prisma.balance.deleteMany({
+            where: { transactionId: { in: [futureTx.id, expRes.body.id] } },
+        });
         await prisma.transaction.delete({ where: { id: expRes.body.id } });
         await prisma.transaction.delete({ where: { id: futureTx.id } });
     });
@@ -303,10 +353,28 @@ describe("Transaction Items – persistence and lifecycle", () => {
             .post("/api/transactions")
             .send({
                 ...expenseBody(accountId),
-                subtotal: 15, taxTotal: 0, grandTotal: 15,
+                subtotal: 15,
+                taxTotal: 0,
+                grandTotal: 15,
                 items: [
-                    { description: "Milk", quantity: 2, unitPrice: 5, lineTotal: 10, variantId: null, brandId: null, categoryId: null },
-                    { description: "Bread", quantity: 1, unitPrice: 5, lineTotal: 5, variantId: null, brandId: null, categoryId: null },
+                    {
+                        description: "Milk",
+                        quantity: 2,
+                        unitPrice: 5,
+                        lineTotal: 10,
+                        variantId: null,
+                        brandId: null,
+                        categoryId: null,
+                    },
+                    {
+                        description: "Bread",
+                        quantity: 1,
+                        unitPrice: 5,
+                        lineTotal: 5,
+                        variantId: null,
+                        brandId: null,
+                        categoryId: null,
+                    },
                 ],
             });
 
@@ -316,7 +384,7 @@ describe("Transaction Items – persistence and lifecycle", () => {
         const txId = createRes.body.id;
         const itemsInDb = await prisma.transactionItem.findMany({ where: { transactionId: txId } });
         expect(itemsInDb).toHaveLength(2);
-        expect(itemsInDb.every(i => i.transactionId === txId)).toBe(true);
+        expect(itemsInDb.every((i) => i.transactionId === txId)).toBe(true);
 
         // Cleanup
         await prisma.transactionItem.deleteMany({ where: { transactionId: txId } });
@@ -329,10 +397,28 @@ describe("Transaction Items – persistence and lifecycle", () => {
             .post("/api/transactions")
             .send({
                 ...expenseBody(accountId),
-                subtotal: 20, taxTotal: 0, grandTotal: 20,
+                subtotal: 20,
+                taxTotal: 0,
+                grandTotal: 20,
                 items: [
-                    { description: "Old Item 1", quantity: 1, unitPrice: 10, lineTotal: 10, variantId: null, brandId: null, categoryId: null },
-                    { description: "Old Item 2", quantity: 1, unitPrice: 10, lineTotal: 10, variantId: null, brandId: null, categoryId: null },
+                    {
+                        description: "Old Item 1",
+                        quantity: 1,
+                        unitPrice: 10,
+                        lineTotal: 10,
+                        variantId: null,
+                        brandId: null,
+                        categoryId: null,
+                    },
+                    {
+                        description: "Old Item 2",
+                        quantity: 1,
+                        unitPrice: 10,
+                        lineTotal: 10,
+                        variantId: null,
+                        brandId: null,
+                        categoryId: null,
+                    },
                 ],
             });
         const txId = createRes.body.id;
@@ -343,9 +429,19 @@ describe("Transaction Items – persistence and lifecycle", () => {
             .send({
                 id: txId,
                 ...expenseBody(accountId),
-                subtotal: 30, taxTotal: 0, grandTotal: 30,
+                subtotal: 30,
+                taxTotal: 0,
+                grandTotal: 30,
                 items: [
-                    { description: "New Item", quantity: 1, unitPrice: 30, lineTotal: 30, variantId: null, brandId: null, categoryId: null },
+                    {
+                        description: "New Item",
+                        quantity: 1,
+                        unitPrice: 30,
+                        lineTotal: 30,
+                        variantId: null,
+                        brandId: null,
+                        categoryId: null,
+                    },
                 ],
             });
         expect(updateRes.status).toBe(200);
@@ -365,9 +461,19 @@ describe("Transaction Items – persistence and lifecycle", () => {
             .post("/api/transactions")
             .send({
                 ...expenseBody(accountId),
-                subtotal: 10, taxTotal: 0, grandTotal: 10,
+                subtotal: 10,
+                taxTotal: 0,
+                grandTotal: 10,
                 items: [
-                    { description: "Will be deleted", quantity: 1, unitPrice: 10, lineTotal: 10, variantId: null, brandId: null, categoryId: null },
+                    {
+                        description: "Will be deleted",
+                        quantity: 1,
+                        unitPrice: 10,
+                        lineTotal: 10,
+                        variantId: null,
+                        brandId: null,
+                        categoryId: null,
+                    },
                 ],
             });
         const txId = createRes.body.id;

@@ -1,13 +1,13 @@
-import {ProductJson, ProductVariantJson} from "../model/PersofiModels";
+import { ProductJson, ProductVariantJson } from "../model/PersofiModels";
 
 export const fetchProducts = async (): Promise<ProductJson[]> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/products`);
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to fetch products');
+        throw new Error("Failed to fetch products");
     }
     return res.json();
-}
+};
 
 export const createProduct = async (product: ProductJson): Promise<ProductJson> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/products`, {
@@ -17,7 +17,7 @@ export const createProduct = async (product: ProductJson): Promise<ProductJson> 
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to create product');
+        throw new Error("Failed to create product");
     }
     return res.json();
 };
@@ -30,7 +30,7 @@ export const updateProduct = async (product: ProductJson): Promise<ProductJson> 
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to update product');
+        throw new Error("Failed to update product");
     }
     return res.json();
 };
@@ -41,7 +41,7 @@ export const deleteProduct = async (product: ProductJson): Promise<void> => {
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to delete product');
+        throw new Error("Failed to delete product");
     }
 };
 
@@ -50,12 +50,14 @@ export const fetchVariants = async (): Promise<ProductVariantJson[]> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/variants`);
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to fetch products');
+        throw new Error("Failed to fetch products");
     }
     return res.json();
-}
+};
 
-export const createProductVariant = async (variant: ProductVariantJson): Promise<ProductVariantJson> => {
+export const createProductVariant = async (
+    variant: ProductVariantJson,
+): Promise<ProductVariantJson> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/variants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,12 +65,14 @@ export const createProductVariant = async (variant: ProductVariantJson): Promise
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to create product variant');
+        throw new Error("Failed to create product variant");
     }
     return res.json();
 };
 
-export const updateProductVariant = async (variant: ProductVariantJson): Promise<ProductVariantJson> => {
+export const updateProductVariant = async (
+    variant: ProductVariantJson,
+): Promise<ProductVariantJson> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/variants/${variant.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -76,7 +80,7 @@ export const updateProductVariant = async (variant: ProductVariantJson): Promise
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to update product variant');
+        throw new Error("Failed to update product variant");
     }
     return res.json();
 };
@@ -87,6 +91,6 @@ export const deleteProductVariant = async (variant: ProductVariantJson): Promise
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to delete product variant');
+        throw new Error("Failed to delete product variant");
     }
 };

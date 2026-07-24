@@ -1,6 +1,6 @@
-import {useMemo, useState} from "react";
+import { useMemo, useState } from "react";
 
-type RowsPerPageOptions = number | { value: number; label: string; }
+type RowsPerPageOptions = number | { value: number; label: string };
 
 export interface PaginationController<T> {
     data: T[];
@@ -15,16 +15,19 @@ export interface PaginationController<T> {
 export const usePaginationController = <T>(listData: T[]): PaginationController<T> => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [page, setPage] = useState(0);
-    const [rowsPerPageOptions] = useState<RowsPerPageOptions[]>([10, 25, 50, { label: "All", value: -1 }]);
+    const [rowsPerPageOptions] = useState<RowsPerPageOptions[]>([
+        10,
+        25,
+        50,
+        { label: "All", value: -1 },
+    ]);
 
     const count = listData.length;
     const sliceFrom = page * rowsPerPage;
     const sliceTo = page * rowsPerPage + rowsPerPage;
 
     const data = useMemo(() => {
-        return rowsPerPage > 0
-            ? listData.slice(sliceFrom, sliceTo)
-            : listData;
+        return rowsPerPage > 0 ? listData.slice(sliceFrom, sliceTo) : listData;
     }, [listData, page, rowsPerPage]);
 
     const changePage = (event: any, newPage: number) => {
@@ -43,6 +46,6 @@ export const usePaginationController = <T>(listData: T[]): PaginationController<
         rowsPerPage,
         page,
         changePage,
-        changeRowsPerPage
-    }
-}
+        changeRowsPerPage,
+    };
+};

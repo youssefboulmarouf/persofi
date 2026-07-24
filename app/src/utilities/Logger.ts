@@ -15,7 +15,7 @@ class Logger {
     }
 
     private formatMessage(level: string, message: string, ...args: any[]): string {
-        return `[${this.getTimestamp()}] [${this.source}] [${level.toUpperCase()}]: ${message} ${args.map(arg => JSON.stringify(arg)).join(" ")}`;
+        return `[${this.getTimestamp()}] [${this.source}] [${level.toUpperCase()}]: ${message} ${args.map((arg) => JSON.stringify(arg)).join(" ")}`;
     }
 
     private ensureLogDirectory() {

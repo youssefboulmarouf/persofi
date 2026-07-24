@@ -8,7 +8,11 @@ type Props = {
     disable?: boolean;
 };
 
-const RefundExpenseButton: React.FC<Props> = ({ tooltipText, openDialogWithType, disable = false }) => (
+const RefundExpenseButton: React.FC<Props> = ({
+    tooltipText,
+    openDialogWithType,
+    disable = false,
+}) => (
     <IconActionButton
         tooltip={tooltipText}
         onClick={openDialogWithType}

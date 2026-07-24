@@ -1,4 +1,4 @@
-import {UnitTypeEnum, unitTypeFromString} from "./UnitType";
+import { UnitTypeEnum, unitTypeFromString } from "./UnitType";
 
 export class ProductVariantJson {
     private readonly id: number;
@@ -8,7 +8,14 @@ export class ProductVariantJson {
     private readonly unitType: UnitTypeEnum;
     private readonly productId: number;
 
-    constructor(id: number, description: string, active: boolean, unitSize: number, unitType: UnitTypeEnum, productId: number) {
+    constructor(
+        id: number,
+        description: string,
+        active: boolean,
+        unitSize: number,
+        unitType: UnitTypeEnum,
+        productId: number,
+    ) {
         this.id = id;
         this.description = description;
         this.active = active;
@@ -49,6 +56,6 @@ export class ProductVariantJson {
             Number(body.unitSize),
             unitTypeFromString(body.unitType),
             Number(body.productId),
-        )
+        );
     }
 }

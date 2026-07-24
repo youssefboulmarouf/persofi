@@ -11,5 +11,9 @@ export function accountTypeFromString(type: string): AccountTypeEnum {
     if (Object.values(AccountTypeEnum).includes(type as AccountTypeEnum)) {
         return type as AccountTypeEnum;
     }
-    throw new AppError("Runtime Error", 500, `Invalid AccountTypeEnum value: ${type}. Expected 'Debit', 'Credit' or 'Cash'.`);
+    throw new AppError(
+        "Runtime Error",
+        500,
+        `Invalid AccountTypeEnum value: ${type}. Expected 'Debit', 'Credit' or 'Cash'.`,
+    );
 }

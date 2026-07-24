@@ -2,8 +2,11 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import router from "./resources";
+import { disconnectPrisma } from "./utilities/prisma";
+import { validateEnv } from "./utilities/validateEnv";
 
 dotenv.config();
+validateEnv();
 
 const app = express();
 let server: any;
@@ -21,6 +24,17 @@ if (process.env.NODE_ENV !== "test") {
     server = app.listen(port, host, () => {
         console.log(`Server running on http://${host}:${port}`);
     });
+
+    const shutdown = (signal: string) => {
+        console.log(`Received ${signal}, shutting down gracefully`);
+        server.close(async () => {
+            await disconnectPrisma();
+            process.exit(0);
+        });
+    };
+
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 // Function to close the server (useful for Jest tests)
@@ -30,4 +44,4 @@ export const stopServer = () => {
     }
 };
 
-export { app, server };  // Export for testing
+export { app, server }; // Export for testing

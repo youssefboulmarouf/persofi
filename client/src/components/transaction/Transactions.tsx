@@ -5,7 +5,12 @@ import { Stack } from "@mui/system";
 import TableCallToActionButton from "../common/TableCallToActionButton";
 import Box from "@mui/material/Box";
 import { useDialogController } from "../common/useDialogController";
-import { ModalTypeEnum, TransactionItemJson, TransactionJson, TransactionTypeEnum } from "../../model/PersofiModels";
+import {
+    ModalTypeEnum,
+    TransactionItemJson,
+    TransactionJson,
+    TransactionTypeEnum,
+} from "../../model/PersofiModels";
 import { useTransactions, useProcessTransaction } from "../../hooks/useTransactions";
 import TransactionsFilter from "./TransactionsFilter";
 import { TransactionsList } from "./TransactionsList";
@@ -23,10 +28,7 @@ interface FilterProps {
     endDate: Date | null;
 }
 
-const bCrumb = [
-    { to: "/", title: "Home" },
-    { title: "Transactions" },
-];
+const bCrumb = [{ to: "/", title: "Home" }, { title: "Transactions" }];
 
 const emptyTransaction: TransactionJson = {
     id: 0,
@@ -52,7 +54,7 @@ export const Transactions: FC = () => {
         type: null,
         unprocessed: false,
         startDate: getFirstDayOfCurrentMonth(),
-        endDate: null
+        endDate: null,
     });
     const transactionDialog = useDialogController<TransactionJson>(emptyTransaction);
     const refundTransactionDialog = useDialogController<TransactionJson>(emptyTransaction);
@@ -71,10 +73,8 @@ export const Transactions: FC = () => {
         const q = (filters.searchTerm ?? "").toLowerCase().trim();
 
         // Normalize date bounds
-        const startTs =
-            filters.startDate ? new Date(filters.startDate).setHours(0, 0, 0, 0) : null;
-        const endTs =
-            filters.endDate ? new Date(filters.endDate).setHours(23, 59, 59, 999) : null;
+        const startTs = filters.startDate ? new Date(filters.startDate).setHours(0, 0, 0, 0) : null;
+        const endTs = filters.endDate ? new Date(filters.endDate).setHours(23, 59, 59, 999) : null;
 
         const typeIsSet = filters.type !== undefined && filters.type !== null;
 
@@ -82,7 +82,7 @@ export const Transactions: FC = () => {
             // The date field is typed as Date but arrives as an ISO string from JSON.
             // Slice to YYYY-MM-DD and append local midnight to avoid UTC→local day shift.
             const dateStr = String(t.date).slice(0, 10);
-            const tTime = new Date(dateStr + 'T00:00:00').getTime();
+            const tTime = new Date(dateStr + "T00:00:00").getTime();
             if (Number.isNaN(tTime)) return false;
 
             const nonInitBalance = t.type !== TransactionTypeEnum.INIT_BALANCE;
@@ -104,27 +104,37 @@ export const Transactions: FC = () => {
         });
 
         // Sort by date descending (newest first)
-        return results.sort(
-            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
+        return results.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [transactions, filters]);
 
     const processTransaction = async (tx: TransactionJson) => {
         await processTx(tx);
-    }
+    };
 
     return (
         <>
             <Breadcrumb title="Transactions" items={bCrumb} />
             <Grid container mt={3}>
-                <Card sx={{ padding: 0, borderColor: (theme) => theme.palette.divider }} variant="outlined">
+                <Card
+                    sx={{ padding: 0, borderColor: (theme) => theme.palette.divider }}
+                    variant="outlined"
+                >
                     <CardContent>
-                        <Stack justifyContent="space-between" direction={{ xs: "column", sm: "row" }} spacing={{ xs: 1, sm: 2, md: 4 }}>
+                        <Stack
+                            justifyContent="space-between"
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={{ xs: 1, sm: 2, md: 4 }}
+                        >
                             <TransactionsFilter filters={filters} setFilters={setFilters} />
                             <TableCallToActionButton
                                 fullwidth={false}
                                 callToActionText="Add Transaction"
-                                callToActionFunction={() => transactionDialog.openDialog(ModalTypeEnum.ADD, emptyTransaction)}
+                                callToActionFunction={() =>
+                                    transactionDialog.openDialog(
+                                        ModalTypeEnum.ADD,
+                                        emptyTransaction,
+                                    )
+                                }
                             />
                         </Stack>
                         <Box sx={{ overflowX: "auto" }} mt={3}>

@@ -1,5 +1,15 @@
 import { FC, useEffect, useState } from "react";
-import {Autocomplete, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Stack, TextField, Typography} from "@mui/material";
+import {
+    Autocomplete,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import { getActionButton } from "../common/Utilities";
@@ -11,7 +21,7 @@ import {
     ProductJson,
     ProductVariantJson,
     TransactionItemJson,
-    TransactionJson
+    TransactionJson,
 } from "../../model/PersofiModels";
 import { useProducts } from "../../hooks/useProducts";
 import { useCategories } from "../../hooks/useCategories";
@@ -54,13 +64,10 @@ export const TransactionItemDialog: FC<TransactionItemDialogProps> = ({
         setLineTotal(selectedItem.lineTotal);
         setVariant(
             products
-                .flatMap(p => p.variants || [])
-                .filter(v => v.id === selectedItem.variantId)[0] ?? null
+                .flatMap((p) => p.variants || [])
+                .filter((v) => v.id === selectedItem.variantId)[0] ?? null,
         );
-        setCategory(
-            categories
-                .filter(cat => cat.id === selectedItem.categoryId)[0] ?? null
-        );
+        setCategory(categories.filter((cat) => cat.id === selectedItem.categoryId)[0] ?? null);
         setBrandId(selectedItem.brandId);
     }, [selectedItem, dialogType]);
 
@@ -71,9 +78,11 @@ export const TransactionItemDialog: FC<TransactionItemDialogProps> = ({
     }, [quantity, unitPrice]);
 
     useEffect(() => {
-        setDescription(description === "" && variant
-            ? `${variant?.description} (${variant?.unitSize}/${variant?.unitType})`
-            : description);
+        setDescription(
+            description === "" && variant
+                ? `${variant?.description} (${variant?.unitSize}/${variant?.unitType})`
+                : description,
+        );
     }, [variant]);
 
     const emptyForm = () => {
@@ -86,16 +95,17 @@ export const TransactionItemDialog: FC<TransactionItemDialogProps> = ({
         setBrandId(null);
         setProduct(null);
         closeDialog();
-    }
+    };
 
     const onAddConfirm = async () => {
         handleAddItem({
             id: 0,
-            description: description !== ""
-                ? description
-                : variant
-                    ? `${variant?.description} (${variant?.unitSize}/${variant?.unitType})`
-                    : "",
+            description:
+                description !== ""
+                    ? description
+                    : variant
+                      ? `${variant?.description} (${variant?.unitSize}/${variant?.unitType})`
+                      : "",
             quantity: quantity,
             unitPrice: unitPrice,
             lineTotal: lineTotal,
@@ -105,34 +115,55 @@ export const TransactionItemDialog: FC<TransactionItemDialogProps> = ({
             categoryId: category?.id ?? null,
         });
         emptyForm();
-    }
+    };
 
     return (
-        <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '600px', maxWidth: '600px'}}}>
+        <Dialog
+            open={openDialog}
+            onClose={() => emptyForm()}
+            PaperProps={{ sx: { width: "600px", maxWidth: "600px" } }}
+        >
             <DialogTitle sx={{ mt: 2 }}>
                 {dialogType} Item
-                {product && <Typography component="span" sx={{ ml: 1, opacity: 0.6, fontSize: '0.9em' }}>— {product.name}</Typography>}
+                {product && (
+                    <Typography component="span" sx={{ ml: 1, opacity: 0.6, fontSize: "0.9em" }}>
+                        — {product.name}
+                    </Typography>
+                )}
             </DialogTitle>
 
             <DialogContent>
                 <Stack spacing={2} sx={{ mt: 1 }}>
-
                     {/* ── Category (shown first — useful even without a variant) ── */}
-                    <FormLabel>Category <span style={{ fontWeight: 400, opacity: 0.55, fontSize: '0.8em' }}>(optional)</span></FormLabel>
+                    <FormLabel>
+                        Category{" "}
+                        <span style={{ fontWeight: 400, opacity: 0.55, fontSize: "0.8em" }}>
+                            (optional)
+                        </span>
+                    </FormLabel>
                     <Autocomplete
-                        options={categories.filter(c => c.active)}
+                        options={categories.filter((c) => c.active)}
                         fullWidth
                         getOptionKey={(c) => c.id}
                         getOptionLabel={(c) => c.name}
                         value={category}
-                        onChange={(event: React.SyntheticEvent, newValue: CategoryJson | null) => setCategory(newValue)}
-                        renderInput={(params) => <TextField {...params} placeholder="e.g. Groceries" size="small" />}
+                        onChange={(event: React.SyntheticEvent, newValue: CategoryJson | null) =>
+                            setCategory(newValue)
+                        }
+                        renderInput={(params) => (
+                            <TextField {...params} placeholder="e.g. Groceries" size="small" />
+                        )}
                     />
 
                     {/* ── Product + Variant ── */}
-                    <FormLabel>Product <span style={{ fontWeight: 400, opacity: 0.55, fontSize: '0.8em' }}>(optional)</span></FormLabel>
+                    <FormLabel>
+                        Product{" "}
+                        <span style={{ fontWeight: 400, opacity: 0.55, fontSize: "0.8em" }}>
+                            (optional)
+                        </span>
+                    </FormLabel>
                     <Autocomplete
-                        options={products.filter(p => p.active)}
+                        options={products.filter((p) => p.active)}
                         fullWidth
                         getOptionKey={(options) => options.id}
                         getOptionLabel={(options) => options.name}
@@ -141,24 +172,40 @@ export const TransactionItemDialog: FC<TransactionItemDialogProps> = ({
                             setProduct(newValue);
                             setVariant(null); // reset variant when product changes
                         }}
-                        renderInput={(params) => <TextField {...params} placeholder="Search product..." size="small" />}
+                        renderInput={(params) => (
+                            <TextField {...params} placeholder="Search product..." size="small" />
+                        )}
                     />
 
-                    <FormLabel>Variant <span style={{ fontWeight: 400, opacity: 0.55, fontSize: '0.8em' }}>(optional)</span></FormLabel>
+                    <FormLabel>
+                        Variant{" "}
+                        <span style={{ fontWeight: 400, opacity: 0.55, fontSize: "0.8em" }}>
+                            (optional)
+                        </span>
+                    </FormLabel>
                     <Autocomplete
-                        options={products.flatMap(p => p.variants || []).filter(v => v.active && v.productId === product?.id)}
+                        options={products
+                            .flatMap((p) => p.variants || [])
+                            .filter((v) => v.active && v.productId === product?.id)}
                         fullWidth
                         getOptionKey={(options) => options.id}
-                        getOptionLabel={(options) => `${options.description} (${options.unitSize}/${options.unitType})`}
+                        getOptionLabel={(options) =>
+                            `${options.description} (${options.unitSize}/${options.unitType})`
+                        }
                         value={variant}
                         disabled={!product}
-                        onChange={(event: React.SyntheticEvent, newValue: ProductVariantJson | null) => {
+                        onChange={(
+                            event: React.SyntheticEvent,
+                            newValue: ProductVariantJson | null,
+                        ) => {
                             setVariant(newValue);
                         }}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
-                                placeholder={product ? "Select variant..." : "Select a product first"}
+                                placeholder={
+                                    product ? "Select variant..." : "Select a product first"
+                                }
                                 size="small"
                             />
                         )}
@@ -202,7 +249,7 @@ export const TransactionItemDialog: FC<TransactionItemDialogProps> = ({
                     </Stack>
 
                     {/* ── Live formula chip ── */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <Typography variant="body2" sx={{ opacity: 0.6 }}>
                             {quantity} × {unitPrice.toFixed(2)} =
                         </Typography>
@@ -213,18 +260,16 @@ export const TransactionItemDialog: FC<TransactionItemDialogProps> = ({
                             sx={{ fontWeight: 700 }}
                         />
                     </Box>
-
                 </Stack>
             </DialogContent>
 
             <DialogActions>
-                {
-                    getActionButton(
-                        dialogType,
-                        onAddConfirm,
-                        `${dialogType} Item`,
-                        quantity === 0 || unitPrice === 0)
-                }
+                {getActionButton(
+                    dialogType,
+                    onAddConfirm,
+                    `${dialogType} Item`,
+                    quantity === 0 || unitPrice === 0,
+                )}
                 <Button variant="outlined" onClick={emptyForm}>
                     Cancel
                 </Button>

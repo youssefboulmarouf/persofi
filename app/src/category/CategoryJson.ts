@@ -33,7 +33,6 @@ export class CategoryJson {
             body.name,
             body.active,
             body.parentCategoryId != null ? Number(body.parentCategoryId) : null,
-        )
+        );
     }
-
 }

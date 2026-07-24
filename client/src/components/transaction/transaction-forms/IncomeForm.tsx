@@ -1,16 +1,21 @@
-import React, {FC} from "react";
+import React, { FC } from "react";
 import FormLabel from "../../common/FormLabel";
-import {Autocomplete, TextField} from "@mui/material";
-import {AccountJson, AccountTypeEnum, ModalTypeEnum, TransactionJson} from "../../../model/PersofiModels";
+import { Autocomplete, TextField } from "@mui/material";
+import {
+    AccountJson,
+    AccountTypeEnum,
+    ModalTypeEnum,
+    TransactionJson,
+} from "../../../model/PersofiModels";
 import { useAccounts } from "../../../hooks/useAccounts";
 
 interface IncomeFormProps {
-    selectedTransaction: TransactionJson,
-    counterPartyAccount: AccountJson | null,
-    setCounterPartyAccount: (account: AccountJson | null) => void,
-    amount: number,
-    setAmount: (amount: number) => void,
-    dialogType: ModalTypeEnum,
+    selectedTransaction: TransactionJson;
+    counterPartyAccount: AccountJson | null;
+    setCounterPartyAccount: (account: AccountJson | null) => void;
+    amount: number;
+    setAmount: (amount: number) => void;
+    dialogType: ModalTypeEnum;
 }
 
 export const IncomeForm: FC<IncomeFormProps> = ({
@@ -19,15 +24,13 @@ export const IncomeForm: FC<IncomeFormProps> = ({
     setCounterPartyAccount,
     amount,
     setAmount,
-    dialogType
+    dialogType,
 }) => {
     const { data: accountsData } = useAccounts();
     const accounts = accountsData || [];
 
     // Credit accounts cannot receive income (backend rejects them)
-    const depositableAccounts = accounts.filter(
-        a => a.accountType !== AccountTypeEnum.CREDIT
-    );
+    const depositableAccounts = accounts.filter((a) => a.accountType !== AccountTypeEnum.CREDIT);
 
     const isReadOnly = dialogType === ModalTypeEnum.DELETE || selectedTransaction.processed;
 
@@ -41,7 +44,11 @@ export const IncomeForm: FC<IncomeFormProps> = ({
                 value={counterPartyAccount}
                 onChange={(e, nv) => setCounterPartyAccount(nv)}
                 renderInput={(params) => (
-                    <TextField {...params} fullWidth placeholder="Search Debit / Cash / Saving account..." />
+                    <TextField
+                        {...params}
+                        fullWidth
+                        placeholder="Search Debit / Cash / Saving account..."
+                    />
                 )}
                 size="small"
                 disabled={isReadOnly}
@@ -60,4 +67,4 @@ export const IncomeForm: FC<IncomeFormProps> = ({
             />
         </>
     );
-}
+};

@@ -1,7 +1,7 @@
 import React from "react";
-import {Autocomplete, Checkbox, FormControlLabel, Stack, TextField} from "@mui/material";
+import { Autocomplete, Checkbox, FormControlLabel, Stack, TextField } from "@mui/material";
 import TableSearch from "../common/TableSearch";
-import {AccountTypeEnum} from "../../model/PersofiModels";
+import { AccountTypeEnum } from "../../model/PersofiModels";
 
 interface FilterProps {
     searchTerm: string;
@@ -19,16 +19,14 @@ const AccountsFilter: React.FC<AccountFiltersProps> = ({ filters, setFilters }) 
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <TableSearch
                 searchTerm={filters.searchTerm}
-                setSearchTerm={(newValue) =>
-                    setFilters({ ...filters, searchTerm: newValue || "" })
-                }
+                setSearchTerm={(newValue) => setFilters({ ...filters, searchTerm: newValue || "" })}
             />
             <Autocomplete
                 options={[
                     AccountTypeEnum.CASH,
                     AccountTypeEnum.CREDIT,
                     AccountTypeEnum.DEBIT,
-                    AccountTypeEnum.SAVING
+                    AccountTypeEnum.SAVING,
                 ]}
                 value={filters.accountType}
                 getOptionKey={(options) => options}
@@ -45,7 +43,7 @@ const AccountsFilter: React.FC<AccountFiltersProps> = ({ filters, setFilters }) 
                     <Checkbox
                         checked={filters.active}
                         onChange={(e) => {
-                            setFilters({...filters, active: e.target.checked })
+                            setFilters({ ...filters, active: e.target.checked });
                         }}
                     />
                 }
@@ -53,6 +51,6 @@ const AccountsFilter: React.FC<AccountFiltersProps> = ({ filters, setFilters }) 
             />
         </Stack>
     );
-}
+};
 
 export default AccountsFilter;

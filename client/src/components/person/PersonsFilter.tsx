@@ -17,9 +17,7 @@ const PersonsFilter: React.FC<PersonFiltersProps> = ({ filters, setFilters }) =>
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
             <TableSearch
                 searchTerm={filters.searchTerm}
-                setSearchTerm={(newValue) =>
-                  setFilters({ ...filters, searchTerm: newValue || "" })
-                }
+                setSearchTerm={(newValue) => setFilters({ ...filters, searchTerm: newValue || "" })}
             />
 
             <FormControlLabel

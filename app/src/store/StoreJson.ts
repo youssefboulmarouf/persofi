@@ -26,12 +26,6 @@ export class StoreJson {
     }
 
     public static from(body: any): StoreJson {
-        return new StoreJson(
-            Number(body.id),
-            body.name,
-            body.url,
-            body.active,
-        )
+        return new StoreJson(Number(body.id), body.name, body.url, body.active);
     }
-
 }

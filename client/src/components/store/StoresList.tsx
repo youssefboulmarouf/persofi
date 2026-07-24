@@ -1,12 +1,11 @@
-
 import React from "react";
 import Typography from "@mui/material/Typography";
-import {Table, TableBody, TableCell, TableHead, TableRow} from "@mui/material";
+import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import EditButton from "../common/buttons/EditButton";
 import DeleteButton from "../common/buttons/DeleteButton";
-import {usePaginationController} from "../common/usePaginationController";
+import { usePaginationController } from "../common/usePaginationController";
 import Pagination from "../common/Pagination";
-import {ModalTypeEnum, StoreJson} from "../../model/PersofiModels";
+import { ModalTypeEnum, StoreJson } from "../../model/PersofiModels";
 import LoadingComponent from "../common/LoadingComponent";
 import IconButton from "@mui/material/IconButton";
 import CheckIcon from "@mui/icons-material/Check";
@@ -18,7 +17,11 @@ interface StoresListProps {
     isLoading: boolean;
 }
 
-export const StoresList: React.FC<StoresListProps> = ({stores, openDialogWithType, isLoading}) => {
+export const StoresList: React.FC<StoresListProps> = ({
+    stores,
+    openDialogWithType,
+    isLoading,
+}) => {
     const paginationController = usePaginationController<StoreJson>(stores);
 
     if (isLoading) return <LoadingComponent message="Loading Accounts" />;
@@ -28,11 +31,31 @@ export const StoresList: React.FC<StoresListProps> = ({stores, openDialogWithTyp
         <Table>
             <TableHead>
                 <TableRow>
-                    <TableCell><Typography variant="h6" fontSize="14px">Id</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Store Name</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">URL</Typography></TableCell>
-                    <TableCell><Typography variant="h6" fontSize="14px">Active</Typography></TableCell>
-                    <TableCell align="right"><Typography variant="h6" fontSize="14px">Actions</Typography></TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Id
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Store Name
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            URL
+                        </Typography>
+                    </TableCell>
+                    <TableCell>
+                        <Typography variant="h6" fontSize="14px">
+                            Active
+                        </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                        <Typography variant="h6" fontSize="14px">
+                            Actions
+                        </Typography>
+                    </TableCell>
                 </TableRow>
             </TableHead>
 
@@ -44,21 +67,21 @@ export const StoresList: React.FC<StoresListProps> = ({stores, openDialogWithTyp
                         <TableCell>{store.url}</TableCell>
                         <TableCell>
                             <IconButton color={store.active ? "success" : "error"}>
-                                {store.active ? (
-                                    <CheckIcon width={22} />
-                                ) : (
-                                    <ClearIcon width={22} />
-                                )}
+                                {store.active ? <CheckIcon width={22} /> : <ClearIcon width={22} />}
                             </IconButton>
                         </TableCell>
                         <TableCell align="right">
                             <EditButton
                                 tooltipText={"Edit Store"}
-                                openDialogWithType={() => openDialogWithType(ModalTypeEnum.UPDATE, store)}
+                                openDialogWithType={() =>
+                                    openDialogWithType(ModalTypeEnum.UPDATE, store)
+                                }
                             />
                             <DeleteButton
                                 tooltipText={"Delete Store"}
-                                openDialogWithType={() => openDialogWithType(ModalTypeEnum.DELETE, store)}
+                                openDialogWithType={() =>
+                                    openDialogWithType(ModalTypeEnum.DELETE, store)
+                                }
                             />
                         </TableCell>
                     </TableRow>
@@ -67,4 +90,4 @@ export const StoresList: React.FC<StoresListProps> = ({stores, openDialogWithTyp
             <Pagination paginationController={paginationController} />
         </Table>
     );
-}
+};

@@ -18,7 +18,7 @@ router.get(
         res.setHeader("Content-Type", "application/json");
         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
         res.status(200).json(data);
-    })
+    }),
 );
 
 /**
@@ -31,7 +31,7 @@ router.post(
     handleAsync(async (req: Request, res: Response) => {
         await backupService.importAll(req.body);
         res.status(200).json({ message: "Restore completed successfully." });
-    })
+    }),
 );
 
 export default router;

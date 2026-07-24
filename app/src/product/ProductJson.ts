@@ -28,12 +28,6 @@ export class ProductJson {
     }
 
     public static from(body: any): ProductJson {
-        return new ProductJson(
-            Number(body.id),
-            body.name,
-            body.active,
-            body.categoryId,
-        )
+        return new ProductJson(Number(body.id), body.name, body.active, body.categoryId);
     }
-
 }

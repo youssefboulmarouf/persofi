@@ -16,6 +16,6 @@ export function TransactionTypeFromString(type: string): TransactionTypeEnum {
     throw new AppError(
         "Runtime Error",
         500,
-        `Invalid TransactionTypeEnum value: ${type}. Expected 'Expense', 'Income', 'Credit_Payment', 'Refund'.`
+        `Invalid TransactionTypeEnum value: ${type}. Expected 'Expense', 'Income', 'Credit_Payment', 'Refund'.`,
     );
 }

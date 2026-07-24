@@ -1,14 +1,13 @@
-
-import {StoreJson} from "../model/PersofiModels";
+import { StoreJson } from "../model/PersofiModels";
 
 export const fetchStores = async (): Promise<StoreJson[]> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/stores`);
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to fetch stores');
+        throw new Error("Failed to fetch stores");
     }
     return res.json();
-}
+};
 
 export const createStore = async (storeJson: StoreJson): Promise<StoreJson> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/stores`, {
@@ -18,7 +17,7 @@ export const createStore = async (storeJson: StoreJson): Promise<StoreJson> => {
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to create store');
+        throw new Error("Failed to create store");
     }
     return res.json();
 };
@@ -31,7 +30,7 @@ export const updateStore = async (storeJson: StoreJson): Promise<StoreJson> => {
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to update store');
+        throw new Error("Failed to update store");
     }
     return res.json();
 };
@@ -42,6 +41,6 @@ export const deleteStore = async (storeJson: StoreJson): Promise<void> => {
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error('Failed to delete store');
+        throw new Error("Failed to delete store");
     }
 };

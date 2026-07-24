@@ -2,15 +2,15 @@ import Chart from "react-apexcharts";
 import React from "react";
 import { ApexOptions } from "apexcharts";
 import { Card, CardContent, CardHeader, Divider } from "@mui/material";
-import {useTheme} from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 
 interface MultyStatsChartProps {
     title: string;
     categories: string[];
-    series: {name: string, data: number[]}[];
+    series: { name: string; data: number[] }[];
 }
 
-const DashboardBarChart: React.FC<MultyStatsChartProps> = ({title, categories, series}) => {
+const DashboardBarChart: React.FC<MultyStatsChartProps> = ({ title, categories, series }) => {
     const theme = useTheme();
     const primary = theme.palette.primary.main;
     const primarylight = theme.palette.grey[100];
@@ -18,7 +18,7 @@ const DashboardBarChart: React.FC<MultyStatsChartProps> = ({title, categories, s
     const options: ApexOptions = {
         chart: {
             height: 350,
-            type: 'bar',
+            type: "bar",
             foreColor: "#adb0bb",
             toolbar: { show: false },
         },
@@ -26,7 +26,7 @@ const DashboardBarChart: React.FC<MultyStatsChartProps> = ({title, categories, s
         plotOptions: {
             bar: {
                 borderRadius: 4,
-                columnWidth: '45%',
+                columnWidth: "45%",
                 distributed: true,
             },
         },

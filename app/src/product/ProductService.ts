@@ -1,9 +1,9 @@
-import {BaseService} from "../utilities/BaseService";
-import {ProductJson} from "./ProductJson";
+import { BaseService } from "../utilities/BaseService";
+import { ProductJson } from "./ProductJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import BadRequestError from "../utilities/errors/BadRequestError";
-import {ProductVariantJson} from "../product-variant/ProductVariantJson";
-import {ProductVariantService} from "../product-variant/ProductVariantService";
+import { ProductVariantJson } from "../product-variant/ProductVariantJson";
+import { ProductVariantService } from "../product-variant/ProductVariantService";
 
 export class ProductService extends BaseService {
     private readonly productVariantService: ProductVariantService;
@@ -21,7 +21,7 @@ export class ProductService extends BaseService {
         this.logger.log(`Get product by [id:${id}]`);
 
         const data = await this.prisma.product.findUnique({
-            where: { id }
+            where: { id },
         });
 
         NotFoundError.throwIf(!data, `Product with [id:${id}] not found`);
@@ -37,9 +37,9 @@ export class ProductService extends BaseService {
                 data: {
                     name: product.getName(),
                     categoryId: product.getCategoryId(),
-                    active: true
-                }
-            })
+                    active: true,
+                },
+            }),
         );
     }
 
@@ -52,29 +52,33 @@ export class ProductService extends BaseService {
         this.logger.log(`Update existing product`, existingProduct);
         this.logger.log(`Product updated data`, product);
 
-
         return ProductJson.from(
             await this.prisma.product.update({
                 where: { id },
                 data: {
                     name: product.getName(),
                     categoryId: product.getCategoryId(),
-                    active: product.isActive()
-                }
-            })
+                    active: product.isActive(),
+                },
+            }),
         );
     }
 
     async delete(id: number): Promise<void> {
         this.logger.log(`Delete product with [id=${id}]`);
 
-        const productVariants: ProductVariantJson[] = await this.productVariantService.getByProductId(id);
+        const productVariants: ProductVariantJson[] =
+            await this.productVariantService.getByProductId(id);
 
         this.logger.log(`Delete variant of product with [id=${id}]`);
-        await Promise.all(productVariants.map(async (variant) => await this.productVariantService.delete(variant.getId())))
+        await Promise.all(
+            productVariants.map(
+                async (variant) => await this.productVariantService.delete(variant.getId()),
+            ),
+        );
 
         await this.prisma.product.delete({
-            where: { id }
-        })
+            where: { id },
+        });
     }
 }

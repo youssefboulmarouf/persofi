@@ -1,19 +1,24 @@
-import React, {FC} from "react";
+import React, { FC } from "react";
 import {
-    Autocomplete, Chip, Stack,
+    Autocomplete,
+    Chip,
+    Stack,
     Table,
     TableBody,
     TableCell,
     TableHead,
-    TableRow, TextField, Typography
+    TableRow,
+    TextField,
+    Typography,
 } from "@mui/material";
 import FormLabel from "../../common/FormLabel";
 import {
     AccountJson,
-    ModalTypeEnum, PersonJson,
+    ModalTypeEnum,
+    PersonJson,
     StoreJson,
     TransactionItemJson,
-    TransactionJson
+    TransactionJson,
 } from "../../../model/PersofiModels";
 import TableCallToActionButton from "../../common/TableCallToActionButton";
 import { useAccounts } from "../../../hooks/useAccounts";
@@ -22,24 +27,24 @@ import { usePersons } from "../../../hooks/usePersons";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import ClearIcon from "@mui/icons-material/Clear";
-import {uniqueId} from "lodash";
+import { uniqueId } from "lodash";
 
 interface ExpenseFormProps {
-    selectedTransaction: TransactionJson,
-    payAccount: AccountJson | null,
-    setPayAccount: (account: AccountJson | null) => void,
-    store: StoreJson | null,
-    setStore: (store: StoreJson | null) => void,
-    person: PersonJson | null,
-    setPerson: (person: PersonJson | null) => void,
-    items: TransactionItemJson[],
-    subtotal: number,
-    taxTotal: number,
-    grandTotal: number,
-    setTaxTotal: (tax: number) => void,
-    handleRemoveItem: (itemToRemove: TransactionItemJson) => void,
-    openItemDialogWithType: (type: ModalTypeEnum, item: TransactionItemJson) => void,
-    dialogType: ModalTypeEnum,
+    selectedTransaction: TransactionJson;
+    payAccount: AccountJson | null;
+    setPayAccount: (account: AccountJson | null) => void;
+    store: StoreJson | null;
+    setStore: (store: StoreJson | null) => void;
+    person: PersonJson | null;
+    setPerson: (person: PersonJson | null) => void;
+    items: TransactionItemJson[];
+    subtotal: number;
+    taxTotal: number;
+    grandTotal: number;
+    setTaxTotal: (tax: number) => void;
+    handleRemoveItem: (itemToRemove: TransactionItemJson) => void;
+    openItemDialogWithType: (type: ModalTypeEnum, item: TransactionItemJson) => void;
+    dialogType: ModalTypeEnum;
 }
 
 const emptyItem: TransactionItemJson = {
@@ -69,7 +74,7 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
     subtotal,
     taxTotal,
     setTaxTotal,
-    grandTotal
+    grandTotal,
 }) => {
     const { data: accountsData } = useAccounts();
     const accounts = accountsData || [];
@@ -86,7 +91,7 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
         <>
             {/* ── Account / Store / Person row ── */}
             <Stack direction="row" spacing={1} justifyContent="space-between">
-                <Box sx={{ width: '100%' }}>
+                <Box sx={{ width: "100%" }}>
                     <FormLabel>Pay Account</FormLabel>
                     <Autocomplete
                         options={accounts}
@@ -102,29 +107,43 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
                     />
                 </Box>
 
-                <Box sx={{ width: '100%' }}>
-                    <FormLabel>Store <span style={{ fontWeight: 400, opacity: 0.55, fontSize: '0.8em' }}>(optional)</span></FormLabel>
+                <Box sx={{ width: "100%" }}>
+                    <FormLabel>
+                        Store{" "}
+                        <span style={{ fontWeight: 400, opacity: 0.55, fontSize: "0.8em" }}>
+                            (optional)
+                        </span>
+                    </FormLabel>
                     <Autocomplete
                         options={stores}
                         getOptionLabel={(opt: StoreJson) => opt.name}
                         getOptionKey={(opt: StoreJson) => opt.id}
                         value={store}
                         onChange={(e, nv) => setStore(nv)}
-                        renderInput={(params) => <TextField {...params} fullWidth placeholder="Search store..." />}
+                        renderInput={(params) => (
+                            <TextField {...params} fullWidth placeholder="Search store..." />
+                        )}
                         size="small"
                         disabled={isReadOnly}
                     />
                 </Box>
 
-                <Box sx={{ width: '100%' }}>
-                    <FormLabel>Person <span style={{ fontWeight: 400, opacity: 0.55, fontSize: '0.8em' }}>(optional)</span></FormLabel>
+                <Box sx={{ width: "100%" }}>
+                    <FormLabel>
+                        Person{" "}
+                        <span style={{ fontWeight: 400, opacity: 0.55, fontSize: "0.8em" }}>
+                            (optional)
+                        </span>
+                    </FormLabel>
                     <Autocomplete
                         options={persons}
                         getOptionLabel={(opt: PersonJson) => opt.name}
                         getOptionKey={(opt: PersonJson) => opt.id}
                         value={person}
                         onChange={(e, nv) => setPerson(nv)}
-                        renderInput={(params) => <TextField {...params} fullWidth placeholder="Search person..." />}
+                        renderInput={(params) => (
+                            <TextField {...params} fullWidth placeholder="Search person..." />
+                        )}
                         size="small"
                         disabled={isReadOnly}
                     />
@@ -133,7 +152,7 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
 
             {/* ── Tax + totals row ── */}
             <Stack direction="row" spacing={1} alignItems="flex-end" mt={1}>
-                <Box sx={{ width: '33%' }}>
+                <Box sx={{ width: "33%" }}>
                     <FormLabel>Tax Total</FormLabel>
                     <TextField
                         type="number"
@@ -147,7 +166,7 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
                         inputProps={{ min: 0, step: 0.01 }}
                     />
                 </Box>
-                <Box sx={{ flex: 1, display: 'flex', gap: 2, pb: '22px' }}>
+                <Box sx={{ flex: 1, display: "flex", gap: 2, pb: "22px" }}>
                     <Chip
                         label={`Subtotal: ${subtotal.toFixed(2)}`}
                         variant="outlined"
@@ -165,13 +184,17 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
             <Box mt={1}>
                 <TableCallToActionButton
                     fullwidth={true}
-                    callToActionText={items.length > 0 ? `Add Item  (${items.length} added)` : "Add Item"}
-                    callToActionFunction={() => openItemDialogWithType(ModalTypeEnum.ADD, emptyItem)}
+                    callToActionText={
+                        items.length > 0 ? `Add Item  (${items.length} added)` : "Add Item"
+                    }
+                    callToActionFunction={() =>
+                        openItemDialogWithType(ModalTypeEnum.ADD, emptyItem)
+                    }
                 />
             </Box>
 
             {/* ── Items table ── */}
-            <Box sx={{overflowX: "auto"}} mt={1}>
+            <Box sx={{ overflowX: "auto" }} mt={1}>
                 <Table size="small">
                     <TableHead>
                         <TableRow>
@@ -186,7 +209,9 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
                         {items.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} align="center" sx={{ py: 3, opacity: 0.45 }}>
-                                    <Typography variant="body2">No items yet — click Add Item above</Typography>
+                                    <Typography variant="body2">
+                                        No items yet — click Add Item above
+                                    </Typography>
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -202,7 +227,7 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
                                             onClick={() => handleRemoveItem(it)}
                                             disabled={isReadOnly}
                                         >
-                                            <ClearIcon width={22}/>
+                                            <ClearIcon width={22} />
                                         </IconButton>
                                     </TableCell>
                                 </TableRow>
@@ -213,4 +238,4 @@ export const ExpenseForm: FC<ExpenseFormProps> = ({
             </Box>
         </>
     );
-}
+};

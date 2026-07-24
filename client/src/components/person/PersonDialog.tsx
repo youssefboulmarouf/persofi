@@ -1,10 +1,18 @@
 import { FC, useEffect, useState } from "react";
-import { Dialog, DialogActions, DialogContent, DialogTitle, Stack, Switch, TextField } from "@mui/material";
+import {
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Stack,
+    Switch,
+    TextField,
+} from "@mui/material";
 import Button from "@mui/material/Button";
 import LoadingComponent from "../common/LoadingComponent";
 import FormLabel from "../common/FormLabel";
 import { getActionButton } from "../common/Utilities";
-import {ModalTypeEnum, PersonJson} from "../../model/PersofiModels";
+import { ModalTypeEnum, PersonJson } from "../../model/PersofiModels";
 import { useAddPerson, useUpdatePerson, useDeletePerson } from "../../hooks/usePersons";
 import { useTransactions } from "../../hooks/useTransactions";
 
@@ -28,7 +36,7 @@ export const PersonDialog: FC<PersonDialogProps> = ({
     const { mutateAsync: addPerson } = useAddPerson();
     const { mutateAsync: updatePerson } = useUpdatePerson();
     const { mutateAsync: deletePerson } = useDeletePerson();
-    
+
     const { data: transactionsData } = useTransactions();
     const transactions = transactionsData || [];
 
@@ -44,12 +52,12 @@ export const PersonDialog: FC<PersonDialogProps> = ({
         setIsActive(true);
 
         closeDialog();
-    }
+    };
 
     const handleSubmit = async () => {
         if (!personName) {
             // show error
-            console.log(`Missing personName`)
+            console.log(`Missing personName`);
             return;
         }
 
@@ -69,19 +77,22 @@ export const PersonDialog: FC<PersonDialogProps> = ({
                     active: isActive,
                 });
             } else if (dialogType === ModalTypeEnum.DELETE) {
-                const personTransactions = transactions
-                    .filter(tr => tr.personId == selectedPerson.id);
-                console.log(`personTransactions: ${personTransactions.length}`)
+                const personTransactions = transactions.filter(
+                    (tr) => tr.personId == selectedPerson.id,
+                );
+                console.log(`personTransactions: ${personTransactions.length}`);
 
                 if (personTransactions.length > 0) {
-                    console.log(`Person with [id=${selectedPerson.id}] have ${personTransactions.length} transactions, deactivate instead of delete`)
+                    console.log(
+                        `Person with [id=${selectedPerson.id}] have ${personTransactions.length} transactions, deactivate instead of delete`,
+                    );
                     await updatePerson({
                         id: selectedPerson.id,
                         name: personName.trim(),
                         active: false,
                     });
                 } else {
-                  await deletePerson(selectedPerson);
+                    await deletePerson(selectedPerson);
                 }
             }
             emptyForm();
@@ -93,15 +104,25 @@ export const PersonDialog: FC<PersonDialogProps> = ({
     };
 
     return (
-        <Dialog open={openDialog} onClose={() => emptyForm()} PaperProps={{sx: {width: '500px', maxWidth: '500px'}}}>
-            <DialogTitle sx={{ mt: 2 }}>{dialogType} Person: {selectedPerson.name}</DialogTitle>
+        <Dialog
+            open={openDialog}
+            onClose={() => emptyForm()}
+            PaperProps={{ sx: { width: "500px", maxWidth: "500px" } }}
+        >
+            <DialogTitle sx={{ mt: 2 }}>
+                {dialogType} Person: {selectedPerson.name}
+            </DialogTitle>
             <DialogContent>
                 {isLoading ? (
                     <LoadingComponent message={"Loading Persons..."} />
                 ) : (
                     <Stack spacing={2}>
                         <FormLabel>Id</FormLabel>
-                        <TextField fullWidth value={selectedPerson.id === 0 ? "" : selectedPerson.id} disabled />
+                        <TextField
+                            fullWidth
+                            value={selectedPerson.id === 0 ? "" : selectedPerson.id}
+                            disabled
+                        />
 
                         <FormLabel>Name</FormLabel>
                         <TextField
@@ -113,23 +134,25 @@ export const PersonDialog: FC<PersonDialogProps> = ({
 
                         <FormLabel>Active</FormLabel>
                         <Stack direction="row" alignItems="center" spacing={1}>
-                          <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                            <Switch
+                                checked={isActive}
+                                onChange={(e) => setIsActive(e.target.checked)}
+                            />
                         </Stack>
                     </Stack>
                 )}
             </DialogContent>
             <DialogActions>
-                {
-                    getActionButton(
-                        dialogType,
-                        handleSubmit,
-                        `${dialogType} Person`,
-                        personName === "" || isLoading)
-                }
+                {getActionButton(
+                    dialogType,
+                    handleSubmit,
+                    `${dialogType} Person`,
+                    personName === "" || isLoading,
+                )}
                 <Button variant="outlined" onClick={emptyForm}>
-                  Cancel
+                    Cancel
                 </Button>
             </DialogActions>
-    </Dialog>
-  );
+        </Dialog>
+    );
 };

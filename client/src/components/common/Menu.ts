@@ -1,4 +1,4 @@
-import {uniqueId} from "lodash";
+import { uniqueId } from "lodash";
 
 export interface Menu {
     id: string;
@@ -11,63 +11,65 @@ export const appMenuItems: Menu[] = [
         id: uniqueId(),
         title: "Dashboard",
         href: "/",
-    }
+    },
 ];
 
 export const transactionMenuItems: Menu[] = [
     {
         id: uniqueId(),
         title: "Transactions",
-        href: "/transactions"
-    }
+        href: "/transactions",
+    },
 ];
 
 export const financeMenuItems: Menu[] = [
     {
         id: uniqueId(),
         title: "Accounts",
-        href: "/accounts"
-    }
+        href: "/accounts",
+    },
 ];
 
 export const peopleMenuItems: Menu[] = [
     {
         id: uniqueId(),
         title: "Persons",
-        href: "/persons"
-    }
+        href: "/persons",
+    },
 ];
 
 export const catalogMenuItems: Menu[] = [
     {
         id: uniqueId(),
         title: "Categories",
-        href: "/categories"
-    },{
+        href: "/categories",
+    },
+    {
         id: uniqueId(),
         title: "Products",
-        href: "/products"
-    },{
+        href: "/products",
+    },
+    {
         id: uniqueId(),
         title: "Brands",
-        href: "/brands"
-    }
+        href: "/brands",
+    },
 ];
 
 export const storeMenuItems: Menu[] = [
     {
         id: uniqueId(),
         title: "Stores",
-        href: "/stores"
-    }
+        href: "/stores",
+    },
 ];
 
 export const settingsMenuItems: Menu[] = [
     {
         id: uniqueId(),
         title: "Settings",
-        href: "/settings"
-    }
+        href: "/settings",
+    },
 ];
 
 export interface ProfileType {
@@ -82,6 +84,6 @@ export const profileMenuItem: ProfileType[] = [
         href: "/",
         title: "My Profile",
         subtitle: "Account Settings",
-        icon: ""
-    }
+        icon: "",
+    },
 ];
