@@ -173,7 +173,7 @@ describe("Products API", () => {
     it("POST /api/variants → creates a variant for the product", async () => {
         const res = await request(app)
             .post(`/api/variants`)
-            .send({ productId, unitSize: 1.0, unitType: "kg", description: "1kg bag", active: true });
+            .send({ productId, unitSize: 1.0, unitType: "Kg", description: "1kg bag", active: true });
 
         expect(res.status).toBe(201);
         expect(res.body.productId).toBe(productId);

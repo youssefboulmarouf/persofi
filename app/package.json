@@ -6,7 +6,7 @@
     "start": "export NODE_ENV=dev; nodemon src/index.ts",
     "dev": "ts-node src/index.ts",
     "build": "tsc",
-    "test": "export NODE_ENV=test && dotenv -e .env.test -- npx prisma migrate reset --force --skip-seed && dotenv -e .env.test -- npx prisma db seed && dotenv -e .env.test -- jest --runInBand",
+    "test": "NODE_ENV=test jest --runInBand",
     "github-test": "NODE_ENV=test jest --runInBand",
     "init-db": "npx prisma migrate dev --name init",
     "seed-db": "npx prisma db seed"

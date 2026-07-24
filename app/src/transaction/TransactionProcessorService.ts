@@ -111,23 +111,26 @@ export class TransactionProcessorService extends BaseService {
             await this.balanceService.getLatestBalanceOfAccount(counterPartyAccount.getId());
             BadRequestError.throwIf(true, `Balance already exists for account [id=${counterPartyAccount.getId()}]`);
         } catch (e: any) {
-            if (e instanceof BadRequestError && e.message.includes("try to initialize it first")) {
-                await this.balanceService.updateAccountBalance(
-                    transaction.getAmount(),
-                    transaction.getDate(),
-                    transaction.getId(),
-                    counterPartyAccount.getId()
-                );
-            } else {
-                throw new AppError(
-                    "Runtime Error",
-                    500,
-                    `Unable to initialize balance for account [id=${counterPartyAccount.getId()}]. ` + e.message
-                );
+            if (e instanceof BadRequestError) {
+                if (e.message.includes("try to initialize it first")) {
+                    await this.balanceService.updateAccountBalance(
+                        transaction.getAmount(),
+                        transaction.getDate(),
+                        transaction.getId(),
+                        counterPartyAccount.getId()
+                    );
+                    return;
+                }
+
+                throw e;
             }
+
+            throw new AppError(
+                "Runtime Error",
+                500,
+                `Unable to initialize balance for account [id=${counterPartyAccount.getId()}]. ` + e.message
+            );
         }
-
-
     }
 
 }
