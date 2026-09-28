@@ -1,6 +1,10 @@
 # persofi
 Personal Finance Web Application
 
+## Documentation
+
+Start with the [documentation index](docs/README.md) or the active [roadmap](docs/ROADMAP.md).
+
 ## Environment variables
 
 Copy `app/.env.example` to `app/.env` and `client/.env.example` to
@@ -9,7 +13,7 @@ Copy `app/.env.example` to `app/.env` and `client/.env.example` to
 
 The full variable contract (what each variable does, whether it's required
 in production, defaults, and rotation guidance) is documented in
-[`docs/operations/STAB_005_ENV_CONTRACT.md`](docs/operations/STAB_005_ENV_CONTRACT.md).
+[`docs/OPERATIONS.md#environment-variables`](docs/OPERATIONS.md#environment-variables).
 
 ## Running tests
 
@@ -19,4 +23,4 @@ scripts/run-backend-tests.sh
 
 Runs the full backend Jest suite against a disposable MySQL database created
 solely for the run. See
-[`docs/operations/STAB_003_TEST_HARNESS.md`](docs/operations/STAB_003_TEST_HARNESS.md).
+[`docs/OPERATIONS.md#backend-integration-tests`](docs/OPERATIONS.md#backend-integration-tests).

@@ -1,5 +1,5 @@
 // Required environment variables for a production API process. Keep this list
-// limited to variables the backend actually reads (see docs/operations/STAB_005_ENV_CONTRACT.md).
+// limited to variables the backend actually reads (see docs/OPERATIONS.md#environment-variables).
 const REQUIRED_PRODUCTION_VARIABLES = ["DATABASE_URL"] as const;
 
 export function validateEnv(): void {

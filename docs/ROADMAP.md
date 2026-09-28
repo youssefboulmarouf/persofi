@@ -1,91 +1,229 @@
-# Persofi Delivery Roadmap
+# Persofi Roadmap
 
-This roadmap converts the verified gaps into independently reviewable issues. The detailed copy-ready definitions and project configuration are in `GITHUB_PROJECT_BACKLOG.md`. No application implementation is included in this analysis baseline.
+> Revised: 2026-09-28
+> Product scope: personal, single-user, local-first finance application.
 
-## Initiatives and epics
+## Direction
 
-| Initiative | Epic | Outcome | Milestone |
-|---|---|---|---|
-| STAB-I01 Repository stabilization | STAB-E01 Reproducible development | Builds, tests, environment, and migrations are reproducible | M0 |
-| FIN-I01 Financial integrity | FIN-E01 Posting rules; FIN-E02 Atomic lifecycle | Every balance effect is deterministic, atomic, idempotent, and auditable | M2 |
-| AUTH-I01 Data access protection | AUTH-E01 Identity; AUTH-E02 Household authorization | Financial data is authenticated and household-isolated | M2 |
-| DOM-I01 Consumption domain | DOM-E01 Beneficiaries; DOM-E02 Itemization/catalog | Mixed-beneficiary and partial-item data remain correct | M1–M3 |
-| REC-I01 Receipt import | REC-E01 Safe drafts; REC-E02 Local extraction | Untrusted receipts create reviewable drafts only | M4–M5 |
-| OPS-I01 Production readiness | OPS-E01 Containers; OPS-E02 CI/security; OPS-E03 Deployment/recovery | Secure, observable, recoverable remote operation | M6–M8 |
+The roadmap is ordered by necessity rather than by architectural completeness.
 
-## Phase sequence
+1. Protect financial correctness.
+2. Make manual entry fast enough for daily use.
+3. Add human-reviewed receipt extraction.
+4. Learn mappings and remove repeated corrections.
+5. Optimize only the bottlenecks demonstrated by use.
+6. Activate security, local OCR, or remote operations only when their trigger exists.
 
-### Phase 0 — Repository stabilization (M0)
+The detailed tasks and acceptance criteria are in [EXECUTION_PLAN.md](EXECUTION_PLAN.md). Product priorities and deferred capabilities are in [FUTURE_ENHANCEMENTS.md](FUTURE_ENHANCEMENTS.md).
 
-`STAB-001` through `STAB-006`: capture a recoverable database baseline, commit a non-destructive Prisma baseline, make MySQL-backed tests reproducible, establish lint/type gates, document environment variables, and centralize Prisma lifecycle. This phase must precede schema work.
+## Current Position
 
-### Phase 1 — Domain-model correction (M1)
+| Stage | Status | Outcome |
+|---|---|---|
+| M0 - Repository stabilization | Complete | Recoverable baseline, migrations, test harness, quality gates, environment contract, shared Prisma client |
+| R1A - Financial guardrails | Next | Deterministic, atomic, retry-safe transaction processing |
+| R1B - Manual entry rescue | Planned | Quick expense entry, optional inline items, Save Draft, Save & Process |
+| R2A - Receipt foundation | Planned | Hosted extraction into strict, editable drafts |
+| R2B - Receipt trust and learning | Planned | Reconciliation, duplicate detection, aliases, atomic confirmation |
+| R3 - Measured optimization | Planned | Pagination, latest balances, and cache work justified by measurements |
+| F1-F5 - Triggered future tracks | Deferred | Reporting, local OCR, shared access, remote operations, advanced audit |
 
-`DOM-001` through `DOM-008`: add default/item beneficiaries, backfill deliberately, resolve effective beneficiary, model itemization and direct product references, and expose backward-compatible contracts. Preserve brands pending a measured usage decision.
+## Release 1 - Trustworthy Manual Entry
 
-### Phase 2 — Financial integrity and access control (M2)
+Goal: make Persofi useful again without requiring AI.
 
-`FIN-001` through `FIN-008` and `AUTH-001` through `AUTH-006`: define/test the posting matrix, correct refunds, make posting and draft updates atomic, add idempotency/concurrency, reversals/audit, authentication, household ownership, object authorization, and HTTP controls.
+### R1A - Financial Guardrails
 
-### Phase 3 — UX and reporting (M3)
+- Approve a posting matrix for every transaction type.
+- Centralize decimal-safe signed balance effects.
+- Make create, item replacement, process, and create-and-process atomic.
+- Make retries idempotent.
+- Prevent editing or deleting processed transactions.
+- Enforce remaining refundable amount.
+- Cover all rules and rollback paths with integration tests.
 
-`DOM-007` and `DOM-008` deliver optional item entry, per-item beneficiary editing, reconciliation, and coverage display. Corrected server-side financial metrics and coverage-qualified consumption metrics are acceptance outcomes of the financial and itemization epics; further dashboard refinements should be added as post-baseline issues after formulas are approved.
+Release gate:
 
-### Phase 4 — Receipt foundation (M4)
+- A failed operation leaves no partial transaction, item, or balance state.
+- Repeating the same process request cannot apply balances twice.
+- Every supported transaction type passes deterministic posting tests.
 
-`REC-001` through `REC-006`: strict draft schema, safe upload quarantine, aliases, duplicate scoring, reconciliation, and review/confirm UI/API. No extractor can write financial records.
+### R1B - Manual Entry Rescue
 
-### Phase 5 — Local OCR decision/integration (M5)
+- Add a dedicated responsive transaction workspace.
+- Require only date, account, and total for a quick expense.
+- Keep store, person, tax, category, notes, and itemization optional.
+- Replace item dialogs with inline rows.
+- Show allocated and unallocated amounts.
+- Remember common defaults and rank recent choices.
+- Add Save Draft and atomic Save & Process.
+- Preserve entered data after recoverable errors.
+- Fix newest-first ordering and expose drafts clearly.
+- Apply narrow query caching improvements.
 
-`SPIKE-001`, `REC-007`, `SEC-006`: benchmark representative generated/redacted receipts, implement only the selected bounded adapter, and test prompt/parser isolation.
+Release gate:
 
-### Phase 6 — Containerization (M6)
+- A simple expense can be entered and processed in under 20 seconds.
+- Detailed entry opens no nested item modal.
+- Income, transfer, credit payment, and refund remain functional.
+- The legacy form is removed only after parity is verified.
 
-`DEVOPS-001` through `DEVOPS-004`: non-root pinned images, secret-safe Compose with internal DB, explicit migration job, health checks and production proxy.
+## Release 2 - Receipt-Assisted Entry
 
-### Phase 7 — CI and security (M7)
+Goal: turn a receipt into a trustworthy draft that is faster to review than entering manually.
 
-`CI-001` through `CI-003` and `SEC-001` through `SEC-005`: build/test/migration/image validation plus distinct dependency, SAST, secret, container, Dockerfile and configuration scans.
+### R2A - Receipt Foundation
 
-### Phase 8 — Production deployment (M8)
+- Build a representative receipt evaluation set.
+- Define and runtime-validate a strict extraction schema.
+- Add ReceiptImport, StoreAlias, and ProductAlias persistence.
+- Introduce a provider-independent extraction interface.
+- Implement one hosted multimodal provider.
+- Validate receipt type, signature, size, dimensions, and page count.
+- Hash and store uploads temporarily using private random names.
+- Add upload, status, abandon, and retry endpoints.
+- Build side-by-side desktop and mobile review.
 
-`DEPLOY-001` through `DEPLOY-006`: platform decision, immutable deploy/rollback, encrypted backup/restore rehearsal, monitoring, runbook, and secure remote access validation.
+Release gate:
 
-## Critical path
+- A supported receipt produces an editable draft.
+- Invalid extraction output is rejected.
+- Failure can be retried or completed manually.
+- Extraction cannot create transactions or alter balances.
 
-`STAB-001 → STAB-002 → STAB-003 → FIN-001 → FIN-002 → FIN-003 → FIN-004 → AUTH-001 → AUTH-002 → AUTH-003 → DEVOPS-002 → CI-001 → CI-002 → DEPLOY-001 → DEPLOY-002 → DEPLOY-003 → DEPLOY-006`.
+### R2B - Trust, Confirmation, and Learning
 
-Production remains blocked until database recovery, migration reproducibility, atomic financial posting, authentication/authorization, secure containers, CI gates, TLS/secrets, and restore-tested deployment are complete.
+- Reconcile item arithmetic and receipt totals deterministically.
+- Show coverage, unallocated amounts, and required mismatches.
+- Detect exact and likely duplicates.
+- Match stores and products using confirmed aliases first.
+- Allow quick entity creation or unresolved raw descriptions.
+- Confirm the reviewed draft through the normal atomic posting path.
+- Learn aliases only from confirmed choices.
+- Delete confirmed images by default.
+- Add receipt metadata and aliases to backup and restore.
 
-## Parallelizable work
+Release gate:
 
-- After `STAB-002`, domain additive migrations and financial policy unit tests can proceed in parallel.
-- Identity implementation and posting-policy work can proceed in parallel, joining before object authorization integration tests.
-- Container hardening, scanner configuration, and documentation can proceed after scripts/build commands stabilize.
-- Receipt research can start after a synthetic dataset exists, but implementation waits for auth/ownership and safe storage.
-- Frontend beneficiary and itemization components can be built against approved API contracts while backend work proceeds.
+- Required amount mismatches are visible before confirmation.
+- Familiar receipt labels reuse confirmed mappings.
+- A typical receipt is reviewed and confirmed in under 60 seconds.
+- Backup and restore preserve mappings and receipt metadata.
 
-## Migration checkpoints
+## Release 3 - Measured Optimization
 
-Use MC0–MC5 from `architecture/GAP_ANALYSIS.md`. Every checkpoint requires a row-count/orphan/reconciliation report, a named backup, a restore result, and explicit go/no-go approval. Do not use `prisma migrate reset` on retained data.
+Goal: address observed delays without designing for hypothetical scale.
 
-## Release blockers
+Candidate work:
 
-All P0 issues, plus `DEVOPS-001`–`DEVOPS-004`, `CI-001`–`CI-003`, `SEC-001`–`SEC-005`, and `DEPLOY-001`–`DEPLOY-006`, block the first remotely accessible release. Receipt and OCR items do not.
+- Recent-first server pagination and transaction filters.
+- Latest-balance-per-account endpoint.
+- Separate current-balance and history queries.
+- Query-plan-driven indexes.
+- Draft persistence across accidental navigation.
+- Receipt cleanup and retry controls.
+- CSV transaction export.
 
-## Release coordination points
+Promotion rule:
 
-1. Freeze writes for MC0 baseline/restore verification if production data exists.
-2. Deploy nullable ownership columns before bootstrapping household identity.
-3. Deploy dual-compatible beneficiary fields before backfill and constraint enforcement.
-4. Reconcile all existing balances before enabling atomic posting.
-5. Take a verified backup immediately before each constraint-enforcing migration.
-6. Promote immutable images only after smoke tests; retain previous image and backup IDs.
+A candidate enters active work only when timing, query volume, failure frequency, or repeated user friction demonstrates the need.
 
-## Breaking changes
+## Critical Path
 
-Authentication, pagination/versioning, posted-transaction immutability, `personId` deprecation, and removal of startup seeding require coordinated client/API releases. Each uses a documented compatibility window rather than a flag-day schema change.
+    M0 complete
+       |
+       v
+    Posting matrix
+       |
+       v
+    Decimal-safe effect calculator
+       |
+       v
+    Atomic and retry-safe processing
+       |
+       v
+    Quick manual entry and inline items
+       |
+       v
+    Manual Release 1
+       |
+       v
+    Strict receipt draft and hosted provider
+       |
+       v
+    Review, reconciliation, duplicates, aliases
+       |
+       v
+    Receipt Release 2
+       |
+       v
+    Measured optimization
 
-## Post-MVP items
+Receipt dataset preparation and extraction-contract design may proceed while manual UX is built. Receipt confirmation cannot ship before atomic processing is complete.
 
-All M4/M5 OCR features, advanced product/store comparisons, semantic matching, Ollama, multi-role administration beyond minimum household membership, and brand retirement are postponable. The first secure release may support manual optional itemization only.
+## Future Tracks
+
+### F1 - Reporting and Convenience
+
+Trigger: Releases 1 and 2 meet their usability targets.
+
+- Monthly cash flow and tax history.
+- Historical balances and net worth.
+- Expense grouping and itemization coverage.
+- Budgets, CSV export, and price comparisons.
+
+### F2 - Local OCR
+
+Trigger: hosted extraction misses cost, privacy, latency, availability, or accuracy targets.
+
+- Benchmark local engines on the same receipt set.
+- Select by exact financial-field accuracy and maintenance cost.
+- Add only the winning adapter behind the existing provider interface.
+
+### F3 - Shared Access and Beneficiaries
+
+Trigger: another user or household needs access, or mixed-person item allocation becomes frequent.
+
+- Authentication and secure sessions.
+- Household ownership and object authorization.
+- Default and item-level beneficiaries.
+- Protected backup and browser request controls.
+
+### F4 - Remote Production Operations
+
+Trigger: access moves beyond a trusted local machine or network.
+
+- Hardened containers and internal networking.
+- Least-privilege credentials and managed secrets.
+- Controlled migrations, HTTPS, monitoring, and rollback.
+- Encrypted off-host backups and CI/security gates.
+
+### F5 - Advanced Audit and Reversal
+
+Trigger: multiple users, compliance, or detailed correction history requires it.
+
+- Immutable balance effects and audit events.
+- Reversal and replacement workflows.
+- Concurrency controls and exchange-rate records.
+
+## Scope Guardrails
+
+Do not delay Release 1 or Release 2 for:
+
+- Authentication or household ownership.
+- Local OCR.
+- Public deployment.
+- Kubernetes, n8n, or distributed services.
+- Comprehensive scanner pipelines.
+- Custom OCR training.
+- Dashboard expansion.
+- Full audit and reversal infrastructure.
+
+Always preserve:
+
+- Tracked migrations.
+- Restorable backups.
+- Backend-only provider credentials.
+- Upload limits and private temporary storage.
+- Atomic financial writes.
+- Human confirmation of extracted receipts.
