@@ -1,76 +1,114 @@
-- Dashboard
-    - Date Search Bar
+# Persofi Future Enhancements
 
-    Balances
-        - Balance per account types
-        - Historical balances per account types
-        - Balance per account
-        - Historical balances per account
+## Product Goal
 
-    Net Flow
-        - Expense
-        - Income
-        - Expense - Income
-        - Bar chart expense vs Income totale
-        - Bar chart expense vs Income by month
+Make Persofi easy enough to use consistently. Capturing a normal expense should take seconds, and importing a receipt should produce a trustworthy draft that only needs review and confirmation.
 
-    Expenses
-        - Total Expense (How much credit / How much debit)
-        - Expense per parent categories
-        - Expense per store
-        - Expense per person
+## Product Principles
 
-    Tax Paid
-        - how much tax paid
-        - historic tax paid
--App
-    - Transations
-        - CRUDS
-        - Filter by:
-            . Date
-            . Transaction Type
-            . Account Type
-            . Store
-            . Person
+- Optimize for one person using the application locally.
+- Reduce data-entry effort before adding more reporting features.
+- Keep manual transaction entry available and fast.
+- Treat AI output as an editable draft, never as confirmed financial data.
+- Validate amounts with deterministic calculations rather than AI confidence.
+- Learn store and product mappings from confirmed corrections.
+- Allow an item to remain unmapped when receipt text is ambiguous.
+- Preserve backups and data integrity even though advanced security is not a priority.
 
-- Settings
-    Finance
-    - Accounts
-        - CRUDS
-        - Filter by:
-            . Name
-            . Account Type
+## Priority 0 - Transaction Entry Usability
 
-    People
-    - Persons
-        - CRUDS
-        - Filter by:
-            . Name
+### Quick Manual Entry
 
-    Catalog
-    - Categories
-        - CRUDS
-        - Filter by:
-            . Name / Parent Name
-            . Is Parent
+- Provide two clear entry paths: Scan Receipt and Manual Entry.
+- Replace the large nested transaction/item dialogs with a focused entry workspace.
+- Default the date to today and remember the most recently used account and person.
+- Suggest recently used stores and accounts first.
+- Allow a simple expense with account, store, total, tax, and optional category.
+- Make itemization optional for manual expenses.
+- Edit item descriptions, quantities, prices, categories, and product mappings inline.
+- Support keyboard navigation and automatic focus for repeated entry.
+- Add Save Draft and Save & Process actions.
+- Preserve manual entry for income, transfer, credit payment, and refund transactions.
+- Show actionable validation and API errors in the interface.
 
-    - Products
-        - CRUDS
-        - Filter by:
-            . Product Name / Category Name
+### Transaction List
 
-    - Variants
-        - CRUDS
-        - Filter by:
-            . Variant Name / Product Name
+- Show newest transactions first.
+- Load recent transactions by default and paginate older history.
+- Add filters for date, transaction type, account type, store, person, and status.
+- Make unprocessed drafts easy to find and resume.
+- Provide a clear duplicate warning before saving likely duplicate expenses.
 
-    - Brands
-        - CRUDS
-        - Filter by:
-            . Name
+## Priority 1 - Receipt-Assisted Entry
 
-    Stores
-    - Stores
-        - CRUDS
-        - Filter by:
-            . Name
+### Receipt Capture and Extraction
+
+- Accept receipt photos and PDFs from desktop or mobile camera upload.
+- Correct common image orientation and quality problems before extraction.
+- Extract merchant name, date, currency, subtotal, tax, discounts, fees, total, and line items.
+- Return structured extraction results through a provider-independent backend interface.
+- Start with a hosted vision model for the first implementation.
+- Keep a local OCR provider as a future option if cost, privacy, or availability becomes a concern.
+- Keep AI credentials exclusively on the backend.
+
+### Review and Validation
+
+- Display the receipt beside an editable transaction draft.
+- Highlight uncertain, missing, inconsistent, and unmapped fields.
+- Verify quantity multiplied by unit price against each line total.
+- Verify item totals and adjustments against the subtotal.
+- Verify subtotal plus tax and fees against the receipt total.
+- Require account selection and user confirmation before processing.
+- Never automatically save and process a transaction directly from AI output.
+- Detect likely duplicate receipts using image hash, store, date, and total.
+- Permit confirmation only when required fields and arithmetic checks pass.
+
+### Store and Product Mapping Memory
+
+- Map normalized merchant text to an existing Persofi store.
+- Map receipt item text, scoped by store where possible, to product variants, categories, and brands.
+- Prefer previously confirmed aliases over fuzzy or AI suggestions.
+- Present ranked candidates when no confirmed mapping exists.
+- Remember corrections after a transaction is confirmed.
+- Allow explicit creation of a new store, product, or variant during review.
+- Allow unresolved items to retain their raw description without a product mapping.
+
+## Priority 2 - Reliability and Performance
+
+- Use one shared Prisma client and connection pool.
+- Use decimal-safe or epsilon-based monetary validation.
+- Make transaction creation and processing an atomic backend operation.
+- Prevent accidental modification or deletion of processed transactions.
+- Add query caching for accounts, stores, people, categories, products, and brands.
+- Avoid refetching the complete transaction history after every mutation.
+- Add server-side filtering and pagination to growing transaction and balance endpoints.
+- Add an endpoint for latest balances by account.
+- Improve loading, empty, retry, and failure states.
+- Add focused tests for manual entry, extraction validation, mapping, duplicates, and processing.
+
+## Priority 3 - Data Ownership
+
+- Keep full database export and restore support.
+- Add receipt-import metadata to backups.
+- Make receipt image retention configurable.
+- Default to deleting a receipt image after confirmation while retaining extracted text and mappings.
+- Document recovery steps and verify backup compatibility after schema changes.
+
+## Priority 4 - Reporting and Convenience
+
+- Historical balances grouped by account type.
+- Monthly expense versus income chart.
+- Expense split by credit versus debit account type.
+- Expense grouped by parent category.
+- Tax paid total and tax history.
+- Historical net worth chart.
+- CSV transaction export.
+- Monthly budget envelopes and budget-versus-actual reporting.
+
+## Deferred / Not Planned Initially
+
+- Authentication, authorization, and multi-user support.
+- Enterprise-grade security hardening.
+- Fully autonomous receipt ingestion without review.
+- Training a custom OCR or receipt model before evaluating an off-the-shelf provider.
+- Additional dashboard work before transaction entry is demonstrably easier.

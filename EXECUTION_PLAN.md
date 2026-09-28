@@ -1,307 +1,396 @@
-# Persofi — Execution Plan
+# Persofi - Execution Plan
 
-> Generated: 2026-05-10 | Based on technical review + FutureEnhancement backlog
+> Revised: 2026-09-28
+> Primary objective: remove transaction-entry friction and restore regular use of the application.
 
----
+## 1. Outcome and Success Measures
 
-## FutureEnhancement Status Map
+Persofi should make both manual and receipt-assisted entry quick, predictable, and safe to confirm.
 
-| Area | Feature | Status | Notes |
-|---|---|---|---|
-| **Dashboard** | Date Search Bar | ✅ Done | `DashboardFilter.tsx` |
-| **Dashboard / Balances** | Balance per account type | ✅ Done | `DashboardTopCards.tsx` typeSummaries |
-| **Dashboard / Balances** | Historical balances per account type | ❌ Missing | Historical chart is per individual account, not grouped by type |
-| **Dashboard / Balances** | Balance per account | ✅ Done | Accounts tab in `Dashboard.tsx` |
-| **Dashboard / Balances** | Historical balances per account | ✅ Done | MultyStatsChart "Historical Accounts Balances" |
-| **Dashboard / Net Flow** | Expense KPI | ✅ Done | |
-| **Dashboard / Net Flow** | Income KPI | ✅ Done | |
-| **Dashboard / Net Flow** | Expense – Income KPI | ✅ Done | "Net Cashflow" card |
-| **Dashboard / Net Flow** | Bar chart expense vs income total | ✅ Done | Transaction Breakdown bar chart |
-| **Dashboard / Net Flow** | Bar chart expense vs income by month | ❌ Missing | Daily cashflow exists; monthly grouping absent |
-| **Dashboard / Expenses** | Total expense (credit vs debit breakdown) | ❌ Missing | No split by account type on expense |
-| **Dashboard / Expenses** | Expense per parent category | ❌ Missing | Flat category breakdown only; no parent grouping |
-| **Dashboard / Expenses** | Expense per store | ✅ Done | Top Stores chart |
-| **Dashboard / Expenses** | Expense per person | ✅ Done | Spend by Person chart |
-| **Dashboard / Tax** | How much tax paid | ❌ Missing | `taxTotal` field exists on transactions; no widget |
-| **Dashboard / Tax** | Historic tax paid | ❌ Missing | |
-| **Transactions** | CRUDS | ✅ Done | |
-| **Transactions / Filters** | Filter by date | ✅ Done | |
-| **Transactions / Filters** | Filter by transaction type | ✅ Done — label bug | Dropdown labelled "Categories" instead of "Type" |
-| **Transactions / Filters** | Filter by account type | ❌ Missing | Not in `FilterProps` or the filter UI |
-| **Transactions / Filters** | Filter by store | ❌ Missing | |
-| **Transactions / Filters** | Filter by person | ❌ Missing | |
-| **Settings / Accounts** | CRUDS | ✅ Done | |
-| **Settings / Accounts** | Filter by name | ✅ Done | |
-| **Settings / Accounts** | Filter by account type | ✅ Done | |
-| **Settings / Persons** | CRUDS | ✅ Done | |
-| **Settings / Persons** | Filter by name | ✅ Done | |
-| **Settings / Categories** | CRUDS | ✅ Done | |
-| **Settings / Categories** | Filter by name / parent name | ✅ Done | |
-| **Settings / Categories** | Filter by "Is Parent" | ❌ Missing | Boolean flag not in filter UI |
-| **Settings / Products** | CRUDS | ✅ Done | |
-| **Settings / Products** | Filter by product name / category name | ✅ Done | |
-| **Settings / Variants** | CRUDS | ✅ Done | |
-| **Settings / Variants** | Filter by variant / product name | ✅ Done | |
-| **Settings / Brands** | CRUDS | ✅ Done | |
-| **Settings / Brands** | Filter by name | ✅ Done | |
-| **Settings / Stores** | CRUDS | ✅ Done | |
-| **Settings / Stores** | Filter by name | ✅ Done | |
+The first release is successful when:
 
-**9 items pending from FutureEnhancement.**
+- A simple manual expense can be entered and processed in under 20 seconds.
+- A typical receipt can be reviewed and confirmed in under 60 seconds.
+- Receipt imports always begin as unprocessed drafts.
+- Required fields and financial totals are deterministically validated before confirmation.
+- Previously confirmed store and product aliases are reused automatically.
+- Ambiguous mappings are visibly flagged rather than silently guessed.
+- The transaction list remains responsive as history grows.
+- Existing transaction processing and backup behavior remain covered by tests.
 
----
+## 2. Current State
 
-## Sprint 1 — Foundation & Critical Fixes
-> Security, data integrity, and the connection pool issue. Do these before anything else ships.
+### Working Today
 
-### Step 1 — Add MySQL Password `(S)`
-- `docker-compose.yml:9` — Replace `MYSQL_ALLOW_EMPTY_PASSWORD: "yes"` with `MYSQL_ROOT_PASSWORD: "${DB_PASSWORD}"`
-- `docker-compose.yml:27` — Update `DATABASE_URL` to `mysql://root:${DB_PASSWORD}@mysql:3306/persofi`
-- Add `.env.example` with `DB_PASSWORD=` and load it via `env_file` in both compose files
-- Apply the same change to `docker-compose.dev.yml`
+- CRUD flows exist for transactions, accounts, people, stores, categories, products, variants, and brands.
+- Expense, income, transfer, credit payment, refund, and initial-balance processing exist.
+- Expense items support descriptions, quantities, prices, categories, variants, and brands.
+- Dashboard, balance history, filters, database export, and database restore exist.
+- Backend unit and integration test suites cover core transaction behavior.
 
-### Step 2 — Guard `delete()` Against Processed Transactions `(S)`
-- `app/src/transaction/TransactionService.ts:214` — Add `isProcessed()` guard before deletion
-- Add a test: attempt to delete a processed transaction, assert 400 response
+### Main Bottlenecks
 
-```typescript
-// Before
-async delete(id: number) {
-    await this.prisma.transaction.delete({ where: { id } });
-}
+- Each expense item is entered through a separate modal.
+- Manual expenses effectively require itemization because subtotal is derived from item rows.
+- Saving and processing require separate actions.
+- The transaction form exposes many fields before the user needs them.
+- The transaction list fetches the full history and paginates only in the browser.
+- Mutations invalidate and reload broad datasets.
+- Reference data is repeatedly queried without an explicit caching policy.
+- Transaction ordering is inconsistent with the intended newest-first behavior.
+- Errors are often logged rather than explained in the UI.
+- Receipt capture, extraction, review, duplicate detection, and mapping memory do not exist.
 
-// After
-async delete(id: number) {
-    const tx = await this.getById(id);
-    BadRequestError.throwIf(tx.isProcessed(), `Cannot delete a processed transaction [id=${id}]`);
-    await this.prisma.transaction.delete({ where: { id } });
-}
-```
+## 3. Product and Technical Decisions
 
-### Step 3 — Singleton PrismaClient `(S)`
-- Create `app/src/utilities/prisma.ts` exporting one shared `PrismaClient` instance
-- Update `app/src/utilities/BaseService.ts:9` to import and use it instead of `new PrismaClient()`
-- Eliminates the 5 connection pools spawned per `processTransaction` request
+### Workflow Decisions
 
-```typescript
-// app/src/utilities/prisma.ts (new file)
-import { PrismaClient } from "@prisma/client";
-export const prisma = new PrismaClient();
+- Scan Receipt and Manual Entry are equal entry points.
+- AI extraction creates a receipt draft, not a transaction of record.
+- Only the user can confirm and process an imported transaction.
+- Simple manual expenses do not require detailed product itemization.
+- Product, category, and brand mappings remain optional, but unresolved values are visible.
+- The default confirmation action is Save & Process; Save Draft remains available.
 
-// BaseService.ts
-import { prisma } from "./prisma";
-protected prisma = prisma;  // replace: this.prisma = new PrismaClient()
-```
+### AI and OCR Decisions
 
-### Step 4 — Fix Error Message Bugs + Filter Label `(S)`
-- `app/src/transaction/TransactionService.ts:126` — Replace `getTransactionType()` with `getId()`
-- `app/src/transaction/TransactionService.ts:199` — Replace hardcoded `"Expense transaction"` with a generic message
-- `client/src/components/transaction/TransactionsFilter.tsx:42` — Change `label="Categories"` to `label="Type"`
+- Begin with a hosted multimodal vision provider to minimize infrastructure and tuning work.
+- Hide the provider behind a ReceiptExtractionProvider interface so it can be replaced.
+- Require structured output that matches a versioned receipt-extraction schema.
+- Never ask the model to invent Persofi database IDs.
+- Perform store and product matching inside Persofi after extraction.
+- Keep provider credentials in backend environment variables only.
+- Benchmark the provider against real receipts before expanding the feature.
 
----
+### Data Decisions
 
-## Sprint 2 — Backend Robustness
+- Store money in the existing decimal-backed database fields.
+- Perform arithmetic checks in application code using decimal-safe comparisons.
+- Save raw merchant and item descriptions even when mappings are confirmed.
+- Store confirmed aliases separately from products and stores.
+- Keep receipt images only while a draft is under review by default.
+- Include receipt metadata and aliases in database backups.
 
-### Step 5 — Fix Floating-Point Equality in TransactionValidator `(S)`
-- `app/src/transaction/TransactionValidator.ts:116` — Replace strict `!==` with epsilon comparison
-- Add test: expense with `subtotal: 0.1, taxTotal: 0.2, grandTotal: 0.3` must pass validation
+## 4. Target Workflow
 
-```typescript
-// Before
-private static mustEq(total: number, a: number, msg: string): void {
-    BadRequestError.throwIf(total !== a, msg);
-}
+    Receipt photo or PDF
+            |
+            v
+    Upload and image preparation
+            |
+            v
+    Structured AI extraction
+            |
+            v
+    Deterministic arithmetic validation
+            |
+            v
+    Store and product candidate matching
+            |
+            v
+    Side-by-side user review
+            |
+            +---- Save Draft
+            |
+            +---- Confirm, create, and process transaction
+                        |
+                        v
+                 Remember corrections
 
-// After
-private static mustEq(total: number, a: number, msg: string): void {
-    BadRequestError.throwIf(Math.abs(total - a) > 0.001, msg);
-}
-```
+## 5. Delivery Plan
 
-### Step 6 — Fix `processInitBalanceTransaction` Control Flow `(S)`
-- Add `existsForAccount(accountId: number): Promise<boolean>` to `app/src/balance/BalanceService.ts`
-- Rewrite `app/src/transaction/TransactionProcessorService.ts:109-131` to use it directly — no more try/catch on a known error message string
+### Phase 0 - Baseline and Guardrails
 
-```typescript
-// BalanceService.ts — new method
-async existsForAccount(accountId: number): Promise<boolean> {
-    const count = await this.prisma.balance.count({ where: { accountId } });
-    return count > 0;
-}
+Goal: establish measurable examples and protect existing behavior before changing the entry flow.
 
-// TransactionProcessorService.ts — rewritten
-async processInitBalanceTransaction(transaction, counterPartyAccount) {
-    const hasBalance = await this.balanceService.existsForAccount(counterPartyAccount.getId());
-    BadRequestError.throwIf(hasBalance, `Balance already exists for account [id=${counterPartyAccount.getId()}]`);
-    await this.balanceService.updateAccountBalance(
-        transaction.getAmount(), transaction.getDate(),
-        transaction.getId(), counterPartyAccount.getId()
-    );
-}
-```
+#### Step 1 - Build a Representative Test Set (S)
 
-### Step 7 — Parallelize Independent DB Lookups `(S)`
-- `TransactionService.ts:147-151` (CREDIT_PAYMENT) and `162-165` (TRANSFER) — wrap the two `getById` calls in `Promise.all`
-- `TransactionProcessorService.ts:59-60` and `91-92` — wrap the two `getLatestBalanceOfAccount` calls in `Promise.all`
+- Collect 20 to 50 receipts from frequently used stores.
+- Include clear, blurry, long, discounted, taxed, weighted-item, and multi-page examples.
+- Remove or mask information that should not be sent to a hosted provider.
+- Define expected merchant, date, totals, and line items for each receipt.
+- Keep test images outside Git unless they are intentionally sanitized fixtures.
 
-```typescript
-// Before (sequential — CREDIT_PAYMENT case)
-await this.accountService.getById(Number(existingTransaction.getPayAccountId())),
-await this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
+#### Step 2 - Capture Baseline Entry Friction (S)
 
-// After
-const [payAccount, counterpartyAccount] = await Promise.all([
-    this.accountService.getById(Number(existingTransaction.getPayAccountId())),
-    this.accountService.getById(Number(existingTransaction.getCounterpartyAccountId()))
-]);
-```
+- Record the clicks and time required for a simple expense and an itemized expense.
+- Note fields that are commonly skipped or repeatedly use the same value.
+- Use the results to choose defaults and validate the success measures.
 
-### Step 8 — Add Pagination to List Endpoints `(M)`
-- Add `?limit=100&offset=0` query params to all `get()` methods in every service, starting with `TransactionService` and `BalanceService` (these grow fastest)
-- Update each resource to extract and pass through pagination params
-- Frontend hooks: pass `limit` param; default to a reasonable page size per entity
+#### Step 3 - Protect Core Processing (S)
 
----
+- Add regression coverage for create, update, process, refund, and backup behavior affected by the new flow.
+- Fix floating-point equality in TransactionValidator.
+- Add a processed-transaction deletion guard.
+- Correct transaction ordering to newest first.
 
-## Sprint 3 — Frontend Performance & Quick Wins
+Exit criteria:
 
-### Step 9 — Add `staleTime` to All React Query Hooks `(S)`
-- All files in `client/src/hooks/`:
-  - Mutable data (transactions, balances, accounts): `staleTime: 60_000`
-  - Reference data (brands, categories, stores, persons, products): `staleTime: Infinity`
+- Baseline timings and receipt fixtures are documented.
+- Core transaction tests cover behavior the redesign will reuse.
 
-```typescript
-// Before
-return useQuery({ queryKey: ["transactions"], queryFn: fetchTransactions });
+### Phase 1 - Manual Entry Rescue
 
-// After
-return useQuery({ queryKey: ["transactions"], queryFn: fetchTransactions, staleTime: 60_000 });
-```
+Goal: make Persofi useful again without depending on OCR.
 
-### Step 10 — Route-Level Code Splitting `(S)`
-- `client/src/App.tsx:10-18` — Convert all page imports except Dashboard to `React.lazy()`
-- Wrap `<Routes>` with `<Suspense fallback={<LoadingComponent />}>`
+#### Step 4 - Introduce a Transaction Entry Workspace (M)
 
-```typescript
-// Before
-import {Transactions} from "./components/transaction/Transactions";
+- Replace the nested expense/item dialog experience with a responsive entry page or full-width workspace.
+- Present Scan Receipt and Manual Entry as primary actions.
+- Keep transaction-type selection compact and move uncommon types out of the expense path.
+- Preserve editing and read-only viewing for existing transactions.
 
-// After
-const Transactions = React.lazy(() => import("./components/transaction/Transactions"));
-```
+#### Step 5 - Add Quick Expense Entry (M)
 
-### Step 11 — Add `/api/balances/latest` Endpoint `(S)`
-- New `getLatestPerAccount()` method in `BalanceService.ts` using a grouped raw query
-- New route `GET /api/balances/latest` in `BalanceResource`
-- Update `useLatestBalancesByAccount` in `DashboardSelectors.ts:45` to call this endpoint instead of iterating all balance rows client-side
+- Require only date, pay account, and total for the shortest valid expense path.
+- Make store, person, tax, category, notes, and detailed items optional.
+- If no detailed items are supplied, create one summary item using the entered total and optional category.
+- Remember the last pay account and person locally.
+- Rank recent stores and accounts first.
 
-```typescript
-// BalanceService.ts
-async getLatestPerAccount(): Promise<BalanceJson[]> {
-    const data = await this.prisma.$queryRaw`
-        SELECT b.* FROM Balance b
-        INNER JOIN (
-            SELECT accountId, MAX(date) as maxDate FROM Balance GROUP BY accountId
-        ) latest ON b.accountId = latest.accountId AND b.date = latest.maxDate
-    `;
-    return (data as any[]).map(BalanceJson.from);
-}
-```
+#### Step 6 - Replace Item Modals with Inline Editing (M)
 
-### Step 12 — Categories "Is Parent" Filter `(S)`
-- `client/src/components/category/CategoriesFilter.tsx` — Add a checkbox "Parent categories only"
-- `client/src/components/category/Categories.tsx` — Add `isParent: boolean` to `FilterProps`, filter on `category.parentCategoryId === null`
+- Add editable rows for description, quantity, unit price, line total, category, and product mapping.
+- Support add, duplicate, and remove row actions without leaving the form.
+- Recalculate totals immediately.
+- Support keyboard movement between cells.
+- Use stable row IDs so edits do not cause table rows to remount.
 
----
+#### Step 7 - Add Atomic Save and Process (M)
 
-## Sprint 4 — Transaction Filter Completion
-> Completes the 3 missing filters from FutureEnhancement.
+- Add a backend operation that creates and processes a transaction atomically.
+- Roll back transaction, items, and balances when processing fails.
+- Expose Save Draft and Save & Process in the UI.
+- Return structured validation errors and display them next to the affected section.
 
-### Step 13 — Add Store Filter to Transactions `(S)`
-- `client/src/components/transaction/TransactionsFilter.tsx` — Add an `Autocomplete` populated from `useStores()`
-- `client/src/components/transaction/Transactions.tsx` — Add `storeId: number | null` to `FilterProps`; filter logic: `filters.storeId ? t.storeId === filters.storeId : true`
+Exit criteria:
 
-### Step 14 — Add Person Filter to Transactions `(S)`
-- Same pattern as Step 13 using `usePersons()` and `personId`
+- A simple manual expense can be entered and processed in under 20 seconds.
+- Detailed manual entry no longer opens a modal per item.
+- Existing transaction types still work.
 
-### Step 15 — Add Account Type Filter to Transactions `(S)`
-- `client/src/components/transaction/TransactionsFilter.tsx` — Add `AccountTypeEnum` Autocomplete
-- Filter logic: check if `payAccountId` or `counterpartyAccountId` belongs to an account of the selected type, using the already-loaded `accounts` list
-- Add `accountType: AccountTypeEnum | null` to `FilterProps`
+### Phase 2 - Receipt Extraction Vertical Slice
 
----
+Goal: turn one uploaded receipt into an editable, unprocessed draft.
 
-## Sprint 5 — Dashboard: Missing Widgets
-> Completes the 5 missing dashboard items from FutureEnhancement.
+#### Step 8 - Define the Extraction Contract (S)
 
-### Step 16 — Expense by Account Type (Credit vs Debit) `(S)`
-- New selector `useExpenseByAccountTypeInRange(range)` in `DashboardSelectors.ts`: join transactions with the accounts list on `payAccountId`, group `grandTotal` by `accountType`
-- Add a bar or donut chart card in the Spending Analysis tab
+Create a versioned schema containing:
 
-### Step 17 — Expense by Parent Category `(S)`
-- Update (or add a variant of) `useCategoryBreakdownInRange` in `DashboardSelectors.ts:152`: walk `categoryId → parentCategoryId` using the categories list, accumulate `lineTotal` under the resolved parent
-- Replace or supplement the flat category chart in the Spending Analysis tab with the parent-grouped version
+- Merchant raw name and optional address.
+- Transaction date, time, and currency.
+- Subtotal, tax, discounts, fees, tips, and grand total.
+- Line-item raw description, quantity, unit price, discount, and line total.
+- Optional extraction confidence and warnings per field.
+- Provider name, schema version, and extraction timestamp.
 
-### Step 18 — Monthly Expense vs Income Bar Chart `(M)`
-- New selector `useCashFlowMonthlyInRange(range)` in `DashboardSelectors.ts`: same logic as `useCashFlowDailyInRange` but bucket by `YYYY-MM` key
-- Add a grouped bar chart (Income series + Expense series by month) to the Overview tab
+#### Step 9 - Add Receipt Import Persistence (M)
 
-### Step 19 — Tax Paid KPI + Historic Chart `(S)`
-- New selector `useTaxInRange(range)`: sum `taxTotal` across EXPENSE transactions in the range
-- New selector `useTaxMonthlyInRange(range)`: bucket `taxTotal` by month for the historic bar chart
-- Add a "Tax Paid" KPI card and a monthly bar chart to the Spending Analysis tab
+Add Prisma models equivalent to:
 
----
+- ReceiptImport: status, image path, image hash, raw extraction JSON, warnings, timestamps, and optional transaction ID.
+- StoreAlias: normalized merchant text and confirmed store ID.
+- ProductAlias: store scope, normalized item text, and confirmed variant/category/brand IDs.
 
-## Sprint 6 — Historical Balances by Account Type
-> Last remaining FutureEnhancement item.
+Suggested import statuses:
 
-### Step 20 — Historical Balance Grouped by Account Type `(M)`
-- `client/src/components/dashborad/Dashboard.tsx:196-213` — Alongside the existing per-account `balanceSeries`, compute an aggregated series: for each date in `balanceDateSet`, sum balances across all accounts of each `AccountTypeEnum`
-- Add a second `MultyStatsChart` (or a toggle on the existing one) titled "Historical Balance by Account Type" in the Accounts tab
+    UPLOADED -> EXTRACTING -> REVIEW_REQUIRED -> CONFIRMED
+                           -> FAILED
 
----
+#### Step 10 - Implement the Provider Boundary (M)
 
-## Sprint 7 — New Features
+- Define ReceiptExtractionProvider.extract(input): ReceiptExtraction.
+- Implement the first hosted vision provider using image input and strict structured output.
+- Validate the provider response at runtime before returning it to the client.
+- Add timeout, size, type, and retry handling.
+- Keep the API key in the backend environment.
 
-### Step 21 — CSV Export for Transactions `(S)`
-- Backend: `GET /api/transactions/export?format=csv` — stream a CSV file response with `Content-Disposition: attachment; filename="transactions.csv"`; respect the same date/type query params as the list endpoint
-- Frontend: "Export CSV" button on the Transactions page, triggers a download via `window.open` or a `fetch` + blob
+#### Step 11 - Add Upload and Extraction Endpoints (M)
 
-### Step 22 — Historical Net Worth Chart `(S)`
-- New selector `useNetWorthHistory(range)` in `DashboardSelectors.ts`: for each unique balance date, compute total signed net worth per currency using the same account-type sign logic as `useNetWorthByCurrency`
-- Add a line chart to the Accounts tab
+- POST /api/receipt-imports uploads an image or PDF and starts extraction.
+- GET /api/receipt-imports/:id returns status and the current draft.
+- DELETE /api/receipt-imports/:id abandons a draft and removes its temporary image.
+- Accept JPEG, PNG, WebP, and PDF within a configured size limit.
+- Compute an image hash before extraction for duplicate detection.
 
-### Step 23 — Monthly Budget Envelopes `(M)`
-- Backend: new `Budget` Prisma model (`categoryId | null, amount, currency, month, year`); new `BudgetService` / `BudgetResource` with CRUDS
-- Frontend: budget config page under Settings; "Budget vs Actual" progress bar widget on the Spending Analysis tab comparing `useCategoryBreakdownInRange` totals vs budget limits
+#### Step 12 - Add the First Review Screen (M)
 
----
+- Display the receipt and editable extracted fields side by side on desktop.
+- Stack the receipt and fields ergonomically on mobile.
+- Reuse the inline item editor from Phase 1.
+- Keep the result unprocessed and require explicit confirmation.
 
-## Full Priority Table
+Exit criteria:
 
-| # | Sprint | Step | Item | Type | Impact | Effort |
-|---|---|---|---|---|---|---|
-| 1 | S1 | 1 | MySQL password in Docker config | Security | 🔴 Critical | S |
-| 2 | S1 | 2 | Guard `delete()` on processed transactions | Bug/Integrity | 🔴 Critical | S |
-| 3 | S1 | 3 | Singleton PrismaClient | Perf | 🔴 Critical | S |
-| 4 | S1 | 4 | Fix error message bugs + filter label | Bug/DX | 🟡 High | S |
-| 5 | S2 | 5 | Fix floating-point equality in validator | Bug | 🔴 Critical | S |
-| 6 | S2 | 6 | Fix `processInitBalance` control flow | Code Quality | 🟡 High | S |
-| 7 | S2 | 7 | Parallelize account/balance fetches | Perf | 🟡 High | S |
-| 8 | S2 | 8 | Pagination on list endpoints | Perf/Scale | 🟡 High | M |
-| 9 | S3 | 9 | `staleTime` on React Query hooks | Perf | 🟡 High | S |
-| 10 | S3 | 10 | Route code splitting | Perf | 🟡 High | S |
-| 11 | S3 | 11 | `/api/balances/latest` endpoint | Perf | 🟡 High | S |
-| 12 | S3 | 12 | Categories "Is Parent" filter | Feature | 🟢 Nice | S |
-| 13 | S4 | 13 | Transactions: Store filter | Feature | 🟡 High | S |
-| 14 | S4 | 14 | Transactions: Person filter | Feature | 🟡 High | S |
-| 15 | S4 | 15 | Transactions: Account Type filter | Feature | 🟡 High | S |
-| 16 | S5 | 16 | Dashboard: Expense by account type widget | Feature | 🟡 High | S |
-| 17 | S5 | 17 | Dashboard: Expense by parent category | Feature | 🟡 High | S |
-| 18 | S5 | 18 | Dashboard: Monthly cashflow bar chart | Feature | 🟡 High | M |
-| 19 | S5 | 19 | Dashboard: Tax Paid KPI + historic chart | Feature | 🟡 High | S |
-| 20 | S6 | 20 | Dashboard: Historical balance by account type | Feature | 🟡 High | M |
-| 21 | S7 | 21 | CSV export for transactions | Feature | 🟡 High | S |
-| 22 | S7 | 22 | Historical net worth chart | Feature | 🟢 Nice | S |
-| 23 | S7 | 23 | Monthly budget envelopes | Feature | 🟢 Nice | M |
+- A supported receipt produces an editable draft.
+- Provider failures do not lose the uploaded draft or block manual entry.
+- No AI-generated transaction is automatically processed.
+
+### Phase 3 - Validation and Mapping Memory
+
+Goal: make receipt review trustworthy and faster with repeated use.
+
+#### Step 13 - Add Deterministic Receipt Validation (M)
+
+- Validate quantity times unit price against line total.
+- Validate item totals plus discounts and adjustments against subtotal.
+- Validate subtotal, tax, fees, and tips against grand total.
+- Use explicit currency precision and tolerances.
+- Highlight mismatches and block confirmation only for required financial inconsistencies.
+- Allow the user to acknowledge legitimate receipt exceptions.
+
+#### Step 14 - Add Duplicate Detection (S)
+
+- Detect exact duplicate image hashes.
+- Detect likely duplicates using store, date, total, and item similarity.
+- Show the existing transaction before the user chooses to continue.
+- Record an override when the user confirms similar receipts are distinct.
+
+#### Step 15 - Add Store Matching (S)
+
+- Normalize merchant text for casing, punctuation, branch numbers, and common suffixes.
+- Prefer confirmed StoreAlias records.
+- Fall back to exact and fuzzy store-name candidates.
+- Allow store creation without leaving the review workflow.
+- Save the confirmed alias after successful confirmation.
+
+#### Step 16 - Add Product and Category Matching (L)
+
+- Prefer confirmed ProductAlias records scoped to the matched store.
+- Fall back to normalized exact matches and ranked fuzzy candidates.
+- Use AI suggestions only to rank candidates, never to create IDs.
+- Let the user confirm, change, create, or leave a mapping unresolved.
+- Save confirmed corrections for future receipts.
+
+#### Step 17 - Confirm and Process the Draft (M)
+
+- Convert the reviewed receipt draft into the existing transaction contract.
+- Create the transaction, items, alias corrections, and balance changes atomically.
+- Link the ReceiptImport to the resulting transaction.
+- Delete the image after confirmation by default while retaining extraction metadata.
+- Invalidate only affected frontend queries.
+
+Exit criteria:
+
+- All financial mismatches are visible before confirmation.
+- Familiar stores and items reuse confirmed mappings.
+- Ambiguous mappings remain under user control.
+- Typical receipt review completes in under 60 seconds.
+
+### Phase 4 - Responsiveness and Operational Reliability
+
+Goal: remove technical delays from the new workflow and growing history.
+
+#### Step 18 - Share the Prisma Client (S)
+
+- Create one application-level Prisma client.
+- Update services to reuse it.
+- Add graceful disconnect behavior for tests and shutdown.
+
+#### Step 19 - Cache Reference Data (S)
+
+- Give accounts and mutable financial data a short React Query staleTime.
+- Give stores, people, categories, products, and brands a longer staleTime.
+- Update or invalidate only the affected entity after mutations.
+- Remove duplicate hook subscriptions where parent data can be passed down.
+
+#### Step 20 - Add Server-Side Transaction Queries (M)
+
+- Support limit, cursor or offset, date range, type, status, account, store, and person.
+- Load recent transactions first.
+- Keep dashboard aggregation needs separate from transaction-list pagination.
+- Add database indexes only where query measurements justify them.
+
+#### Step 21 - Improve Latest-Balance Loading (S)
+
+- Add GET /api/balances/latest returning the latest row per account.
+- Stop loading full balance history when only current balances are required.
+- Retain a separate paginated/history endpoint for charts.
+
+#### Step 22 - Harden Errors and Recovery (M)
+
+- Add visible retry states for extraction and normal API failures.
+- Preserve unsaved manual and receipt drafts across accidental navigation where practical.
+- Make extraction retries idempotent.
+- Verify export and restore after adding receipt and alias tables.
+- Add configurable receipt-image cleanup for abandoned drafts.
+
+Exit criteria:
+
+- Entry screens do not wait on complete transaction or balance history.
+- A failed extraction can be retried or completed manually.
+- Backups include all non-image data needed to restore mappings and drafts.
+
+### Phase 5 - Evaluation and Release
+
+Goal: prove that the redesigned workflow solves the original usability problem.
+
+#### Step 23 - Run the Receipt Evaluation (M)
+
+Measure against the Phase 0 fixture set:
+
+- Exact merchant, date, subtotal, tax, and total accuracy.
+- Line-item description and amount accuracy.
+- Percentage of items correctly auto-mapped from confirmed aliases.
+- Average corrections and review time per receipt.
+- Extraction failures by image quality and store.
+
+Do not use a single overall confidence score as the release criterion. Financial-field accuracy and review time matter more.
+
+#### Step 24 - Usability Acceptance Pass (S)
+
+- Time repeated manual and receipt-assisted entries.
+- Verify desktop and mobile layouts.
+- Test keyboard-only manual entry.
+- Confirm that error messages explain how to recover.
+- Remove fields or steps that do not help confirmation.
+
+#### Step 25 - Release and Observe (S)
+
+- Enable the receipt workflow for normal use.
+- Keep manual entry immediately accessible.
+- Review unmapped items and extraction corrections after several weeks.
+- Adjust aliases, prompts, and matching thresholds using observed corrections.
+
+Exit criteria:
+
+- Manual and receipt-assisted workflows meet target times.
+- No critical transaction-processing or backup regressions remain.
+- The application is comfortable enough to resume regular use.
+
+## 6. Later Reporting Backlog
+
+Resume these only after transaction-entry success measures are met:
+
+1. Historical balances grouped by account type.
+2. Monthly expense versus income chart.
+3. Expense split by credit versus debit.
+4. Expense grouped by parent category.
+5. Tax total and tax history.
+6. Historical net worth.
+7. CSV export.
+8. Monthly budget envelopes.
+
+## 7. Explicitly Deprioritized Work
+
+- Authentication and multi-user authorization.
+- Advanced network and database security for a local-only deployment.
+- A custom-trained OCR model.
+- Autonomous transaction processing without review.
+- Dashboard expansion before entry usability is validated.
+
+Basic safeguards still remain mandatory: keep provider keys on the backend, preserve backups, validate uploaded file types and sizes, and protect transaction integrity.
+
+## 8. Recommended First Release Scope
+
+The smallest valuable release consists of:
+
+- Phase 0 guardrails.
+- Phase 1 manual-entry redesign.
+- One receipt extraction provider.
+- Receipt review with deterministic total validation.
+- Store aliases and basic product aliases.
+- Explicit Save Draft and Save & Process actions.
+- Duplicate detection.
+
+Defer advanced fuzzy matching, local OCR, analytics, and budget features until this release has been used with real receipts.
