@@ -9,6 +9,10 @@
 
 These three files are authoritative for current planning. Persofi is presently scoped as a local, single-user application.
 
+## Specifications
+
+- [Posting Matrix](POSTING_MATRIX.md): balance effects, field rules, account-type constraints, and resolved decisions for every transaction type.
+
 ## Local Operations
 
 - [Operations Guide](OPERATIONS.md): environment variables, local runtime, tests, quality gates, migrations, backups, Prisma lifecycle, and safety rules.

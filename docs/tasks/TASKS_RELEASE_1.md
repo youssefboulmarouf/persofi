@@ -36,7 +36,7 @@ These were found while writing the tasks. Each one is assigned to a task below.
 
 Goal: create, update and process are deterministic, atomic, retry-safe and covered by tests. Phase 2 cannot ship Save & Process until this phase passes its gate.
 
-### [ ] R1-01 — Specify the Posting Matrix (S)
+### [x] R1-01 — Specify the Posting Matrix (S)
 
 Plan: Step 1 / FIN-001. Depends on: nothing.
 
