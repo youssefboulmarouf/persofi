@@ -6,6 +6,7 @@ Personal finance web app. **Scope: single-user, local-first, trusted local machi
 
 - [docs/ROADMAP.md](docs/ROADMAP.md) — release sequence, current position, critical path.
 - [docs/EXECUTION_PLAN.md](docs/EXECUTION_PLAN.md) — numbered steps (1–23) with acceptance criteria. Read the relevant step before starting work.
+- [docs/tasks/TASKS_RELEASE_1.md](docs/tasks/TASKS_RELEASE_1.md) — Release 1 task list (R1-01..R1-21) with known defects D1–D10. Tick tasks here as they complete. Later releases get their own file: `docs/tasks/TASKS_RELEASE_<N>.md`.
 - [docs/FUTURE_ENHANCEMENTS.md](docs/FUTURE_ENHANCEMENTS.md) — product priorities, decision rules, deferred work.
 - [docs/OPERATIONS.md](docs/OPERATIONS.md) — env vars, commands, migrations, backups, safety rules.
 
@@ -37,7 +38,7 @@ If this file and the docs disagree, the docs win; update this file.
 - Financial writes are atomic (single Prisma `$transaction`: transaction + items + balance effects + processed flag). Failures leave no partial state.
 - Save & Process and receipt confirmation must be idempotent — never apply balances twice.
 - Processed transactions are immutable (no edit/delete/re-process).
-- Decimal-safe, currency-aware math; no float equality; no cross-currency aggregation without explicit support.
+- Decimal-safe math; no float equality. Release 1 assumes one shared currency/unit across accounts; multi-currency support and conversion are deferred.
 - Transaction total is independent of item rows; itemization is optional. Itemization state (NOT_ITEMIZED / PARTIAL / NEEDS_REVIEW / COMPLETE) is derived, not persisted, unless proven necessary. Don't add a fake summary item.
 - Receipts (future): extraction output is untrusted draft data, runtime-validated against a strict schema, never writes financial records, never invents entity IDs. Human confirmation required. Aliases learned only from confirmed choices. Provider behind `ReceiptExtractionProvider` interface; keys backend-only (never `REACT_APP_*`).
 - Receipt models stay single-user — no `userId`/`householdId`.

@@ -36,7 +36,7 @@ These capabilities are prerequisites to preserve, not work to repeat.
 ### Financial Integrity Required by the New Workflow
 
 - Define one deterministic posting rule for every transaction type.
-- Use decimal-safe calculations and currency-aware tolerances.
+- Use decimal-safe calculations. Release 1 treats all account amounts as one shared currency/unit.
 - Create transaction items, balance effects, and processed state atomically.
 - Make Save & Process safe to retry without applying balances twice.
 - Update unprocessed transactions atomically.
@@ -78,7 +78,7 @@ A full audit-event and reversal subsystem is not required for Release 1. Process
 - Validate file signature, type, size, dimensions, and PDF page count.
 - Store uploads temporarily using random private filenames.
 - Compute a file hash for exact duplicate detection.
-- Extract merchant, date, currency, subtotal, tax, discounts, fees, tips, total, and line items.
+- Extract merchant, date, subtotal, tax, discounts, fees, tips, total, and line items. Defer currency extraction until multi-currency support is introduced.
 - Use a provider-independent ReceiptExtractionProvider interface.
 - Start with one hosted multimodal vision provider using strict structured output.
 - Keep provider credentials only in the backend.
@@ -90,7 +90,7 @@ A full audit-event and reversal subsystem is not required for Release 1. Process
 - Highlight missing, uncertain, inconsistent, duplicate, and unmapped fields.
 - Verify quantity times unit price against each line total.
 - Verify items and adjustments against subtotal.
-- Verify subtotal, tax, fees, tips, and discounts against grand total.
+- Verify subtotal, tax, fees, tips, and discounts against grand total using decimal-safe single-currency arithmetic.
 - Require explicit user confirmation before creating or processing a transaction.
 - Never allow the extractor to write financial records directly.
 - Preserve a failed extraction so the user can retry or finish manually.
@@ -182,6 +182,14 @@ Trigger: correction history, compliance, or multi-user accountability requires i
 - Replace manual corrections with reversal and replacement workflows.
 - Add optimistic versions, row locking, and concurrency tests.
 - Add explicit exchange-rate records before aggregating currencies.
+
+### Multi-Currency Support
+
+Trigger: the user needs to track accounts denominated in different currencies or convert transaction amounts.
+
+- Define transaction and account currency semantics.
+- Add explicit exchange rates and conversion records before calculating cross-currency transfers or aggregated totals.
+- Add currency-aware display and reporting without changing historical amounts silently.
 
 ### Custom OCR or Autonomous Import
 

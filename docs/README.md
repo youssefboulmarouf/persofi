@@ -5,6 +5,7 @@
 - [Roadmap](ROADMAP.md): release sequence, current position, critical path, and future activation triggers.
 - [Execution Plan](EXECUTION_PLAN.md): detailed implementation steps, dependencies, and acceptance criteria.
 - [Future Enhancements](FUTURE_ENHANCEMENTS.md): product priorities, deferred capabilities, and decision rules.
+- [Release 1 Tasks](tasks/TASKS_RELEASE_1.md): implementable task breakdown for R1A and R1B, with known defects and acceptance checks.
 
 These three files are authoritative for current planning. Persofi is presently scoped as a local, single-user application.
 

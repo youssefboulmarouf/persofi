@@ -127,7 +127,7 @@ Adapt FIN-001 to the local scope.
 - Define valid source and destination account combinations.
 - Define how credit balances are represented.
 - Define refund eligibility and remaining refundable amount.
-- Define currency behavior; do not aggregate or transfer across currencies without explicit support.
+- Treat all account amounts as one shared currency/unit for the current single-currency app. Multi-currency support and conversion are deferred; do not add currency validation or conversion to Release 1.
 - Add pure unit tests for every rule before changing processing code.
 
 Deliverable: one approved posting matrix used by services, tests, and dashboard formulas.
@@ -136,7 +136,7 @@ Deliverable: one approved posting matrix used by services, tests, and dashboard 
 
 Adapt FIN-002 and the relevant part of DOM-007.
 
-- Replace binary floating-point equality checks with currency-aware comparisons.
+- Replace binary floating-point equality checks with decimal-safe comparisons.
 - Calculate signed balance effects in one pure service.
 - Keep financial total independent from item coverage.
 - Calculate item allocation and unallocated amount without making itemization a validity requirement.
@@ -258,7 +258,7 @@ Include:
 
 - Schema version and provider metadata.
 - Raw merchant name and optional address.
-- Date, time, and currency.
+- Date and time. Currency extraction is deferred until multi-currency support is introduced.
 - Subtotal, tax, discounts, fees, tips, and grand total.
 - Raw item description, quantity, unit price, discount, and line total.
 - Per-field warnings or confidence where available.
@@ -336,7 +336,7 @@ Adapt REC-005 and DOM-007.
 - Check quantity times unit price against line total.
 - Check line totals, discounts, and adjustments against subtotal.
 - Check subtotal, tax, fees, tips, and discounts against grand total.
-- Apply currency-aware tolerance.
+- Apply decimal-safe tolerance using the single shared currency/unit.
 - Show coverage and unallocated amount.
 - Block confirmation for unresolved required financial mismatches.
 - Allow an explicit acknowledgement for legitimate receipt exceptions and record the warning.
