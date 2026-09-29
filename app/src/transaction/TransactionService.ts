@@ -2,12 +2,12 @@ import { BaseService } from "../utilities/BaseService";
 import { TransactionJson } from "./TransactionJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import { TransactionItemService } from "../transaction-item/TransactionItemService";
-import { TransactionTypeEnum } from "./TransactionType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import { TransactionProcessorService } from "./TransactionProcessorService";
 import { TransactionValidator } from "./TransactionValidator";
 import { AccountService } from "../account/AccountService";
-import AppError from "../utilities/errors/AppError";
+import { AccountJson } from "../account/AccountJson";
+import { postingAccountIds } from "./BalanceEffects";
 
 export class TransactionService extends BaseService {
     private readonly transactionItemService: TransactionItemService;
@@ -130,78 +130,15 @@ export class TransactionService extends BaseService {
 
         BadRequestError.throwIf(
             existingTransaction.isProcessed(),
-            `Transaction with [id=${existingTransaction.getTransactionType()}] is already processed. Cannot be processed again.`,
+            `Transaction with [id=${existingTransaction.getId()}] is already processed. Cannot be processed again.`,
         );
 
-        switch (existingTransaction.getTransactionType()) {
-            case TransactionTypeEnum.EXPENSE:
-                this.validatePayAccountId(existingTransaction);
-                await this.transactionProcessor.processExpenseTransaction(
-                    existingTransaction,
-                    await this.accountService.getById(
-                        Number(existingTransaction.getPayAccountId()),
-                    ),
-                );
-                break;
-            case TransactionTypeEnum.INCOME:
-                this.validateCounterpartyAccount(existingTransaction);
-                await this.transactionProcessor.processIncomeTransaction(
-                    existingTransaction,
-                    await this.accountService.getById(
-                        Number(existingTransaction.getCounterpartyAccountId()),
-                    ),
-                );
-                break;
-            case TransactionTypeEnum.CREDIT_PAYMENT:
-                this.validatePayAccountId(existingTransaction);
-                this.validateCounterpartyAccount(existingTransaction);
-                await this.transactionProcessor.processCreditPaymentTransaction(
-                    existingTransaction,
-                    await this.accountService.getById(
-                        Number(existingTransaction.getPayAccountId()),
-                    ),
-                    await this.accountService.getById(
-                        Number(existingTransaction.getCounterpartyAccountId()),
-                    ),
-                );
-                break;
-            case TransactionTypeEnum.REFUND:
-                this.validateCounterpartyAccount(existingTransaction);
-                await this.transactionProcessor.processRefundTransaction(
-                    existingTransaction,
-                    await this.accountService.getById(
-                        Number(existingTransaction.getCounterpartyAccountId()),
-                    ),
-                );
-                break;
-            case TransactionTypeEnum.TRANSFER:
-                this.validatePayAccountId(existingTransaction);
-                this.validateCounterpartyAccount(existingTransaction);
-                await this.transactionProcessor.processTransferTransaction(
-                    existingTransaction,
-                    await this.accountService.getById(
-                        Number(existingTransaction.getPayAccountId()),
-                    ),
-                    await this.accountService.getById(
-                        Number(existingTransaction.getCounterpartyAccountId()),
-                    ),
-                );
-                break;
-            case TransactionTypeEnum.INIT_BALANCE:
-                this.validateCounterpartyAccount(existingTransaction);
-                await this.transactionProcessor.processInitBalanceTransaction(
-                    existingTransaction,
-                    await this.accountService.getById(
-                        Number(existingTransaction.getCounterpartyAccountId()),
-                    ),
-                );
-                break;
-            default:
-                BadRequestError.throwIf(
-                    true,
-                    `Transaction Type [{${existingTransaction.getTransactionType()}] is not supported`,
-                );
+        const accounts = new Map<number, AccountJson>();
+        for (const accountId of postingAccountIds(existingTransaction)) {
+            accounts.set(accountId, await this.accountService.getById(accountId));
         }
+
+        await this.transactionProcessor.process(existingTransaction, accounts);
 
         // update transaction
         await this.prisma.transaction.update({
@@ -210,26 +147,6 @@ export class TransactionService extends BaseService {
             },
             where: { id: transactionId },
         });
-    }
-
-    private validateCounterpartyAccount(existingTransaction: TransactionJson) {
-        if (existingTransaction.getCounterpartyAccountId() == null) {
-            throw new AppError(
-                "Runtime Error",
-                500,
-                `Counter Party Account is required for Expense transaction [id=${existingTransaction.getId()}]. `,
-            );
-        }
-    }
-
-    private validatePayAccountId(existingTransaction: TransactionJson) {
-        if (existingTransaction.getPayAccountId() == null) {
-            throw new AppError(
-                "Runtime Error",
-                500,
-                `Pay Account is required for Expense transaction [id=${existingTransaction.getId()}]. `,
-            );
-        }
     }
 
     async delete(id: number) {

@@ -70,7 +70,7 @@ Acceptance:
 - The validator, effect calculator, allocation, balance and refund code in `app/src` does no money arithmetic or comparison with JS `number`.
 - Existing API tests pass with no change to the response shape.
 
-### [ ] R1-03 — Pure Balance-Effect Calculator (M)
+### [x] R1-03 — Pure Balance-Effect Calculator (M)
 
 Plan: Step 2 / FIN-002, DOM-007. Depends on: R1-01, R1-02. Fixes: D10.
 

@@ -1,12 +1,8 @@
+import { Prisma } from "@prisma/client";
 import { BaseService } from "../utilities/BaseService";
-import { AccountService } from "../account/AccountService";
 import { BalanceService } from "../balance/BalanceService";
 import { TransactionJson } from "./TransactionJson";
-import { AccountTypeEnum } from "../account/AccountType";
-import BadRequestError from "../utilities/errors/BadRequestError";
-import AppError from "../utilities/errors/AppError";
-import { AccountJson } from "../account/AccountJson";
-import { Money } from "../utilities/Money";
+import { AccountsById, computeBalanceEffects, postingAccountIds } from "./BalanceEffects";
 
 export class TransactionProcessorService extends BaseService {
     private readonly balanceService: BalanceService;
@@ -16,160 +12,25 @@ export class TransactionProcessorService extends BaseService {
         this.balanceService = new BalanceService();
     }
 
-    async processExpenseTransaction(
-        transaction: TransactionJson,
-        payAccount: AccountJson,
-    ): Promise<void> {
-        const payAccountBalance = await this.balanceService.getLatestBalanceOfAccount(
-            payAccount.getId(),
-        );
+    /**
+     * Applies the transaction's balance effects as computed by the posting matrix.
+     * `accounts` must contain every id returned by postingAccountIds(transaction).
+     */
+    async process(transaction: TransactionJson, accounts: AccountsById): Promise<void> {
+        const latestBalances = new Map<number, Prisma.Decimal | null>();
+        for (const accountId of postingAccountIds(transaction)) {
+            const latest = await this.balanceService.findLatestBalanceOfAccount(accountId);
+            latestBalances.set(accountId, latest ? latest.getAmount() : null);
+        }
 
-        await this.balanceService.updateAccountBalance(
-            payAccount.getAccountType() == AccountTypeEnum.CREDIT
-                ? Money.add(payAccountBalance.getAmount(), transaction.getGrandTotal())
-                : Money.subtract(payAccountBalance.getAmount(), transaction.getGrandTotal()),
-            transaction.getDate(),
-            transaction.getId(),
-            payAccount.getId(),
-        );
-    }
+        const effects = computeBalanceEffects(transaction, accounts, latestBalances);
 
-    async processIncomeTransaction(
-        transaction: TransactionJson,
-        counterPartyAccount: AccountJson,
-    ): Promise<void> {
-        BadRequestError.throwIf(
-            counterPartyAccount.getAccountType() == AccountTypeEnum.CREDIT,
-            `Income is only added to Debit, Cash or Saving but got [accountType=${counterPartyAccount.getAccountType()}].`,
-        );
-
-        const counterPartyAccountBalance = await this.balanceService.getLatestBalanceOfAccount(
-            counterPartyAccount.getId(),
-        );
-
-        await this.balanceService.updateAccountBalance(
-            Money.add(counterPartyAccountBalance.getAmount(), transaction.getAmount()),
-            transaction.getDate(),
-            transaction.getId(),
-            counterPartyAccount.getId(),
-        );
-    }
-
-    async processCreditPaymentTransaction(
-        transaction: TransactionJson,
-        payAccount: AccountJson,
-        counterPartyAccount: AccountJson,
-    ): Promise<void> {
-        BadRequestError.throwIf(
-            payAccount.getAccountType() == AccountTypeEnum.CREDIT,
-            `Credit Payment emitter should be Debit, Cash or Saving but got [accountType=${payAccount.getAccountType()}].`,
-        );
-
-        BadRequestError.throwIf(
-            counterPartyAccount.getAccountType() != AccountTypeEnum.CREDIT,
-            `Credit Payment receiver should be Credit but got [accountType=${counterPartyAccount.getAccountType()}].`,
-        );
-
-        const payAccountBalance = await this.balanceService.getLatestBalanceOfAccount(
-            payAccount.getId(),
-        );
-        const counterPartyAccountBalance = await this.balanceService.getLatestBalanceOfAccount(
-            counterPartyAccount.getId(),
-        );
-
-        await this.balanceService.updateAccountBalance(
-            Money.subtract(payAccountBalance.getAmount(), transaction.getAmount()),
-            transaction.getDate(),
-            transaction.getId(),
-            payAccount.getId(),
-        );
-
-        await this.balanceService.updateAccountBalance(
-            Money.subtract(counterPartyAccountBalance.getAmount(), transaction.getAmount()),
-            transaction.getDate(),
-            transaction.getId(),
-            counterPartyAccount.getId(),
-        );
-    }
-
-    async processRefundTransaction(
-        transaction: TransactionJson,
-        counterPartyAccount: AccountJson,
-    ): Promise<void> {
-        const counterPartyAccountBalance = await this.balanceService.getLatestBalanceOfAccount(
-            counterPartyAccount.getId(),
-        );
-
-        await this.balanceService.updateAccountBalance(
-            counterPartyAccount.getAccountType() == AccountTypeEnum.CREDIT
-                ? Money.subtract(
-                      counterPartyAccountBalance.getAmount(),
-                      transaction.getGrandTotal(),
-                  )
-                : Money.add(counterPartyAccountBalance.getAmount(), transaction.getGrandTotal()),
-            transaction.getDate(),
-            transaction.getId(),
-            counterPartyAccount.getId(),
-        );
-    }
-
-    async processTransferTransaction(
-        transaction: TransactionJson,
-        payAccount: AccountJson,
-        counterPartyAccount: AccountJson,
-    ): Promise<void> {
-        const payAccountBalance = await this.balanceService.getLatestBalanceOfAccount(
-            payAccount.getId(),
-        );
-        const counterPartyAccountBalance = await this.balanceService.getLatestBalanceOfAccount(
-            counterPartyAccount.getId(),
-        );
-
-        await this.balanceService.updateAccountBalance(
-            Money.subtract(payAccountBalance.getAmount(), transaction.getAmount()),
-            transaction.getDate(),
-            transaction.getId(),
-            payAccount.getId(),
-        );
-
-        await this.balanceService.updateAccountBalance(
-            Money.add(counterPartyAccountBalance.getAmount(), transaction.getAmount()),
-            transaction.getDate(),
-            transaction.getId(),
-            counterPartyAccount.getId(),
-        );
-    }
-
-    async processInitBalanceTransaction(
-        transaction: TransactionJson,
-        counterPartyAccount: AccountJson,
-    ): Promise<void> {
-        try {
-            await this.balanceService.getLatestBalanceOfAccount(counterPartyAccount.getId());
-            BadRequestError.throwIf(
-                true,
-                `Balance already exists for account [id=${counterPartyAccount.getId()}]`,
-            );
-        } catch (e: any) {
-            if (e instanceof BadRequestError) {
-                if (e.message.includes("try to initialize it first")) {
-                    await this.balanceService.updateAccountBalance(
-                        transaction.getAmount(),
-                        transaction.getDate(),
-                        transaction.getId(),
-                        counterPartyAccount.getId(),
-                    );
-                    return;
-                }
-
-                throw e;
-            }
-
-            throw new AppError(
-                "Runtime Error",
-                500,
-                `Unable to initialize balance for account [id=${counterPartyAccount.getId()}]. ` +
-                    e.message,
+        for (const effect of effects) {
+            await this.balanceService.updateAccountBalance(
+                effect.newBalance,
+                transaction.getDate(),
+                transaction.getId(),
+                effect.accountId,
             );
         }
     }
