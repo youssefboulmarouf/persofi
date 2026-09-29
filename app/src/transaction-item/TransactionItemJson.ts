@@ -1,3 +1,6 @@
+import { Prisma } from "@prisma/client";
+import { Money } from "../utilities/Money";
+
 export class TransactionItemJson {
     private readonly id: number;
     private transactionId: number;
@@ -8,16 +11,16 @@ export class TransactionItemJson {
     private readonly categoryId: number | null;
 
     private readonly quantity: number;
-    private readonly unitPrice: number;
-    private readonly lineTotal: number;
+    private readonly unitPrice: Prisma.Decimal;
+    private readonly lineTotal: Prisma.Decimal;
 
     constructor(
         id: number,
         transactionId: number,
         description: string,
         quantity: number,
-        unitPrice: number,
-        lineTotal: number,
+        unitPrice: Prisma.Decimal,
+        lineTotal: Prisma.Decimal,
         variantId: number | null,
         brandId: number | null,
         categoryId: number | null,
@@ -53,11 +56,11 @@ export class TransactionItemJson {
         return this.quantity;
     }
 
-    public getUnitPrice(): number {
+    public getUnitPrice(): Prisma.Decimal {
         return this.unitPrice;
     }
 
-    public getLineTotal(): number {
+    public getLineTotal(): Prisma.Decimal {
         return this.lineTotal;
     }
 
@@ -79,11 +82,25 @@ export class TransactionItemJson {
             Number(body.transactionId),
             body.description,
             Number(body.quantity),
-            Number(body.unitPrice),
-            Number(body.lineTotal),
+            Money.parse(body.unitPrice === null ? 0 : body.unitPrice, "unitPrice"),
+            Money.parse(body.lineTotal === null ? 0 : body.lineTotal, "lineTotal"),
             body.variantId === null ? null : Number(body.variantId),
             body.brandId === null ? null : Number(body.brandId),
             body.categoryId === null ? null : Number(body.categoryId),
         );
+    }
+
+    public toJSON() {
+        return {
+            id: this.id,
+            transactionId: this.transactionId,
+            description: this.description,
+            quantity: this.quantity,
+            unitPrice: Money.serialize(this.unitPrice),
+            lineTotal: Money.serialize(this.lineTotal),
+            variantId: this.variantId,
+            brandId: this.brandId,
+            categoryId: this.categoryId,
+        };
     }
 }

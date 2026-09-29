@@ -6,6 +6,7 @@ import { AccountTypeEnum } from "../account/AccountType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import AppError from "../utilities/errors/AppError";
 import { AccountJson } from "../account/AccountJson";
+import { Money } from "../utilities/Money";
 
 export class TransactionProcessorService extends BaseService {
     private readonly balanceService: BalanceService;
@@ -25,8 +26,8 @@ export class TransactionProcessorService extends BaseService {
 
         await this.balanceService.updateAccountBalance(
             payAccount.getAccountType() == AccountTypeEnum.CREDIT
-                ? payAccountBalance.getAmount() + transaction.getGrandTotal()
-                : payAccountBalance.getAmount() - transaction.getGrandTotal(),
+                ? Money.add(payAccountBalance.getAmount(), transaction.getGrandTotal())
+                : Money.subtract(payAccountBalance.getAmount(), transaction.getGrandTotal()),
             transaction.getDate(),
             transaction.getId(),
             payAccount.getId(),
@@ -47,7 +48,7 @@ export class TransactionProcessorService extends BaseService {
         );
 
         await this.balanceService.updateAccountBalance(
-            counterPartyAccountBalance.getAmount() + transaction.getAmount(),
+            Money.add(counterPartyAccountBalance.getAmount(), transaction.getAmount()),
             transaction.getDate(),
             transaction.getId(),
             counterPartyAccount.getId(),
@@ -77,14 +78,14 @@ export class TransactionProcessorService extends BaseService {
         );
 
         await this.balanceService.updateAccountBalance(
-            payAccountBalance.getAmount() - transaction.getAmount(),
+            Money.subtract(payAccountBalance.getAmount(), transaction.getAmount()),
             transaction.getDate(),
             transaction.getId(),
             payAccount.getId(),
         );
 
         await this.balanceService.updateAccountBalance(
-            counterPartyAccountBalance.getAmount() - transaction.getAmount(),
+            Money.subtract(counterPartyAccountBalance.getAmount(), transaction.getAmount()),
             transaction.getDate(),
             transaction.getId(),
             counterPartyAccount.getId(),
@@ -101,8 +102,11 @@ export class TransactionProcessorService extends BaseService {
 
         await this.balanceService.updateAccountBalance(
             counterPartyAccount.getAccountType() == AccountTypeEnum.CREDIT
-                ? counterPartyAccountBalance.getAmount() - transaction.getGrandTotal()
-                : counterPartyAccountBalance.getAmount() + transaction.getGrandTotal(),
+                ? Money.subtract(
+                      counterPartyAccountBalance.getAmount(),
+                      transaction.getGrandTotal(),
+                  )
+                : Money.add(counterPartyAccountBalance.getAmount(), transaction.getGrandTotal()),
             transaction.getDate(),
             transaction.getId(),
             counterPartyAccount.getId(),
@@ -122,14 +126,14 @@ export class TransactionProcessorService extends BaseService {
         );
 
         await this.balanceService.updateAccountBalance(
-            payAccountBalance.getAmount() - transaction.getAmount(),
+            Money.subtract(payAccountBalance.getAmount(), transaction.getAmount()),
             transaction.getDate(),
             transaction.getId(),
             payAccount.getId(),
         );
 
         await this.balanceService.updateAccountBalance(
-            counterPartyAccountBalance.getAmount() + transaction.getAmount(),
+            Money.add(counterPartyAccountBalance.getAmount(), transaction.getAmount()),
             transaction.getDate(),
             transaction.getId(),
             counterPartyAccount.getId(),

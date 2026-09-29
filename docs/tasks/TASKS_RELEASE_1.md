@@ -54,7 +54,7 @@ Acceptance:
 - The matrix covers every type × account-type combination, including rejected ones.
 - The open decisions above are resolved and written down.
 
-### [ ] R1-02 — Decimal-Safe Money Type (M)
+### [x] R1-02 — Decimal-Safe Money Type (M)
 
 Plan: Step 2 / FIN-002. Depends on: R1-01. Fixes: D1.
 

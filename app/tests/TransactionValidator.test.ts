@@ -295,8 +295,16 @@ describe("TransactionValidator – INIT_BALANCE", () => {
         ).toThrow();
     });
 
-    it("throws if amount is <= 0", () => {
-        expect(() => TransactionValidator.validate(makeTx({ ...validInit, amount: 0 }))).toThrow();
+    it("allows a zero initial balance", () => {
+        expect(() =>
+            TransactionValidator.validate(makeTx({ ...validInit, amount: 0 })),
+        ).not.toThrow();
+    });
+
+    it("rejects a negative initial balance", () => {
+        expect(() =>
+            TransactionValidator.validate(makeTx({ ...validInit, amount: -0.01 })),
+        ).toThrow();
     });
 
     it("throws if payAccountId is not null", () => {

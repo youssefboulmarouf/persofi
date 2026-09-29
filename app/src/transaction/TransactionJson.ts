@@ -1,5 +1,7 @@
 import { TransactionTypeEnum, TransactionTypeFromString } from "./TransactionType";
 import { TransactionItemJson } from "../transaction-item/TransactionItemJson";
+import { Money, MoneyInput } from "../utilities/Money";
+import { Prisma } from "@prisma/client";
 
 export class TransactionJson {
     private readonly id: number;
@@ -16,12 +18,12 @@ export class TransactionJson {
 
     private readonly personId: number | null;
     // Totals for EXPENSE (required when type = expense)
-    private readonly subtotal: number;
-    private readonly taxTotal: number;
-    private readonly grandTotal: number;
+    private readonly subtotal: Prisma.Decimal;
+    private readonly taxTotal: Prisma.Decimal;
+    private readonly grandTotal: Prisma.Decimal;
 
     // Simple amount for INCOME / CREDIT_PAYMENT / REFUND (required in those cases)
-    private readonly amount: number;
+    private readonly amount: Prisma.Decimal;
 
     constructor(
         id: number,
@@ -35,10 +37,10 @@ export class TransactionJson {
         storeId: number | null,
         refundOfId: number | null,
         personId: number | null,
-        subtotal: number,
-        taxTotal: number,
-        grandTotal: number,
-        amount: number,
+        subtotal: MoneyInput,
+        taxTotal: MoneyInput,
+        grandTotal: MoneyInput,
+        amount: MoneyInput,
     ) {
         this.id = id;
         this.date = date;
@@ -51,10 +53,10 @@ export class TransactionJson {
         this.storeId = storeId;
         this.refundOfId = refundOfId;
         this.personId = personId;
-        this.subtotal = subtotal;
-        this.taxTotal = taxTotal;
-        this.grandTotal = grandTotal;
-        this.amount = amount;
+        this.subtotal = Money.parse(subtotal, "subtotal");
+        this.taxTotal = Money.parse(taxTotal, "taxTotal");
+        this.grandTotal = Money.parse(grandTotal, "grandTotal");
+        this.amount = Money.parse(amount, "amount");
     }
 
     public getId(): number {
@@ -93,19 +95,19 @@ export class TransactionJson {
         return this.personId;
     }
 
-    public getSubtotal(): number {
+    public getSubtotal(): Prisma.Decimal {
         return this.subtotal;
     }
 
-    public getTaxTotal(): number {
+    public getTaxTotal(): Prisma.Decimal {
         return this.taxTotal;
     }
 
-    public getGrandTotal(): number {
+    public getGrandTotal(): Prisma.Decimal {
         return this.grandTotal;
     }
 
-    public getAmount(): number {
+    public getAmount(): Prisma.Decimal {
         return this.amount;
     }
 
@@ -130,10 +132,30 @@ export class TransactionJson {
             body.storeId === null ? null : Number(body.storeId),
             body.refundOfId === null ? null : Number(body.refundOfId),
             body.personId === null ? null : Number(body.personId),
-            Number(body.subtotal),
-            Number(body.taxTotal),
-            Number(body.grandTotal),
-            Number(body.amount),
+            Money.parse(body.subtotal === null ? 0 : body.subtotal, "subtotal"),
+            Money.parse(body.taxTotal === null ? 0 : body.taxTotal, "taxTotal"),
+            Money.parse(body.grandTotal === null ? 0 : body.grandTotal, "grandTotal"),
+            Money.parse(body.amount === null ? 0 : body.amount, "amount"),
         );
+    }
+
+    public toJSON() {
+        return {
+            id: this.id,
+            date: this.date,
+            type: this.type,
+            items: this.items,
+            notes: this.notes,
+            processed: this.processed,
+            payAccountId: this.payAccountId,
+            counterpartyAccountId: this.counterpartyAccountId,
+            storeId: this.storeId,
+            refundOfId: this.refundOfId,
+            personId: this.personId,
+            subtotal: Money.serialize(this.subtotal),
+            taxTotal: Money.serialize(this.taxTotal),
+            grandTotal: Money.serialize(this.grandTotal),
+            amount: Money.serialize(this.amount),
+        };
     }
 }

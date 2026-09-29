@@ -2,6 +2,8 @@ import { BaseService } from "../utilities/BaseService";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import { BalanceJson } from "./BalanceJson";
 import BadRequestError from "../utilities/errors/BadRequestError";
+import { Prisma } from "@prisma/client";
+import { Money } from "../utilities/Money";
 
 export class BalanceService extends BaseService {
     constructor() {
@@ -52,7 +54,7 @@ export class BalanceService extends BaseService {
     }
 
     async updateAccountBalance(
-        newBalance: number,
+        newBalance: Prisma.Decimal | number,
         date: Date,
         transactionId: number,
         accountId: number,
@@ -62,7 +64,7 @@ export class BalanceService extends BaseService {
         );
         await this.prisma.balance.create({
             data: {
-                amount: newBalance,
+                amount: Money.parse(newBalance),
                 date,
                 accountId,
                 transactionId,

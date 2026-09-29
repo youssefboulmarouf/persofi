@@ -1,6 +1,8 @@
 import { TransactionJson } from "./TransactionJson";
 import { TransactionTypeEnum } from "./TransactionType";
 import BadRequestError from "../utilities/errors/BadRequestError";
+import { Prisma } from "@prisma/client";
+import { Money } from "../utilities/Money";
 
 export class TransactionValidator {
     static validate(t: TransactionJson): void {
@@ -41,7 +43,7 @@ export class TransactionValidator {
         );
         this.mustEq(
             t.getGrandTotal(),
-            t.getSubtotal() + t.getTaxTotal(),
+            Money.add(t.getSubtotal(), t.getTaxTotal()),
             "Grand Total must be equal to Subtotal + Tax Total for an expense transaction",
         );
         this.mustEq(t.getAmount(), 0, "Amount must be 0 for an expense transaction");
@@ -59,7 +61,7 @@ export class TransactionValidator {
         this.mustEq(t.getSubtotal(), 0, "Subtotal must be 0 for an income transaction");
         this.mustEq(t.getTaxTotal(), 0, "Tax Total must be 0 for an income transaction");
         this.mustEq(t.getGrandTotal(), 0, "Grand Total must be 0 for an income transaction");
-        this.mustPositive(t.getAmount(), "Amount must be greater than 0 for an income transaction");
+        this.mustGt0(t.getAmount(), "Amount must be greater than 0 for an income transaction");
         this.mustNull(t.getRefundOfId(), "Refund ID must be null for an income transaction");
     }
 
@@ -77,7 +79,7 @@ export class TransactionValidator {
         this.mustEq(t.getSubtotal(), 0, "Subtotal must be 0 for a credit payment transaction");
         this.mustEq(t.getTaxTotal(), 0, "Tax Total must be 0 for a credit payment transaction");
         this.mustEq(t.getGrandTotal(), 0, "Grand Total must be 0 for a credit payment transaction");
-        this.mustPositive(
+        this.mustGt0(
             t.getAmount(),
             "Amount must be greater than 0 for a credit payment transaction",
         );
@@ -98,10 +100,7 @@ export class TransactionValidator {
         this.mustEq(t.getSubtotal(), 0, "Subtotal must be 0 for a transfer transaction");
         this.mustEq(t.getTaxTotal(), 0, "Tax Total must be 0 for a transfer transaction");
         this.mustEq(t.getGrandTotal(), 0, "Grand Total must be 0 for a transfer transaction");
-        this.mustPositive(
-            t.getAmount(),
-            "Amount must be greater than 0 for a transfer transaction",
-        );
+        this.mustGt0(t.getAmount(), "Amount must be greater than 0 for a transfer transaction");
         this.mustNull(t.getRefundOfId(), "Refund ID must be null for a transfer transaction");
     }
 
@@ -118,7 +117,7 @@ export class TransactionValidator {
         );
         this.mustEq(
             t.getGrandTotal(),
-            t.getSubtotal() + t.getTaxTotal(),
+            Money.add(t.getSubtotal(), t.getTaxTotal()),
             "Grand Total must be equal to Subtotal + Tax Total for a refund transaction",
         );
         this.mustEq(t.getAmount(), 0, "Amount must be greater than 0 for a refund transaction");
@@ -139,9 +138,9 @@ export class TransactionValidator {
         this.mustEq(t.getSubtotal(), 0, "Subtotal must be 0 for an init balance transaction");
         this.mustEq(t.getTaxTotal(), 0, "Tax Total must be 0 for an init balance transaction");
         this.mustEq(t.getGrandTotal(), 0, "Grand Total must be 0 for an init balance transaction");
-        this.mustPositive(
+        this.mustGte0(
             t.getAmount(),
-            "Amount must be greater than 0 for an init balance transaction",
+            "Amount must be greater than or equal to 0 for an init balance transaction",
         );
         this.mustNull(t.getRefundOfId(), "Refund ID must be null for an init balance transaction");
     }
@@ -154,19 +153,15 @@ export class TransactionValidator {
         BadRequestError.throwIf(v == null, msg);
     }
 
-    private static mustGt0(v: number, msg: string): void {
-        BadRequestError.throwIf(v <= 0, msg);
+    private static mustGt0(v: Prisma.Decimal, msg: string): void {
+        BadRequestError.throwIf(Money.compare(v, 0) <= 0, msg);
     }
 
-    private static mustGte0(v: number, msg: string): void {
-        BadRequestError.throwIf(v < 0, msg);
+    private static mustGte0(v: Prisma.Decimal, msg: string): void {
+        BadRequestError.throwIf(Money.compare(v, 0) < 0, msg);
     }
 
-    private static mustPositive(v: number, msg: string): void {
-        BadRequestError.throwIf(v <= 0, msg);
-    }
-
-    private static mustEq(total: number, a: number, msg: string): void {
-        BadRequestError.throwIf(total !== a, msg);
+    private static mustEq(total: Prisma.Decimal, a: Prisma.Decimal | number, msg: string): void {
+        BadRequestError.throwIf(Money.compare(total, a) !== 0, msg);
     }
 }
