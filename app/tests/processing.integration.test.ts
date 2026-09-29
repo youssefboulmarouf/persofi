@@ -233,22 +233,24 @@ describe("Transactions – INIT_BALANCE processing", () => {
     });
 
     it("rejects INIT_BALANCE on account that already has a balance", async () => {
-        const createRes = await request(app).post("/api/transactions").send({
-            date: new Date().toISOString(),
-            type: "Init_Balance",
-            notes: "second init",
-            processed: false,
-            payAccountId: null,
-            counterpartyAccountId: preInitAccountId,
-            storeId: null,
-            personId: null,
-            refundOfId: null,
-            subtotal: 0,
-            taxTotal: 0,
-            grandTotal: 0,
-            amount: 999,
-            items: [],
-        });
+        const createRes = await request(app)
+            .post("/api/transactions")
+            .send({
+                type: "Init_Balance",
+                notes: "second init",
+                processed: false,
+                date: new Date("2020-01-01T00:00:00.000Z").toISOString(),
+                payAccountId: null,
+                counterpartyAccountId: preInitAccountId,
+                storeId: null,
+                personId: null,
+                refundOfId: null,
+                subtotal: 0,
+                taxTotal: 0,
+                grandTotal: 0,
+                amount: 999,
+                items: [],
+            });
         expect(createRes.status).toBe(201);
         const txId = createRes.body.id;
 
@@ -292,44 +294,78 @@ describe("Balance – append-only pattern", () => {
         await prisma.transaction.delete({ where: { id: txId } });
     });
 
-    it("getLatestBalance returns the most recent row by date", async () => {
-        // Add an older balance directly with a past date
-        const pastDate = new Date("2020-01-01");
-        const futureTx = await prisma.transaction.create({
-            data: {
-                date: pastDate,
-                type: "Init_Balance",
-                processed: true,
-                counterpartyAccountId: accountId,
-                subtotal: 0,
-                taxTotal: 0,
-                grandTotal: 0,
-                amount: 9999,
-            },
-        });
-        await prisma.balance.create({
-            data: { amount: 9999, date: pastDate, accountId, transactionId: futureTx.id },
-        });
-
-        // The API's process should use the latest balance (1000), not the "old" 9999 entry
-        const expRes = await request(app)
+    it("rejects back-dated processing without writing a balance or marking the transaction", async () => {
+        const olderDate = new Date("2020-01-01T00:00:00.000Z");
+        const createRes = await request(app)
             .post("/api/transactions")
-            .send(expenseBody(accountId, { subtotal: 100, grandTotal: 100 }));
-        await request(app).post(`/api/transactions/${expRes.body.id}/process`);
+            .send(
+                expenseBody(accountId, {
+                    date: olderDate.toISOString(),
+                    subtotal: 10,
+                    grandTotal: 10,
+                }),
+            );
+        const txId = createRes.body.id;
 
+        const processRes = await request(app).post(`/api/transactions/${txId}/process`);
+        expect(processRes.status).toBe(409);
+        expect(processRes.body.message).toMatch(/before the latest balance date/i);
+        expect(await prisma.balance.count({ where: { transactionId: txId } })).toBe(0);
+        expect(
+            (await prisma.transaction.findUniqueOrThrow({ where: { id: txId } })).processed,
+        ).toBe(false);
+
+        await prisma.transaction.delete({ where: { id: txId } });
+    });
+
+    it("processes date-only transactions on the same day in deterministic balance-id order", async () => {
+        const currentLatest = await prisma.balance.findFirst({
+            where: { accountId },
+            orderBy: [{ id: "desc" }],
+        });
+        const latestDate = currentLatest!.date;
+        const sameDate = new Date(
+            Date.UTC(
+                latestDate.getUTCFullYear(),
+                latestDate.getUTCMonth(),
+                latestDate.getUTCDate(),
+            ),
+        );
+        const initialAmount = Number(currentLatest!.amount);
+        const first = await request(app)
+            .post("/api/transactions")
+            .send(
+                expenseBody(accountId, {
+                    date: sameDate.toISOString(),
+                    subtotal: 10,
+                    grandTotal: 10,
+                }),
+            );
+        const second = await request(app)
+            .post("/api/transactions")
+            .send(
+                expenseBody(accountId, {
+                    date: sameDate.toISOString(),
+                    subtotal: 20,
+                    grandTotal: 20,
+                }),
+            );
+
+        expect((await request(app).post(`/api/transactions/${first.body.id}/process`)).status).toBe(
+            201,
+        );
+        expect(
+            (await request(app).post(`/api/transactions/${second.body.id}/process`)).status,
+        ).toBe(201);
         const latest = await prisma.balance.findFirst({
             where: { accountId },
-            orderBy: { date: "desc" },
+            orderBy: [{ id: "desc" }],
         });
-        // Should be 1000 - 100 = 900, not 9999 - 100
-        expect(Number(latest!.amount)).toBe(900);
+        expect(Number(latest!.amount)).toBe(initialAmount - 30);
 
-        // Cleanup
-        await prisma.balance.deleteMany({
-            where: { transactionId: { in: [futureTx.id, expRes.body.id] } },
-        });
-        await prisma.transaction.delete({ where: { id: expRes.body.id } });
-        await prisma.transaction.delete({ where: { id: futureTx.id } });
+        const txIds = [first.body.id, second.body.id];
+        await prisma.balance.deleteMany({ where: { transactionId: { in: txIds } } });
+        await prisma.transaction.deleteMany({ where: { id: { in: txIds } } });
     });
 });
 

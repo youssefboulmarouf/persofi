@@ -189,9 +189,9 @@ Each row shows the signed delta applied to the account's balance. "Posting amoun
 
 **Decision: back-dating is rejected in Release 1.**
 
-When processing a transaction, if the transaction's `date` is **strictly before** the `date` of the latest Balance row for any affected account, processing is rejected with a 409 Conflict error.
+When processing a transaction, if its UTC calendar day is earlier than the UTC calendar day of the latest Balance row for any affected account, processing is rejected with a 409 Conflict error. Timestamps within a calendar day do not make a transaction back-dated.
 
-Two transactions on the **same date** are allowed. The latest balance is determined by `(date DESC, id DESC)` so the ordering is always deterministic.
+Two transactions on the **same calendar day** are allowed, even if their timestamps differ. The latest balance is selected by `id DESC`, which follows processing order and prevents a same-day date-only row at midnight from sorting behind a later timestamp.
 
 **Rationale:** Allowing back-dated transactions requires recalculating every subsequent balance row for the affected accounts. This is the domain of F5 (Advanced Audit and Reversal). For Release 1, the user should process transactions in chronological order. If a past transaction was missed, enter it with today's date and add a note about the actual date. A proper reversal and reprocessing workflow is deferred to F5.
 

@@ -24,7 +24,7 @@ These were found while writing the tasks. Each one is assigned to a task below.
 | D3 | Two concurrent process requests both pass the `isProcessed()` check and apply the balances twice | `TransactionService.processTransaction` | R1-06 |
 | D4 | `update` checks `processed` on the request body, not the database, so a client can edit a processed transaction by sending `processed: false` | `TransactionService.update` | R1-05 |
 | D5 | `update` deletes items, updates the transaction and inserts items as three separate writes; a failure can leave a transaction with no items | `TransactionService.update` | R1-05 |
-| D6 | The latest balance is chosen by `date desc` only. Processing a back-dated transaction writes a row older than the current latest, so its effect is silently lost from the next calculation. Ties on the same date are non-deterministic | `BalanceService.getLatestBalanceOfAccount` | R1-04 |
+| D6 | The latest balance is chosen by transaction date only. Processing a back-dated transaction writes a row older than the current latest, so its effect is silently lost from the next calculation. Ties on the same date are non-deterministic | `BalanceService.getLatestBalanceOfAccount` | R1-04 |
 | D7 | Refunds are not checked against the original: `refundOfId` may point to any transaction, and the total refunded is unlimited | `TransactionValidator.validateRefund`, processor | R1-08 |
 | D9 | `GET /api/transactions` has no ordering | `TransactionService.get` | R1-18 |
 | D10 | `INIT_BALANCE` detects "no balance yet" by matching an error message string | `processInitBalanceTransaction` | R1-03 |
@@ -83,12 +83,12 @@ Acceptance:
 - Table-driven unit tests cover every row of the matrix, including rejections.
 - The existing processing integration tests pass unchanged.
 
-### [ ] R1-04 — Deterministic Latest Balance (S)
+### [x] R1-04 — Deterministic Latest Balance (S)
 
 Plan: Step 2. Depends on: R1-01 (back-dating decision). Fixes: D6.
 
-- Order the latest balance by `date desc, id desc`.
-- Apply the back-dating policy from R1-01. If it is "reject", processing fails with a clear 400/409 when the transaction date is before the latest balance row for any affected account.
+- Order the latest balance by `id desc` so same-day postings follow processing order.
+- Apply the back-dating policy from R1-01. If it is "reject", processing fails with a clear 409 when the transaction calendar day is before the latest balance calendar day for any affected account.
 - Add an integration test for back-dated processing and for two transactions on the same date.
 
 ### [ ] R1-05 — Transaction-Scoped Services and Atomic Create/Update (M)

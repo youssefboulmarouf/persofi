@@ -48,11 +48,11 @@ describe("BalanceService", () => {
         );
     });
 
-    it("getLatestBalanceOfAccount returns the most recent balance by date (not insertion order)", async () => {
-        // Insert an older balance first
+    it("getLatestBalanceOfAccount follows insertion order even when the latest row has an older date", async () => {
+        // Insert the first row with a later date
         const oldTx = await prisma.transaction.create({
             data: {
-                date: new Date("2021-01-01"),
+                date: new Date("2023-06-01"),
                 type: "Init_Balance",
                 processed: true,
                 counterpartyAccountId: accountId,
@@ -63,13 +63,13 @@ describe("BalanceService", () => {
             },
         });
         await prisma.balance.create({
-            data: { amount: 100, date: new Date("2021-01-01"), accountId, transactionId: oldTx.id },
+            data: { amount: 100, date: new Date("2023-06-01"), accountId, transactionId: oldTx.id },
         });
 
-        // Insert a newer balance
+        // Insert a later row with an older date
         const newTx = await prisma.transaction.create({
             data: {
-                date: new Date("2023-06-01"),
+                date: new Date("2020-06-01"),
                 type: "Init_Balance",
                 processed: true,
                 counterpartyAccountId: accountId,
@@ -80,7 +80,7 @@ describe("BalanceService", () => {
             },
         });
         await prisma.balance.create({
-            data: { amount: 999, date: new Date("2023-06-01"), accountId, transactionId: newTx.id },
+            data: { amount: 999, date: new Date("2020-06-01"), accountId, transactionId: newTx.id },
         });
 
         const latest = await balanceService.getLatestBalanceOfAccount(accountId);

@@ -23,6 +23,36 @@ export type LatestBalances = ReadonlyMap<number, Prisma.Decimal | null>;
 const NON_CREDIT = [AccountTypeEnum.DEBIT, AccountTypeEnum.CASH, AccountTypeEnum.SAVING];
 const CREDIT_ONLY = [AccountTypeEnum.CREDIT];
 
+export function assertNotBackdated(
+    transactionDate: Date,
+    accountId: number,
+    latestBalanceDate: Date,
+): void {
+    const transactionDay = Date.UTC(
+        transactionDate.getUTCFullYear(),
+        transactionDate.getUTCMonth(),
+        transactionDate.getUTCDate(),
+    );
+    const latestBalanceDay = Date.UTC(
+        latestBalanceDate.getUTCFullYear(),
+        latestBalanceDate.getUTCMonth(),
+        latestBalanceDate.getUTCDate(),
+    );
+    if (transactionDay < latestBalanceDay) {
+        throw new PostingRuleError(
+            PostingErrorCode.BACKDATED_TRANSACTION,
+            "Transaction date " +
+                transactionDate.toISOString() +
+                " is before the latest balance date " +
+                latestBalanceDate.toISOString() +
+                " for account [id=" +
+                accountId +
+                "]",
+            409,
+        );
+    }
+}
+
 /** Account ids a transaction touches, i.e. the accounts and balances to load before posting. */
 export function postingAccountIds(transaction: TransactionJson): number[] {
     const ids = [transaction.getPayAccountId(), transaction.getCounterpartyAccountId()].filter(

@@ -2,7 +2,12 @@ import { Prisma } from "@prisma/client";
 import { BaseService } from "../utilities/BaseService";
 import { BalanceService } from "../balance/BalanceService";
 import { TransactionJson } from "./TransactionJson";
-import { AccountsById, computeBalanceEffects, postingAccountIds } from "./BalanceEffects";
+import {
+    AccountsById,
+    assertNotBackdated,
+    computeBalanceEffects,
+    postingAccountIds,
+} from "./BalanceEffects";
 
 export class TransactionProcessorService extends BaseService {
     private readonly balanceService: BalanceService;
@@ -18,12 +23,19 @@ export class TransactionProcessorService extends BaseService {
      */
     async process(transaction: TransactionJson, accounts: AccountsById): Promise<void> {
         const latestBalances = new Map<number, Prisma.Decimal | null>();
+        const latestBalanceDates = new Map<number, Date>();
         for (const accountId of postingAccountIds(transaction)) {
             const latest = await this.balanceService.findLatestBalanceOfAccount(accountId);
             latestBalances.set(accountId, latest ? latest.getAmount() : null);
+            if (latest) {
+                latestBalanceDates.set(accountId, latest.getDate());
+            }
         }
 
         const effects = computeBalanceEffects(transaction, accounts, latestBalances);
+        for (const [accountId, latestDate] of latestBalanceDates) {
+            assertNotBackdated(transaction.getDate(), accountId, latestDate);
+        }
 
         for (const effect of effects) {
             await this.balanceService.updateAccountBalance(

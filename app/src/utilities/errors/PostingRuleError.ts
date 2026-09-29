@@ -7,6 +7,7 @@ export enum PostingErrorCode {
     SAME_ACCOUNT = "SAME_ACCOUNT",
     BALANCE_NOT_INITIALIZED = "BALANCE_NOT_INITIALIZED",
     BALANCE_ALREADY_INITIALIZED = "BALANCE_ALREADY_INITIALIZED",
+    BACKDATED_TRANSACTION = "BACKDATED_TRANSACTION",
     UNSUPPORTED_TRANSACTION_TYPE = "UNSUPPORTED_TRANSACTION_TYPE",
 }
 
@@ -17,8 +18,8 @@ export enum PostingErrorCode {
 class PostingRuleError extends AppError {
     public readonly code: PostingErrorCode;
 
-    constructor(code: PostingErrorCode, message: string) {
-        super(PostingRuleError.name, 400, message);
+    constructor(code: PostingErrorCode, message: string, status = 400) {
+        super(PostingRuleError.name, status, message);
         this.code = code;
         Object.setPrototypeOf(this, PostingRuleError.prototype);
     }

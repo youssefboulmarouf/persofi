@@ -53,7 +53,7 @@ export class BalanceService extends BaseService {
 
         const data = await this.prisma.balance.findFirst({
             where: { accountId },
-            orderBy: [{ date: "desc" }],
+            orderBy: [{ id: "desc" }],
         });
 
         return data ? BalanceJson.from(data) : null;

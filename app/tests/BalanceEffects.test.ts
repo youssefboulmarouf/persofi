@@ -5,6 +5,7 @@ import { AccountJson } from "../src/account/AccountJson";
 import { AccountTypeEnum } from "../src/account/AccountType";
 import {
     BalanceEffect,
+    assertNotBackdated,
     computeBalanceEffects,
     postingAccountIds,
 } from "../src/transaction/BalanceEffects";
@@ -84,13 +85,13 @@ function simplify(effects: BalanceEffect[]) {
     }));
 }
 
-function expectPostingError(fn: () => unknown, code: PostingErrorCode) {
+function expectPostingError(fn: () => unknown, code: PostingErrorCode, status = 400) {
     try {
         fn();
     } catch (e) {
         expect(e).toBeInstanceOf(PostingRuleError);
         expect((e as PostingRuleError).code).toBe(code);
-        expect((e as PostingRuleError).status).toBe(400);
+        expect((e as PostingRuleError).status).toBe(status);
         return;
     }
     throw new Error(`Expected PostingRuleError ${code}`);
@@ -290,6 +291,29 @@ describe("Credit_Payment", () => {
 // ─── Cross-cutting rules ────────────────────────────────────────────────────
 
 describe("Shared rules", () => {
+    it("rejects a prior calendar day as a 409 posting conflict", () => {
+        expectPostingError(
+            () =>
+                assertNotBackdated(
+                    new Date("2026-09-27T23:59:00.000Z"),
+                    PAY_ID,
+                    new Date("2026-09-28T00:00:00.000Z"),
+                ),
+            PostingErrorCode.BACKDATED_TRANSACTION,
+            409,
+        );
+    });
+
+    it("allows a date-only transaction on the same calendar day as a later balance timestamp", () => {
+        expect(() =>
+            assertNotBackdated(
+                new Date("2026-09-28T00:00:00.000Z"),
+                PAY_ID,
+                new Date("2026-09-28T14:32:00.000Z"),
+            ),
+        ).not.toThrow();
+    });
+
     it("rejects a missing required account", () => {
         expectPostingError(
             () =>
