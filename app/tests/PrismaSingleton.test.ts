@@ -19,13 +19,12 @@ describe("Shared Prisma client", () => {
     });
 
     it("is reused by services composed internally by other services", () => {
-        // TransactionService internally constructs AccountService, TransactionItemService,
-        // and TransactionProcessorService — those composed instances must reuse the same
+        // TransactionService internally constructs TransactionItemService and
+        // TransactionProcessorService — those composed instances must reuse the same
         // client rather than opening additional connection pools.
         const transactionService = new TransactionService();
 
         expect((transactionService as any).prisma).toBe(prisma);
-        expect((transactionService as any).accountService.prisma).toBe(prisma);
         expect((transactionService as any).transactionItemService.prisma).toBe(prisma);
         expect((transactionService as any).transactionProcessor.prisma).toBe(prisma);
     });

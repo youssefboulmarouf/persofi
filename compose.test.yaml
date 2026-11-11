@@ -28,6 +28,7 @@ services:
     environment:
       NODE_ENV: test
       DATABASE_URL: mysql://persofi_test:${PERSOFI_TEST_DATABASE_PASSWORD}@database:3306/persofi_test
+      TEST_OBSERVER_DATABASE_URL: mysql://root:${PERSOFI_TEST_ROOT_PASSWORD}@database:3306/persofi_test
     depends_on:
       database:
         condition: service_healthy

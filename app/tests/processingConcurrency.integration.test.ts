@@ -4,6 +4,12 @@ import { app } from "../src/index";
 import { BalanceService } from "../src/balance/BalanceService";
 
 const prisma = new PrismaClient();
+// The disposable test stack supplies a root observer for performance_schema only.
+const observer = new PrismaClient({
+    datasources: {
+        db: { url: process.env.TEST_OBSERVER_DATABASE_URL ?? process.env.DATABASE_URL },
+    },
+});
 const accountIds: number[] = [];
 const initial = 500;
 
@@ -61,6 +67,24 @@ async function latest(accountId: number): Promise<string> {
     return row.amount!.toFixed(2);
 }
 
+async function waitForLockWait(): Promise<void> {
+    const deadline = Date.now() + 4000;
+    do {
+        const [row] = await observer.$queryRaw<{ n: bigint }[]>`
+            SELECT COUNT(*) AS n
+            FROM performance_schema.data_lock_waits AS waits
+            JOIN performance_schema.data_locks AS locks
+              ON locks.ENGINE = waits.ENGINE
+             AND locks.ENGINE_LOCK_ID = waits.REQUESTING_ENGINE_LOCK_ID
+            WHERE locks.OBJECT_SCHEMA = DATABASE()
+              AND locks.OBJECT_NAME = 'Transaction'
+        `;
+        if (Number(row.n) > 0) return;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+    } while (Date.now() < deadline);
+    throw new Error("MySQL did not report the expected row-lock wait");
+}
+
 let firstAccount: number;
 let secondAccount: number;
 
@@ -73,6 +97,16 @@ afterEach(() => jest.restoreAllMocks());
 
 afterAll(async () => {
     await prisma.balance.deleteMany({ where: { accountId: { in: accountIds } } });
+    await prisma.transactionItem.deleteMany({
+        where: {
+            transaction: {
+                OR: [
+                    { payAccountId: { in: accountIds } },
+                    { counterpartyAccountId: { in: accountIds } },
+                ],
+            },
+        },
+    });
     await prisma.transaction.deleteMany({
         where: {
             OR: [
@@ -82,6 +116,7 @@ afterAll(async () => {
         },
     });
     await prisma.account.deleteMany({ where: { id: { in: accountIds } } });
+    await observer.$disconnect();
     await prisma.$disconnect();
 });
 
@@ -154,4 +189,122 @@ describe("atomic and concurrent posting", () => {
         expect(await latest(firstAccount)).toBe((beforeA - 8).toFixed(2));
         expect(await latest(secondAccount)).toBe((beforeB + 8).toFixed(2));
     });
+
+    it("processes the updated account when an account edit holds the transaction row", async () => {
+        const transaction = await draft("Expense", firstAccount, null, 7);
+        const beforeA = await latest(firstAccount);
+        const beforeB = Number(await latest(secondAccount));
+        let releaseUpdate!: () => void;
+        let updateLocked!: () => void;
+        const release = new Promise<void>((resolve) => (releaseUpdate = resolve));
+        const locked = new Promise<void>((resolve) => (updateLocked = resolve));
+
+        const update = prisma.$transaction(
+            async (tx) => {
+                await tx.transaction.update({
+                    where: { id: transaction.id },
+                    data: { payAccountId: secondAccount },
+                });
+                updateLocked();
+                await release;
+            },
+            { timeout: 15000 },
+        );
+        await locked;
+        const process = request(app)
+            .post(`/api/transactions/${transaction.id}/process`)
+            .then((res) => res);
+        try {
+            await waitForLockWait();
+        } finally {
+            releaseUpdate();
+        }
+        await update;
+        expect((await process).status).toBe(201);
+        expect(await latest(firstAccount)).toBe(beforeA);
+        expect(await latest(secondAccount)).toBe((beforeB - 7).toFixed(2));
+    });
+
+    it("keeps processed items when delete waits for a concurrent process", async () => {
+        const transaction = await draft("Expense", firstAccount, null, 8);
+        await prisma.transactionItem.create({
+            data: {
+                transactionId: transaction.id,
+                description: "keep this item",
+                quantity: 1,
+                unitPrice: 8,
+                lineTotal: 8,
+            },
+        });
+        let releaseWrite!: () => void;
+        let writeStarted!: () => void;
+        const release = new Promise<void>((resolve) => (releaseWrite = resolve));
+        const started = new Promise<void>((resolve) => (writeStarted = resolve));
+        const realWrite = BalanceService.prototype.updateAccountBalance;
+        jest.spyOn(BalanceService.prototype, "updateAccountBalance").mockImplementation(
+            async function (this: BalanceService, ...args) {
+                writeStarted();
+                await release;
+                return realWrite.apply(this, args);
+            },
+        );
+
+        const process = request(app)
+            .post(`/api/transactions/${transaction.id}/process`)
+            .then((res) => res);
+        await started;
+        const deletion = request(app)
+            .delete(`/api/transactions/${transaction.id}`)
+            .then((res) => res);
+        try {
+            await waitForLockWait();
+        } finally {
+            releaseWrite();
+        }
+        expect((await process).status).toBe(201);
+        expect((await deletion).status).toBe(400);
+        expect(
+            await prisma.transactionItem.count({ where: { transactionId: transaction.id } }),
+        ).toBe(1);
+        expect(
+            (await prisma.transaction.findUniqueOrThrow({ where: { id: transaction.id } }))
+                .processed,
+        ).toBe(true);
+    });
+
+    it("returns 409 after a real lock wait timeout without applying balances", async () => {
+        const transaction = await draft("Expense", firstAccount, null, 3);
+        let releaseLock!: () => void;
+        let lockHeld!: () => void;
+        const release = new Promise<void>((resolve) => (releaseLock = resolve));
+        const held = new Promise<void>((resolve) => (lockHeld = resolve));
+        const holder = prisma.$transaction(
+            async (tx) => {
+                await tx.$queryRaw`SELECT id FROM \`Transaction\` WHERE id = ${transaction.id} FOR UPDATE`;
+                lockHeld();
+                await release;
+            },
+            { timeout: 15000 },
+        );
+        await held;
+        try {
+            const processing = request(app)
+                .post(`/api/transactions/${transaction.id}/process`)
+                .then((res) => res);
+            await waitForLockWait();
+            const result = await processing;
+            expect(result.status).toBe(409);
+            expect(result.body.message).toMatch(/retry/i);
+            expect(await prisma.balance.count({ where: { transactionId: transaction.id } })).toBe(
+                0,
+            );
+            expect(
+                (await prisma.transaction.findUniqueOrThrow({ where: { id: transaction.id } }))
+                    .processed,
+            ).toBe(false);
+        } finally {
+            releaseLock();
+            await holder;
+        }
+    }, 20000);
 });
