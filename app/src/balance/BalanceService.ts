@@ -1,4 +1,4 @@
-import { BaseService } from "../utilities/BaseService";
+import { BaseService, DbClient } from "../utilities/BaseService";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import { BalanceJson } from "./BalanceJson";
 import BadRequestError from "../utilities/errors/BadRequestError";
@@ -48,13 +48,29 @@ export class BalanceService extends BaseService {
         return latest as BalanceJson;
     }
 
-    async findLatestBalanceOfAccount(accountId: number): Promise<BalanceJson | null> {
+    async findLatestBalanceOfAccount(
+        accountId: number,
+        tx?: DbClient,
+    ): Promise<BalanceJson | null> {
         this.logger.log(`Get latest balance by [accountI:${accountId}]`);
 
-        const data = await this.prisma.balance.findFirst({
-            where: { accountId },
-            orderBy: [{ id: "desc" }],
-        });
+        // A locking read sees the latest committed posting after an account-row lock wait.
+        const data = tx
+            ? (
+                  await tx.$queryRaw<
+                      {
+                          id: number;
+                          amount: Prisma.Decimal | null;
+                          date: Date;
+                          accountId: number;
+                          transactionId: number;
+                      }[]
+                  >`SELECT id, amount, date, accountId, transactionId FROM Balance WHERE accountId = ${accountId} ORDER BY id DESC LIMIT 1 FOR UPDATE`
+              )[0]
+            : await this.prisma.balance.findFirst({
+                  where: { accountId },
+                  orderBy: [{ id: "desc" }],
+              });
 
         return data ? BalanceJson.from(data) : null;
     }
@@ -64,11 +80,12 @@ export class BalanceService extends BaseService {
         date: Date,
         transactionId: number,
         accountId: number,
+        tx?: DbClient,
     ): Promise<void> {
         this.logger.log(
             `Update balance for account with [accountId:${accountId}] and transaction with [transactionId:${transactionId}]`,
         );
-        await this.prisma.balance.create({
+        await this.db(tx).balance.create({
             data: {
                 amount: Money.parse(newBalance),
                 date,

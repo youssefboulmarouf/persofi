@@ -9,6 +9,8 @@ import { AccountService } from "../account/AccountService";
 import { AccountJson } from "../account/AccountJson";
 import { postingAccountIds } from "./BalanceEffects";
 import { assertTransactionReferencesExist } from "./TransactionReferences";
+import { lockForPosting } from "./PostingLocks";
+import AppError from "../utilities/errors/AppError";
 
 export class TransactionService extends BaseService {
     private readonly transactionItemService: TransactionItemService;
@@ -141,27 +143,53 @@ export class TransactionService extends BaseService {
     }
 
     async processTransaction(transactionId: number): Promise<void> {
-        const existingTransaction = await this.getById(transactionId);
+        try {
+            await this.prisma.$transaction(
+                async (tx) => {
+                    await lockForPosting(tx, { transactionId });
+                    const stored = await tx.transaction.findUniqueOrThrow({
+                        where: { id: transactionId },
+                        include: { items: true },
+                    });
+                    const transaction = TransactionJson.from(stored);
+                    const { count } = await tx.transaction.updateMany({
+                        where: { id: transactionId, processed: false },
+                        data: { processed: true },
+                    });
+                    BadRequestError.throwIf(
+                        count === 0,
+                        `Transaction with [id=${transactionId}] is already processed. Cannot be processed again.`,
+                    );
 
-        BadRequestError.throwIf(
-            existingTransaction.isProcessed(),
-            `Transaction with [id=${existingTransaction.getId()}] is already processed. Cannot be processed again.`,
-        );
-
-        const accounts = new Map<number, AccountJson>();
-        for (const accountId of postingAccountIds(existingTransaction)) {
-            accounts.set(accountId, await this.accountService.getById(accountId));
+                    const accounts = new Map<number, AccountJson>();
+                    for (const accountId of postingAccountIds(transaction)) {
+                        const account = await tx.account.findUnique({ where: { id: accountId } });
+                        NotFoundError.throwIf(!account, `Account with [id:${accountId}] not found`);
+                        accounts.set(accountId, AccountJson.from(account));
+                    }
+                    await this.transactionProcessor.process(transaction, accounts, tx);
+                },
+                { maxWait: 10000, timeout: 30000 },
+            );
+        } catch (error) {
+            // MySQL deadlocks and lock timeouts are safe to retry: the transaction rolled back.
+            const code = (error as { code?: string; meta?: { code?: string | number } }).code;
+            const mysqlCode = String(
+                (error as { meta?: { code?: string | number } }).meta?.code ?? "",
+            );
+            if (
+                code === "P2034" ||
+                code === "P2028" ||
+                (code === "P2010" && ["1205", "1213"].includes(mysqlCode))
+            ) {
+                throw new AppError(
+                    "PostingConflict",
+                    409,
+                    "Posting was interrupted by another transaction. Please retry.",
+                );
+            }
+            throw error;
         }
-
-        await this.transactionProcessor.process(existingTransaction, accounts);
-
-        // update transaction
-        await this.prisma.transaction.update({
-            data: {
-                processed: true,
-            },
-            where: { id: transactionId },
-        });
     }
 
     async delete(id: number) {

@@ -104,7 +104,7 @@ Acceptance:
 - A PUT with `processed: false` on a processed transaction returns 400/409 and changes nothing.
 - An injected failure during item insert leaves the original transaction and its items unchanged.
 
-### [ ] R1-06 — Atomic, Race-Safe Processing (M)
+### [x] R1-06 — Atomic, Race-Safe Processing (M)
 
 Plan: Step 3 / FIN-004, FIN-006. Depends on: R1-03, R1-04, R1-05. Fixes: D2, D3, D11 (balances).
 
