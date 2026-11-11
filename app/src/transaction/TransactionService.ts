@@ -1,4 +1,4 @@
-import { BaseService } from "../utilities/BaseService";
+import { BaseService, DbClient } from "../utilities/BaseService";
 import { TransactionJson } from "./TransactionJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import { TransactionItemService } from "../transaction-item/TransactionItemService";
@@ -8,6 +8,7 @@ import { TransactionValidator } from "./TransactionValidator";
 import { AccountService } from "../account/AccountService";
 import { AccountJson } from "../account/AccountJson";
 import { postingAccountIds } from "./BalanceEffects";
+import { assertTransactionReferencesExist } from "./TransactionReferences";
 
 export class TransactionService extends BaseService {
     private readonly transactionItemService: TransactionItemService;
@@ -43,86 +44,100 @@ export class TransactionService extends BaseService {
         return TransactionJson.from(data);
     }
 
-    async create(transaction: TransactionJson): Promise<TransactionJson> {
+    async create(transaction: TransactionJson, tx?: DbClient): Promise<TransactionJson> {
         this.logger.log(`Create new transaction`, transaction);
 
         this.logger.log(`Validating transaction data`);
         TransactionValidator.validate(transaction);
         this.logger.log(`Transaction data is valid`);
 
-        this.logger.log(`Inserting transaction`);
-        const data = await this.prisma.transaction.create({
-            data: {
-                date: transaction.getDate(),
-                type: transaction.getTransactionType(),
-                notes: transaction.getNotes(),
-                payAccountId: transaction.getPayAccountId(),
-                counterpartyAccountId: transaction.getCounterpartyAccountId(),
-                storeId: transaction.getStoreId(),
-                refundOfId: transaction.getRefundOfId(),
-                personId: transaction.getPersonId(),
-                subtotal: transaction.getSubtotal(),
-                taxTotal: transaction.getTaxTotal(),
-                grandTotal: transaction.getGrandTotal(),
-                amount: transaction.getAmount(),
-                processed: false,
-                items: {
-                    create: transaction.getItems().map((it) => ({
-                        description: it.getDescription(),
-                        quantity: it.getQuantity(),
-                        unitPrice: it.getUnitPrice(),
-                        lineTotal: it.getLineTotal(),
-                        variantId: it.getVariantId(),
-                        brandId: it.getBrandId(),
-                        categoryId: it.getCategoryId(),
-                    })),
+        const data = await this.inTransaction(async (db) => {
+            await assertTransactionReferencesExist(db, transaction);
+
+            this.logger.log(`Inserting transaction`);
+            // Nested create: the transaction and its items are inserted in one statement batch.
+            return db.transaction.create({
+                data: {
+                    date: transaction.getDate(),
+                    type: transaction.getTransactionType(),
+                    notes: transaction.getNotes(),
+                    payAccountId: transaction.getPayAccountId(),
+                    counterpartyAccountId: transaction.getCounterpartyAccountId(),
+                    storeId: transaction.getStoreId(),
+                    refundOfId: transaction.getRefundOfId(),
+                    personId: transaction.getPersonId(),
+                    subtotal: transaction.getSubtotal(),
+                    taxTotal: transaction.getTaxTotal(),
+                    grandTotal: transaction.getGrandTotal(),
+                    amount: transaction.getAmount(),
+                    processed: false,
+                    items: {
+                        create: transaction.getItems().map((it) => ({
+                            description: it.getDescription(),
+                            quantity: it.getQuantity(),
+                            unitPrice: it.getUnitPrice(),
+                            lineTotal: it.getLineTotal(),
+                            variantId: it.getVariantId(),
+                            brandId: it.getBrandId(),
+                            categoryId: it.getCategoryId(),
+                        })),
+                    },
                 },
-            },
-            include: {
-                items: true,
-            },
-        });
+                include: {
+                    items: true,
+                },
+            });
+        }, tx);
         this.logger.log(`Transaction inserted successfully [id=${data.id}]`);
 
         return TransactionJson.from(data);
     }
 
-    async update(transactionId: number, transaction: TransactionJson): Promise<void> {
+    async update(
+        transactionId: number,
+        transaction: TransactionJson,
+        tx?: DbClient,
+    ): Promise<void> {
         TransactionValidator.validate(transaction);
         BadRequestError.throwIf(transactionId != transaction.getId(), `Transaction id mismatch`);
-        BadRequestError.throwIf(
-            transaction.isProcessed(),
-            `Transaction is processed. Cannot be updated.`,
-        );
 
-        // delete items
-        await this.transactionItemService.deleteByTransactionId(transactionId);
+        await this.inTransaction(async (db) => {
+            await assertTransactionReferencesExist(db, transaction);
 
-        // update transaction
-        await this.prisma.transaction.update({
-            data: {
-                date: transaction.getDate(),
-                type: transaction.getTransactionType(),
-                notes: transaction.getNotes(),
-                processed: false,
-                payAccountId: transaction.getPayAccountId(),
-                counterpartyAccountId: transaction.getCounterpartyAccountId(),
-                storeId: transaction.getStoreId(),
-                refundOfId: transaction.getRefundOfId(),
-                personId: transaction.getPersonId(),
-                subtotal: transaction.getSubtotal(),
-                taxTotal: transaction.getTaxTotal(),
-                grandTotal: transaction.getGrandTotal(),
-                amount: transaction.getAmount(),
-            },
-            where: { id: transactionId },
-        });
+            // Check and write in one statement, conditional on the stored state (never the
+            // request's `processed` flag). It also locks the row, and it never writes
+            // `processed`, so a concurrent process can't be undone by this update.
+            const { count } = await db.transaction.updateMany({
+                data: {
+                    date: transaction.getDate(),
+                    type: transaction.getTransactionType(),
+                    notes: transaction.getNotes(),
+                    payAccountId: transaction.getPayAccountId(),
+                    counterpartyAccountId: transaction.getCounterpartyAccountId(),
+                    storeId: transaction.getStoreId(),
+                    refundOfId: transaction.getRefundOfId(),
+                    personId: transaction.getPersonId(),
+                    subtotal: transaction.getSubtotal(),
+                    taxTotal: transaction.getTaxTotal(),
+                    grandTotal: transaction.getGrandTotal(),
+                    amount: transaction.getAmount(),
+                },
+                where: { id: transactionId, processed: false },
+            });
+            if (count === 0) {
+                const exists = await db.transaction.count({ where: { id: transactionId } });
+                NotFoundError.throwIf(!exists, `Transaction with [id:${transactionId}] not found`);
+                BadRequestError.throwIf(true, `Transaction is processed. Cannot be updated.`);
+            }
 
-        // insert items
-        await this.transactionItemService.createManyForTrnasaction(
-            transactionId,
-            transaction.getItems(),
-        );
+            await this.transactionItemService.deleteByTransactionId(transactionId, db);
+
+            await this.transactionItemService.createManyForTrnasaction(
+                transactionId,
+                transaction.getItems(),
+                db,
+            );
+        }, tx);
     }
 
     async processTransaction(transactionId: number): Promise<void> {

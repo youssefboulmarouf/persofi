@@ -84,9 +84,9 @@ export class TransactionItemJson {
             Number(body.quantity),
             Money.parse(body.unitPrice === null ? 0 : body.unitPrice, "unitPrice"),
             Money.parse(body.lineTotal === null ? 0 : body.lineTotal, "lineTotal"),
-            body.variantId === null ? null : Number(body.variantId),
-            body.brandId === null ? null : Number(body.brandId),
-            body.categoryId === null ? null : Number(body.categoryId),
+            body.variantId == null ? null : Number(body.variantId),
+            body.brandId == null ? null : Number(body.brandId),
+            body.categoryId == null ? null : Number(body.categoryId),
         );
     }
 

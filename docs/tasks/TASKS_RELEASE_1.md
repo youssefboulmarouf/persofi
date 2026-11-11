@@ -91,7 +91,7 @@ Plan: Step 2. Depends on: R1-01 (back-dating decision). Fixes: D6.
 - Apply the back-dating policy from R1-01. If it is "reject", processing fails with a clear 409 when the transaction calendar day is before the latest balance calendar day for any affected account.
 - Add an integration test for back-dated processing and for two transactions on the same date.
 
-### [ ] R1-05 — Transaction-Scoped Services and Atomic Create/Update (M)
+### [x] R1-05 — Transaction-Scoped Services and Atomic Create/Update (M)
 
 Plan: Step 3 / FIN-004. Depends on: R1-02. Fixes: D4, D5.
 

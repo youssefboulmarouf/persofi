@@ -1,4 +1,4 @@
-import { BaseService } from "../utilities/BaseService";
+import { BaseService, DbClient } from "../utilities/BaseService";
 import { TransactionItemJson } from "./TransactionItemJson";
 
 export class TransactionItemService extends BaseService {
@@ -9,11 +9,12 @@ export class TransactionItemService extends BaseService {
     async createManyForTrnasaction(
         transactionId: number,
         transactionItems: TransactionItemJson[],
+        tx?: DbClient,
     ): Promise<void> {
         this.logger.log(`Creating items for transaction with [id=${transactionId}]`);
         this.logger.log(`Items [${transactionItems}]`);
 
-        await this.prisma.transactionItem.createMany({
+        await this.db(tx).transactionItem.createMany({
             data: transactionItems.map((item) => ({
                 transactionId,
                 description: item.getDescription(),
@@ -27,9 +28,9 @@ export class TransactionItemService extends BaseService {
         });
     }
 
-    async deleteByTransactionId(transactionId: number): Promise<void> {
+    async deleteByTransactionId(transactionId: number, tx?: DbClient): Promise<void> {
         this.logger.log(`Deleting items for transaction with [id=${transactionId}]`);
-        await this.prisma.transactionItem.deleteMany({
+        await this.db(tx).transactionItem.deleteMany({
             where: { transactionId },
         });
     }
