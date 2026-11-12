@@ -44,6 +44,20 @@ If this file and the docs disagree, the docs win; update this file.
 - Receipt models stay single-user — no `userId`/`householdId`.
 - Use the shared `PrismaClient` from `app/src/utilities/prisma.ts`; never construct a new one in services (tests may own one if they disconnect in `afterAll`).
 
+## Definition of done
+
+A task is ticked in `docs/tasks/` only when every point below holds. Go through it before saying a task is done.
+
+1. **Acceptance criteria, one by one.** Copy the task's criteria and mark each met, naming the test that proves it. If any is blocked (e.g. on a later task), leave the box unticked and write down what's open and why.
+2. **Assert the cause, not just the status.** Every rejection test checks status, the error `code` in the response body, and that nothing was written (balances, `processed`, items). A status-only assertion can pass for the wrong reason.
+3. **Concurrency tests force the overlap.** Pause one side, wait for MySQL to report the lock wait (`tests/support/lockWaits.ts`), then release. `Promise.all` alone may just run the requests one after the other.
+4. **Break the protection and watch the test fail.** Temporarily remove the lock, check or rule under test, confirm the test fails, then restore it.
+5. **Test new error paths end to end over HTTP.** The client sees only what `handleAsync` sends; a unit test that the error exists isn't enough.
+6. **Trace the call order for new rules.** Check which validators or checks run before the new one on create, update and process, so it actually runs.
+7. **UI: no silent failures.** Every early `return` and `catch` in a handler shows the user why; search the diff for `return;` and `console.log`.
+8. **Review the diff before handing it over**, against points 1–7 (or run `/code-review`).
+9. **One commit per task, and the message matches its contents.** Follow-ups get their own accurately titled commit.
+
 ## Safety rules
 
 - Never edit an applied migration; add new timestamped, additive migrations and review the SQL.

@@ -35,6 +35,18 @@ If this file conflicts with those documents, follow the documents and update thi
 - Run focused checks while developing and all relevant gates before marking a task complete. Existing lint warnings are tolerated; new errors are not.
 - Start the local app with `docker compose --file docker-compose.dev.yml up --build`.
 
+## Definition of Done and Review Practices
+
+1. **Check every acceptance criterion.** Copy the task's criteria into the completion review, mark each one met, and name the test that proves it. If any criterion is blocked, leave the task unchecked and record what is open and why.
+2. **Assert the cause of a rejection.** Test the HTTP status and error `code`, then verify that the rejection wrote no balances, changed no `processed` state, and left transaction items unchanged. A status-only assertion can pass for the wrong reason.
+3. **Force concurrency overlap.** Pause one operation, wait until MySQL reports the intended lock wait, then release it. Starting requests with `Promise.all` alone does not prove they overlapped.
+4. **Check that protection tests can fail.** Temporarily remove the lock, validation check, or rule under test; confirm the relevant test fails, then restore the protection and rerun the test. Never leave the temporary change in the worktree.
+5. **Test new error paths through HTTP.** Verify the status, error body, and lack of writes at the public endpoint. A unit test of an error class does not prove what `handleAsync` sends to the client.
+6. **Trace rule call order.** For a new rule, inspect the checks that run before it on create, update, and process. Confirm the new rule is reachable on every intended path.
+7. **Show UI failures.** Every early `return` and `catch` in a UI handler must give the user useful feedback. Search the diff for `return;` and `console.log` in handlers before handing it over.
+8. **Review the full diff before handoff.** Check it against points 1–7, or run `/code-review` where available, and resolve findings before reporting completion.
+9. **Keep commits scoped and accurately titled.** Use one commit per task; give follow-ups their own commit with a message that matches the work.
+
 ## Financial Invariants
 
 - Financial writes must be atomic. Transaction data, items, balance effects, and the processed state commit or roll back together.
