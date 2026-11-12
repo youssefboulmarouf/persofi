@@ -1,5 +1,11 @@
 import { TransactionJson } from "../model/PersofiModels";
 
+// Prefer the server's explanation (e.g. a refund over the remaining amount) to a generic message.
+const apiError = async (res: Response, fallback: string): Promise<Error> => {
+    const body = await res.json().catch(() => null);
+    return new Error(body?.message ?? fallback);
+};
+
 export const fetchTransactions = async (): Promise<TransactionJson[]> => {
     const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/transactions`);
     if (!res.ok) {
@@ -19,7 +25,7 @@ export const createTransaction = async (
     });
     if (!res.ok) {
         console.log(res);
-        throw new Error("Failed to create transaction");
+        throw await apiError(res, "Failed to create transaction");
     }
     return res.json();
 };
@@ -35,7 +41,7 @@ export const updateTransaction = async (transactionJson: TransactionJson): Promi
     );
     if (!res.ok) {
         console.log(res);
-        throw new Error("Failed to update transaction");
+        throw await apiError(res, "Failed to update transaction");
     }
 };
 
@@ -61,6 +67,26 @@ export const processTransaction = async (transactionJson: TransactionJson): Prom
     );
     if (!res.ok) {
         console.log(res);
-        throw new Error("Failed to process transaction");
+        throw await apiError(res, "Failed to process transaction");
     }
+};
+
+export interface RefundableAmountJson {
+    transactionId: number;
+    grandTotal: number;
+    refunded: number;
+    remaining: number;
+}
+
+export const fetchRefundableAmount = async (
+    transactionId: number,
+): Promise<RefundableAmountJson> => {
+    const res = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/api/transactions/${transactionId}/refundable`,
+    );
+    if (!res.ok) {
+        console.log(res);
+        throw await apiError(res, "Failed to fetch refundable amount");
+    }
+    return res.json();
 };

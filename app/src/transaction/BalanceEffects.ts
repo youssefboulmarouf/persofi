@@ -121,7 +121,7 @@ export function computeBalanceEffects(
         }
         case TransactionTypeEnum.REFUND: {
             // Refund eligibility and the original-account rule need the original
-            // transaction and are enforced in R1-08.
+            // transaction and are enforced in RefundRules.
             const counterparty = requireAccount(
                 transaction.getCounterpartyAccountId(),
                 "Counter Party",

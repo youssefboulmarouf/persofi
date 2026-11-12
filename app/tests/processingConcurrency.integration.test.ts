@@ -2,14 +2,9 @@ import request from "supertest";
 import { PrismaClient } from "@prisma/client";
 import { app } from "../src/index";
 import { BalanceService } from "../src/balance/BalanceService";
+import { disconnectLockObserver, waitForLockWait } from "./support/lockWaits";
 
 const prisma = new PrismaClient();
-// The disposable test stack supplies a root observer for performance_schema only.
-const observer = new PrismaClient({
-    datasources: {
-        db: { url: process.env.TEST_OBSERVER_DATABASE_URL ?? process.env.DATABASE_URL },
-    },
-});
 const accountIds: number[] = [];
 const initial = 500;
 
@@ -67,24 +62,6 @@ async function latest(accountId: number): Promise<string> {
     return row.amount!.toFixed(2);
 }
 
-async function waitForLockWait(): Promise<void> {
-    const deadline = Date.now() + 4000;
-    do {
-        const [row] = await observer.$queryRaw<{ n: bigint }[]>`
-            SELECT COUNT(*) AS n
-            FROM performance_schema.data_lock_waits AS waits
-            JOIN performance_schema.data_locks AS locks
-              ON locks.ENGINE = waits.ENGINE
-             AND locks.ENGINE_LOCK_ID = waits.REQUESTING_ENGINE_LOCK_ID
-            WHERE locks.OBJECT_SCHEMA = DATABASE()
-              AND locks.OBJECT_NAME = 'Transaction'
-        `;
-        if (Number(row.n) > 0) return;
-        await new Promise((resolve) => setTimeout(resolve, 25));
-    } while (Date.now() < deadline);
-    throw new Error("MySQL did not report the expected row-lock wait");
-}
-
 let firstAccount: number;
 let secondAccount: number;
 
@@ -116,7 +93,7 @@ afterAll(async () => {
         },
     });
     await prisma.account.deleteMany({ where: { id: { in: accountIds } } });
-    await observer.$disconnect();
+    await disconnectLockObserver();
     await prisma.$disconnect();
 });
 

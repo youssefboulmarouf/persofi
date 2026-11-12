@@ -9,6 +9,8 @@ import { AccountJson } from "../account/AccountJson";
 import { postingAccountIds } from "./BalanceEffects";
 import { assertTransactionReferencesExist } from "./TransactionReferences";
 import { lockForPosting, runPosting } from "./PostingLocks";
+import { assertRefundAllowed, getRefundableAmount } from "./RefundRules";
+import { Money } from "../utilities/Money";
 
 export class TransactionService extends BaseService {
     private readonly transactionItemService: TransactionItemService;
@@ -42,6 +44,17 @@ export class TransactionService extends BaseService {
         return TransactionJson.from(data);
     }
 
+    async getRefundable(id: number) {
+        this.logger.log(`Get refundable amount of transaction [id:${id}]`);
+        const refundable = await getRefundableAmount(this.prisma, id);
+        return {
+            transactionId: refundable.transactionId,
+            grandTotal: Money.serialize(refundable.grandTotal),
+            refunded: Money.serialize(refundable.refunded),
+            remaining: Money.serialize(refundable.remaining),
+        };
+    }
+
     async create(transaction: TransactionJson, tx?: DbClient): Promise<TransactionJson> {
         this.logger.log(`Create new transaction`, transaction);
 
@@ -51,6 +64,7 @@ export class TransactionService extends BaseService {
 
         const data = await this.inTransaction(async (db) => {
             await assertTransactionReferencesExist(db, transaction);
+            await assertRefundAllowed(db, transaction);
 
             this.logger.log(`Inserting transaction`);
             // Nested create: the transaction and its items are inserted in one statement batch.
@@ -101,6 +115,7 @@ export class TransactionService extends BaseService {
 
         await runPosting(async (db) => {
             await assertTransactionReferencesExist(db, transaction);
+            await assertRefundAllowed(db, transaction);
 
             // Check and write in one statement, conditional on the stored state (never the
             // request's `processed` flag). It also locks the row, and it never writes
@@ -146,6 +161,13 @@ export class TransactionService extends BaseService {
                 include: { items: true },
             });
             const transaction = TransactionJson.from(stored);
+            if (!stored.processed) {
+                // Stored drafts may predate current rules or come from a restore; never trust them.
+                TransactionValidator.validate(transaction);
+                // Authoritative refund check: lockForPosting holds the original expense's row lock.
+                // It runs before the claim so the refund's own row isn't counted as processed.
+                await assertRefundAllowed(tx, transaction);
+            }
             const { count } = await tx.transaction.updateMany({
                 where: { id: transactionId, processed: false },
                 data: { processed: true },

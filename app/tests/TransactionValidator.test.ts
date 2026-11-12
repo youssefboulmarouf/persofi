@@ -2,6 +2,7 @@ import { TransactionJson } from "../src/transaction/TransactionJson";
 import { TransactionValidator } from "../src/transaction/TransactionValidator";
 import { TransactionTypeEnum } from "../src/transaction/TransactionType";
 import BadRequestError from "../src/utilities/errors/BadRequestError";
+import PostingRuleError, { PostingErrorCode } from "../src/utilities/errors/PostingRuleError";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -244,10 +245,16 @@ describe("TransactionValidator – REFUND", () => {
         expect(() => TransactionValidator.validate(makeTx(validRefund))).not.toThrow();
     });
 
-    it("throws if refundOfId is null", () => {
+    it("throws REFUND_ORIGINAL_REQUIRED if refundOfId is null", () => {
         expect(() =>
             TransactionValidator.validate(makeTx({ ...validRefund, refundOfId: null })),
-        ).toThrow();
+        ).toThrow(
+            expect.objectContaining({
+                constructor: PostingRuleError,
+                code: PostingErrorCode.REFUND_ORIGINAL_REQUIRED,
+                status: 400,
+            }),
+        );
     });
 
     it("throws if counterpartyAccountId is null", () => {

@@ -6,9 +6,15 @@ import {
     TransactionJson,
     TransactionTypeEnum,
 } from "../../model/PersofiModels";
-import { useAddTransaction, useProcessTransaction } from "../../hooks/useTransactions";
+import {
+    useAddTransaction,
+    useProcessTransaction,
+    useRefundableAmount,
+    useUpdateTransaction,
+} from "../../hooks/useTransactions";
 import React, { FC, useEffect, useState } from "react";
 import {
+    Alert,
     Autocomplete,
     Dialog,
     DialogActions,
@@ -46,6 +52,7 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
 }) => {
     const { mutateAsync: addTransaction } = useAddTransaction();
     const { mutateAsync: processTx } = useProcessTransaction();
+    const { mutateAsync: updateTx } = useUpdateTransaction();
     const [dateStr, setDateStr] = useState<string>("");
     const [notes, setNotes] = useState<string>("");
     const [counterPartyAccount, setCounterPartyAccount] = useState<AccountJson | null>(null);
@@ -53,6 +60,36 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
     const [taxTotal, setTaxTotal] = useState<number>(0);
     const [grandTotal, setGrandTotal] = useState<number>(0);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    // A draft saved by an earlier attempt whose processing failed; retries update it instead
+    // of creating another draft.
+    const [savedDraftId, setSavedDraftId] = useState<number | null>(null);
+    // The backend is authoritative; this only caps the input for fast feedback.
+    const {
+        data: refundable,
+        error: refundableError,
+        isFetching: refundableFetching,
+        refetch: refetchRefundable,
+    } = useRefundableAmount(transactionToRefund.id, openDialog && transactionToRefund.processed);
+    const exceedsRemaining = refundable !== undefined && grandTotal > refundable.remaining;
+
+    // Why the refund can't be submitted yet; shown next to the disabled button.
+    const blockedReason = (): string | null => {
+        if (!transactionToRefund.processed) return "Only a processed expense can be refunded.";
+        if (refundableError) return null; // reported separately, with a retry
+        if (refundable === undefined) return "Loading the remaining refundable amount…";
+        if (counterPartyAccount === null)
+            return "The account this expense was paid from is not available.";
+        if (!(grandTotal > 0)) return "Enter a refund amount greater than 0.";
+        if (subtotal > transactionToRefund.subtotal)
+            return "The refund subtotal can't exceed the original subtotal.";
+        if (taxTotal > transactionToRefund.taxTotal)
+            return "The refund tax can't exceed the original tax.";
+        if (exceedsRemaining)
+            return `The refund exceeds the remaining refundable amount (${refundable.remaining}).`;
+        return null;
+    };
+    const blocked = refundableError !== null || blockedReason() !== null;
 
     const buildItemName = (item: TransactionItemJson): string => {
         if (!item.variantId) return "—";
@@ -79,47 +116,56 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
         setSubtotal(0);
         setTaxTotal(0);
         setGrandTotal(0);
+        setErrorMessage(null);
+        setSavedDraftId(null);
 
         closeDialog();
     };
 
     const processRefund = async () => {
-        if (
-            subtotal > transactionToRefund.subtotal ||
-            taxTotal > transactionToRefund.taxTotal ||
-            grandTotal > transactionToRefund.grandTotal ||
-            counterPartyAccount === null
-        )
-            return;
+        if (blocked || counterPartyAccount === null) return;
 
         setIsLoading(true);
-        const refundTx = await addTransaction({
-            id: 0,
-            date: new Date(dateStr),
-            type: TransactionTypeEnum.REFUND,
-            notes: notes.trim(),
-            processed: false,
-            items: [],
-            payAccountId: null,
-            counterpartyAccountId: counterPartyAccount.id,
-            storeId: transactionToRefund.storeId,
-            personId: transactionToRefund.personId,
-            refundOfId: transactionToRefund.id,
-            subtotal,
-            taxTotal,
-            grandTotal,
-            amount: 0,
-        });
-
-        if (!refundTx) {
-            console.log("Error processing refund transaction");
-            return;
+        setErrorMessage(null);
+        let draftId = savedDraftId;
+        try {
+            const refundTx: TransactionJson = {
+                id: draftId ?? 0,
+                date: new Date(dateStr),
+                type: TransactionTypeEnum.REFUND,
+                notes: notes.trim(),
+                processed: false,
+                items: [],
+                payAccountId: null,
+                counterpartyAccountId: counterPartyAccount.id,
+                storeId: transactionToRefund.storeId,
+                personId: transactionToRefund.personId,
+                refundOfId: transactionToRefund.id,
+                subtotal,
+                taxTotal,
+                grandTotal,
+                amount: 0,
+            };
+            if (draftId === null) {
+                draftId = (await addTransaction(refundTx)).id;
+                setSavedDraftId(draftId);
+            } else {
+                await updateTx(refundTx);
+            }
+            await processTx({ ...refundTx, id: draftId });
+            emptyForm();
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            setErrorMessage(
+                draftId === null
+                    ? `Refund not saved: ${reason}`
+                    : `Refund draft #${draftId} was saved but not processed: ${reason}. ` +
+                          `Retrying updates that draft; you can also process or delete it ` +
+                          `from the transactions list.`,
+            );
+        } finally {
+            setIsLoading(false);
         }
-
-        await processTx(refundTx);
-
-        setIsLoading(false);
-        emptyForm();
     };
 
     useEffect(() => {
@@ -140,6 +186,25 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
                     <LoadingComponent message={"Processing..."} />
                 ) : (
                     <Stack spacing={2} sx={{ mt: 1 }}>
+                        {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+                        {refundableError && (
+                            <Alert
+                                severity="error"
+                                action={
+                                    <Button
+                                        color="inherit"
+                                        size="small"
+                                        disabled={refundableFetching}
+                                        onClick={() => refetchRefundable()}
+                                    >
+                                        Retry
+                                    </Button>
+                                }
+                            >
+                                Couldn't load the remaining refundable amount:{" "}
+                                {refundableError.message}
+                            </Alert>
+                        )}
                         <Stack direction="row" spacing={1} justifyContent="space-between">
                             <Box sx={{ width: "100%" }}>
                                 <FormLabel>Subtotal</FormLabel>
@@ -222,7 +287,9 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
                         />
 
                         <FormLabel>Deposit Account</FormLabel>
+                        {/* A refund always goes back to the account that was charged. */}
                         <Autocomplete
+                            disabled
                             options={accounts}
                             getOptionLabel={(opt: AccountJson) => opt.name}
                             getOptionKey={(opt: AccountJson) => opt.id}
@@ -255,17 +322,33 @@ export const TransactionRefundDialog: FC<TransactionRefundDialogProps> = ({
 
                             <Box sx={{ width: "100%" }}>
                                 <FormLabel>Refund Grand Total</FormLabel>
-                                <TextField fullWidth value={grandTotal} disabled />
+                                <TextField
+                                    fullWidth
+                                    value={grandTotal}
+                                    disabled
+                                    error={exceedsRemaining}
+                                    helperText={
+                                        refundable
+                                            ? `Remaining refundable: ${refundable.remaining} of ${refundable.grandTotal}`
+                                            : " "
+                                    }
+                                />
                             </Box>
                         </Stack>
                     </Stack>
                 )}
             </DialogContent>
             <DialogActions>
+                {!isLoading && blockedReason() && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mr: "auto", ml: 2 }}>
+                        {blockedReason()}
+                    </Typography>
+                )}
                 {getActionButton(
                     ModalTypeEnum.ADD, // the modal type is driving the color of the button
                     processRefund,
                     `Refund Transaction`,
+                    blocked || isLoading,
                 )}
                 <Button variant="outlined" onClick={emptyForm}>
                     Cancel

@@ -173,6 +173,7 @@ export const TransactionsList: React.FC<TransactionsListProps> = ({
                                 {tx.type === TransactionTypeEnum.EXPENSE ? (
                                     <RefundExpenseButton
                                         tooltipText={"Refund Transaction"}
+                                        disable={!tx.processed}
                                         openDialogWithType={() =>
                                             openRefundTransactionDialog(ModalTypeEnum.ADD, tx)
                                         }

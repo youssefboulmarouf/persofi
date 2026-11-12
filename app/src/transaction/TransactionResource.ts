@@ -20,6 +20,13 @@ router.get(
     }),
 );
 
+router.get(
+    "/:id/refundable",
+    handleAsync(async (req: Request, res: Response) => {
+        res.status(200).json(await transactionService.getRefundable(Number(req.params.id)));
+    }),
+);
+
 router.post(
     "/",
     handleAsync(async (req: Request, res: Response) => {

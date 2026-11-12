@@ -5,12 +5,21 @@ import {
     updateTransaction,
     deleteTransaction,
     processTransaction,
+    fetchRefundableAmount,
 } from "../api/TransactionsApi";
 
 export const useTransactions = () => {
     return useQuery({
         queryKey: ["transactions"],
         queryFn: fetchTransactions,
+    });
+};
+
+export const useRefundableAmount = (transactionId: number, enabled: boolean) => {
+    return useQuery({
+        queryKey: ["transactions", transactionId, "refundable"],
+        queryFn: () => fetchRefundableAmount(transactionId),
+        enabled,
     });
 };
 

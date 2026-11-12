@@ -132,7 +132,7 @@ Acceptance:
 - Integration test: N parallel processes of *different* expenses on the same account leave a final balance equal to the start minus the sum of all of them.
 - Integration test: parallel transfers A→B and B→A complete without deadlock errors and leave correct balances.
 
-### [ ] R1-07 — Save & Process Operations with Idempotency (L)
+### [x] R1-07 — Save & Process Operations with Idempotency (L)
 
 Plan: Step 3–4 / FIN-003, FIN-004. Depends on: R1-05, R1-06.
 
@@ -181,7 +181,7 @@ Acceptance:
 - Update and process: a failure injected during balance application leaves the draft with its previous fields and items, still unprocessed.
 - Parallel requests with the same key produce one result.
 
-### [ ] R1-08 — Refund Eligibility and Limits (S)
+### [x] R1-08 — Refund Eligibility and Limits (S)
 
 Plan: Step 4 / FIN-005. Depends on: R1-01, R1-06. Fixes: D7, D11 (refunds).
 
@@ -195,6 +195,16 @@ Acceptance:
 - Tests: a refund of a non-expense is rejected, a refund of an unprocessed expense is rejected, a full refund is accepted, and a refund one cent over the remaining amount is rejected.
 - Tests: two partial refunds that together exceed the original are rejected when the second is processed.
 - Concurrency test: two refund drafts of the same expense that each fit on their own but together exceed it are processed in parallel with different idempotency keys. Exactly one succeeds, the other is rejected, and the total refunded never exceeds the original grand total. Repeat with create-and-process.
+
+Decisions (2026-11-11):
+- Rules live in `app/src/transaction/RefundRules.ts`. `assertRefundAllowed` runs on create, update and process; at process it runs after `lockForPosting` has locked the original expense.
+- **Deviation from the spec above:** the processed-refund sum is a plain read, not `FOR UPDATE`. A locking read also locks sibling refund drafts, which a competing refund holds while it waits for the original's lock, so two parallel refunds deadlocked (MySQL 1213, surfaced as a code-less 409). The original's row lock already serializes every refund of it, and READ COMMITTED (R1-06 follow-up) makes the plain read see each committed refund.
+- Status codes: no `refundOfId` → 400; original is not an Expense → 400; refund account is not the original pay account → 400; original not processed → 409; over the remaining amount → 409. Each refund-rule rejection carries a `PostingErrorCode` (`REFUND_*`), returned as `code` in the error body next to `name` and `message`.
+- Remaining amount is exposed as `GET /api/transactions/:id/refundable` → `{ transactionId, grandTotal, refunded, remaining }`. The refund dialog shows it, blocks totals above it, locks the deposit account to the original pay account, and the Refund button is disabled on unprocessed expenses.
+- Because a refund must go to the original pay account, parallel refunds of one expense also serialize on that account's row lock. The original-expense lock stays as the documented serialization point.
+- Processing re-runs `TransactionValidator` on the stored draft, so a draft written outside the API (e.g. by a restore) can't post without passing the same rules; a Refund with no `refundOfId` is rejected with 400.
+- The refund dialog shows the server's error. If the draft was saved but processing failed, it names the draft and retries by updating it rather than creating another one.
+- **Open:** the create-and-process concurrency test needs `POST /api/transactions/process` (R1-07). R1-08 stays unchecked until that path and test exist.
 
 ### [ ] R1-09 — Processed Immutability and Error Contract (S)
 

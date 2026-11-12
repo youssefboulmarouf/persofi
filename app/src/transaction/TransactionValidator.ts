@@ -3,6 +3,7 @@ import { TransactionTypeEnum } from "./TransactionType";
 import BadRequestError from "../utilities/errors/BadRequestError";
 import { Prisma } from "@prisma/client";
 import { Money } from "../utilities/Money";
+import PostingRuleError, { PostingErrorCode } from "../utilities/errors/PostingRuleError";
 
 export class TransactionValidator {
     static validate(t: TransactionJson): void {
@@ -121,7 +122,13 @@ export class TransactionValidator {
             "Grand Total must be equal to Subtotal + Tax Total for a refund transaction",
         );
         this.mustEq(t.getAmount(), 0, "Amount must be greater than 0 for a refund transaction");
-        this.mustNotNull(t.getRefundOfId(), "Refund ID cannot be null for a refund transaction");
+        if (t.getRefundOfId() == null) {
+            // A posting rule (docs/POSTING_MATRIX.md §4), so it carries a code like the other refund rules.
+            throw new PostingRuleError(
+                PostingErrorCode.REFUND_ORIGINAL_REQUIRED,
+                "Refund ID cannot be null for a refund transaction",
+            );
+        }
     }
 
     private static validateInitBalance(t: TransactionJson): void {
