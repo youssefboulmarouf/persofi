@@ -2,6 +2,7 @@ import { TransactionTypeEnum, TransactionTypeFromString } from "./TransactionTyp
 import { TransactionItemJson } from "../transaction-item/TransactionItemJson";
 import { Money, MoneyInput } from "../utilities/Money";
 import { Prisma } from "@prisma/client";
+import { DataSource, invalidData, RejectData } from "../utilities/DataSource";
 
 export class TransactionJson {
     private readonly id: number;
@@ -119,14 +120,23 @@ export class TransactionJson {
         return this.processed;
     }
 
-    public static from(body: any): TransactionJson {
+    public static from(body: any, source: DataSource = "request"): TransactionJson {
+        // Explicitly typed so TypeScript narrows after each never-returning call.
+        const invalid: RejectData = invalidData(source);
+        if (body == null || typeof body !== "object") invalid("Transaction must be an object");
+        if (!Array.isArray(body.items)) invalid("Items must be an array", "items");
+        // new Date(null) is 1970-01-01, so a null date must be rejected before parsing.
+        const date = body.date == null ? null : new Date(body.date);
+        if (date === null || Number.isNaN(date.getTime())) invalid("Date must be valid", "date");
         return new TransactionJson(
             Number(body.id),
-            new Date(body.date),
-            TransactionTypeFromString(body.type),
+            date,
+            TransactionTypeFromString(body.type, source),
             body.notes,
             Boolean(body.processed),
-            body.items.map(TransactionItemJson.from),
+            body.items.map((item: unknown, index: number) =>
+                TransactionItemJson.from(item, index, source),
+            ),
             body.payAccountId == null ? null : Number(body.payAccountId),
             body.counterpartyAccountId == null ? null : Number(body.counterpartyAccountId),
             body.storeId == null ? null : Number(body.storeId),

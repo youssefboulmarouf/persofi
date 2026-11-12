@@ -6,27 +6,29 @@ export type MoneyInput = Prisma.Decimal | number | string;
 const MAX_MONEY = new Prisma.Decimal("99999999.99");
 
 export class Money {
-    private static invalid(message: string): never {
-        BadRequestError.throwIf(true, message);
-        throw new Error(message);
+    private static invalid(message: string, field?: string): never {
+        return BadRequestError.reject(message, field);
     }
 
-    static parse(value: MoneyInput, field = "Money value"): Prisma.Decimal {
+    static parse(value: MoneyInput, field?: string): Prisma.Decimal {
+        const label = field ?? "Money value";
         let amount: Prisma.Decimal;
         try {
             amount = new Prisma.Decimal(value);
         } catch {
-            return this.invalid(`${field} must be a valid number`);
+            return this.invalid(`${label} must be a valid number`, field);
         }
 
-        BadRequestError.throwIf(!amount.isFinite(), `${field} must be a finite number`);
+        BadRequestError.throwIf(!amount.isFinite(), `${label} must be a finite number`, field);
         BadRequestError.throwIf(
             amount.decimalPlaces() > 2,
-            `${field} must have at most 2 decimal places`,
+            `${label} must have at most 2 decimal places`,
+            field,
         );
         BadRequestError.throwIf(
             amount.abs().greaterThan(MAX_MONEY),
-            `${field} exceeds the maximum value`,
+            `${label} exceeds the maximum value`,
+            field,
         );
         return amount;
     }

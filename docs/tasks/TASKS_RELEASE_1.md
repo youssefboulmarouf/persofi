@@ -132,7 +132,7 @@ Acceptance:
 - Integration test: N parallel processes of *different* expenses on the same account leave a final balance equal to the start minus the sum of all of them.
 - Integration test: parallel transfers A→B and B→A complete without deadlock errors and leave correct balances.
 
-### [x] R1-07 — Save & Process Operations with Idempotency (L)
+### [ ] R1-07 — Save & Process Operations with Idempotency (L)
 
 Plan: Step 3–4 / FIN-003, FIN-004. Depends on: R1-05, R1-06.
 
@@ -181,7 +181,9 @@ Acceptance:
 - Update and process: a failure injected during balance application leaves the draft with its previous fields and items, still unprocessed.
 - Parallel requests with the same key produce one result.
 
-### [x] R1-08 — Refund Eligibility and Limits (S)
+Open (2026-11-11): the create-and-process and update-and-process endpoints, idempotency table, request-key handling and acceptance tests are absent from the current tree. The earlier completion mark was premature.
+
+### [ ] R1-08 — Refund Eligibility and Limits (S)
 
 Plan: Step 4 / FIN-005. Depends on: R1-01, R1-06. Fixes: D7, D11 (refunds).
 
@@ -214,9 +216,40 @@ Plan: Step 4 / FIN-008 essentials. Depends on: R1-05, R1-06.
 - Standardize status codes: 400 for validation, 404 for not found, 409 for state conflicts (already processed, idempotency mismatch, back-dating if rejected).
 - Make validation errors include a `field` (e.g. `grandTotal`, `items[2].lineTotal`) so Phase 2 can show errors next to fields. Extend `BadRequestError` / `AppError` without breaking existing handlers.
 
+Implementation (2026-11-11): update, delete and repeat process now return 409 from stored state; missing transactions return 404. `AppError` supplies machine-readable `code`, and validation paths supply `field` through `handleAsync`. `transactionWrites.integration.test.ts` checks 409 state conflicts without writes and 400 field errors over HTTP. Existing back-dating tests cover its 409. **Open:** the idempotency-mismatch path cannot be verified until R1-07 supplies its endpoints and records; keep R1-09 unchecked.
+
+### [ ] R1-09-A — Close Phase 1 Acceptance Gaps (L)
+
+Plan: Step 4 / FIN-003, FIN-004, FIN-005, FIN-008. Depends on: R1-06. Complete before R1-10; close R1-07, R1-08 and R1-09 only when their own acceptance criteria pass. This follow-up collects the gaps found in the R1-01–R1-09 review; it does not replace the original task criteria.
+
+- **R1-06 concurrency evidence:** make the same-account and opposite-direction transfer tests force a real overlap: hold one posting after it acquires its locks, wait for MySQL to report the other posting's lock wait, then release. Assert HTTP status and `code`, final balances, balance-row counts and processed state. Temporarily remove the relevant lock and confirm at least one test fails, then restore it. Update the R1-06 serialization notes to describe the actual `READ COMMITTED` strategy and its limits.
+- **R1-07 operations:** add `POST /api/transactions/process` and `PUT /api/transactions/:id/process`, reusing the existing create/update and posting logic inside one interactive transaction. Add the `IdempotencyRecord` model with a new additive migration, canonical SHA-256 request hashing, `Idempotency-Key` handling, same-key replay, changed-payload/operation 409, and concurrent-key conflict handling. Record in `docs/OPERATIONS.md` that idempotency records are excluded from backup/restore.
+- **R1-08 remaining test:** run two create-and-process refunds against one expense with different keys and a forced lock overlap. Each refund must fit alone but exceed the remaining amount together; exactly one succeeds, the other returns the refund-limit 409 `code`, and the rejected request leaves no transaction, items, balance rows or idempotency record.
+- **R1-09 remaining contract:** test idempotency-key reuse with a different payload and operation through HTTP. Assert 409 and its `code`, plus unchanged transaction, items, balances and idempotency record. Include the new process endpoints in the processed-immutability checks.
+- **Resolve a spec conflict first:** R1-07 says the key is sent on "all four write operations" (create, update, and the two Save & Process endpoints), but R1-06 says a client retries `POST /:id/process` "with the same idempotency key", and R1-08's concurrency test processes drafts "with different idempotency keys". Decide and record whether `POST /:id/process` accepts `Idempotency-Key`. Recommended: optional there. With a key, a retry replays 200; without one, the existing `TRANSACTION_PROCESSED` 409 applies.
+- **Key contract details** from R1-07 that the bullets above leave implicit:
+  - Missing key on either Save & Process endpoint → 400 with `field: "Idempotency-Key"`. A key longer than 64 characters → 400. Draft create and update work with or without a key.
+  - Same key and same request → **200** with the current stored transaction (not 201), and nothing written.
+  - Different requests that normalize to the same canonical form (e.g. `10` vs `10.00`, different JSON key order) produce the same hash and replay; the order of items does change the hash.
+  - The idempotency-mismatch 409 has its own `code` (e.g. `IDEMPOTENCY_KEY_REUSED`), distinct from `TRANSACTION_PROCESSED`, `STATE_CONFLICT` and `POSTING_CONFLICT`.
+  - A lock conflict (`POSTING_CONFLICT`) on a Save & Process request does not consume the key: retrying with the same key succeeds.
+- **Update-and-process locking:** `lockForPosting` locks the union of the stored and the new account IDs (R1-06). Test an update-and-process that moves the draft to a different account: both accounts are locked, and only the new one is posted.
+- **Refunds through the new endpoints:** create-and-process and update-and-process run the same validator and refund rules as `POST /:id/process`. For create-and-process, the original-expense lock comes from the payload's `refundOfId`. Test one over-limit update-and-process refund as well as the create-and-process concurrency case.
+- **Docs consistency:** the R1-08 serialization bullet still says the refund sum is read "with a locking read"; reword it to match the recorded deviation (plain read under the original's lock).
+
+Acceptance:
+- [ ] Both Save & Process endpoints are atomic; an injected failure leaves no partial state, and update-and-process preserves the draft's previous fields and items.
+- [ ] Repeating either Save & Process request with the same key writes nothing and returns 200 with the stored transaction; a changed payload or operation returns 409 with its own `code`; a failed request (validation, posting rule or lock conflict) does not consume the key and a corrected retry with it succeeds; concurrent requests with one key produce one result.
+- [ ] The key contract is enforced and tested: a missing key on Save & Process gives 400, an over-long key gives 400, equivalent requests hash the same, and the decision on `POST /:id/process` keys is recorded and tested.
+- [ ] Update-and-process locks both the stored and the new accounts, and refund rules apply on both Save & Process endpoints.
+- [ ] The R1-06 and R1-08 concurrency tests observe a real MySQL lock wait before releasing the held posting, and the lock-removal check demonstrates that the tests detect a broken protection.
+- [ ] HTTP rejection tests assert status, `code`, and no writes; R1-08 create-and-process refund concurrency and R1-09 idempotency-mismatch cases pass.
+- [ ] The R1-06 design notes and `docs/OPERATIONS.md` match the implemented behavior; the original R1-07, R1-08 and R1-09 criteria are reviewed and ticked only when each passes.
+- [ ] `scripts/run-backend-tests.sh` and the required lint, typecheck, format and build checks pass in both `app/` and `client/`.
+
 ### [ ] R1-10 — Phase 1 Test Completion (M)
 
-Plan: Step 4 / FIN-008 essentials. Depends on: R1-02 … R1-09. Can be written alongside each task.
+Plan: Step 4 / FIN-008 essentials. Depends on: R1-02 … R1-09-A. Can be written alongside each task.
 
 - Deterministic posting tests for every transaction type and account-type combination in the matrix.
 - Rollback tests for create, update, process, create-and-process and update-and-process.
@@ -362,7 +395,7 @@ Plan: Step 22 (manual subset). Depends on: R1-20.
     R1-01 ─┬─ R1-02 ─┬─ R1-03 ─┬─ R1-06 ─┬─ R1-07 ─┐
            │         │  R1-04 ─┘         ├─ R1-08  │
            │         └─ R1-05 ───────────┴─ R1-09 ─┤
-           │                                       ├─ R1-10 ─► Phase 1 gate
+           │                                       ├─ R1-09-A ─► R1-10 ─► Phase 1 gate
            │                                       │
     R1-11, R1-12 (parallel with Phase 1)           │
            R1-12 ─ R1-13 ─ R1-14                   │

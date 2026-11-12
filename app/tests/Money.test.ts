@@ -1,5 +1,6 @@
 import { Money } from "../src/utilities/Money";
 import { TransactionJson } from "../src/transaction/TransactionJson";
+import BadRequestError from "../src/utilities/errors/BadRequestError";
 
 describe("Money", () => {
     it("adds decimal amounts without binary floating-point drift", () => {
@@ -20,6 +21,25 @@ describe("Money", () => {
         expect(() => Money.parse("100000000.00")).toThrow("exceeds the maximum value");
         expect(() => Money.parse("1.001")).toThrow("at most 2 decimal places");
         expect(() => Money.parse("NaN")).toThrow("finite number");
+    });
+
+    it("only reports a field when the caller names one", () => {
+        try {
+            Money.add("99999999.99", "0.01");
+            throw new Error("Expected money overflow");
+        } catch (error) {
+            expect(error).toBeInstanceOf(BadRequestError);
+            expect((error as BadRequestError).field).toBeUndefined();
+            expect((error as BadRequestError).message).toMatch(/Money value exceeds/);
+        }
+
+        try {
+            Money.parse("100000000.00", "grandTotal");
+            throw new Error("Expected money overflow");
+        } catch (error) {
+            expect(error).toBeInstanceOf(BadRequestError);
+            expect((error as BadRequestError).field).toBe("grandTotal");
+        }
     });
 
     it("serializes transaction money fields as JSON numbers", () => {

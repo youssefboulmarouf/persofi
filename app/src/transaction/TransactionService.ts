@@ -3,6 +3,10 @@ import { TransactionJson } from "./TransactionJson";
 import NotFoundError from "../utilities/errors/NotFoundError";
 import { TransactionItemService } from "../transaction-item/TransactionItemService";
 import BadRequestError from "../utilities/errors/BadRequestError";
+import ConflictError from "../utilities/errors/ConflictError";
+
+// Processed transactions are immutable: update, delete and re-process all answer with this code.
+const TRANSACTION_PROCESSED = "TRANSACTION_PROCESSED";
 import { TransactionProcessorService } from "./TransactionProcessorService";
 import { TransactionValidator } from "./TransactionValidator";
 import { AccountJson } from "../account/AccountJson";
@@ -28,7 +32,7 @@ export class TransactionService extends BaseService {
             await this.prisma.transaction.findMany({
                 include: { items: true },
             })
-        ).map(TransactionJson.from);
+        ).map((data) => TransactionJson.from(data, "stored"));
     }
 
     async getById(id: number): Promise<TransactionJson> {
@@ -41,7 +45,7 @@ export class TransactionService extends BaseService {
 
         NotFoundError.throwIf(!data, `Transaction with [id:${id}] not found`);
 
-        return TransactionJson.from(data);
+        return TransactionJson.from(data, "stored");
     }
 
     async getRefundable(id: number) {
@@ -102,7 +106,7 @@ export class TransactionService extends BaseService {
         }, tx);
         this.logger.log(`Transaction inserted successfully [id=${data.id}]`);
 
-        return TransactionJson.from(data);
+        return TransactionJson.from(data, "stored");
     }
 
     async update(
@@ -111,7 +115,11 @@ export class TransactionService extends BaseService {
         tx?: DbClient,
     ): Promise<void> {
         TransactionValidator.validate(transaction);
-        BadRequestError.throwIf(transactionId != transaction.getId(), `Transaction id mismatch`);
+        BadRequestError.throwIf(
+            transactionId != transaction.getId(),
+            `Transaction id mismatch`,
+            "id",
+        );
 
         await runPosting(async (db) => {
             await assertTransactionReferencesExist(db, transaction);
@@ -140,7 +148,11 @@ export class TransactionService extends BaseService {
             if (count === 0) {
                 const exists = await db.transaction.count({ where: { id: transactionId } });
                 NotFoundError.throwIf(!exists, `Transaction with [id:${transactionId}] not found`);
-                BadRequestError.throwIf(true, `Transaction is processed. Cannot be updated.`);
+                ConflictError.throwIf(
+                    true,
+                    `Transaction is processed. Cannot be updated.`,
+                    TRANSACTION_PROCESSED,
+                );
             }
 
             await this.transactionItemService.deleteByTransactionId(transactionId, db);
@@ -160,7 +172,7 @@ export class TransactionService extends BaseService {
                 where: { id: transactionId },
                 include: { items: true },
             });
-            const transaction = TransactionJson.from(stored);
+            const transaction = TransactionJson.from(stored, "stored");
             if (!stored.processed) {
                 // Stored drafts may predate current rules or come from a restore; never trust them.
                 TransactionValidator.validate(transaction);
@@ -172,9 +184,10 @@ export class TransactionService extends BaseService {
                 where: { id: transactionId, processed: false },
                 data: { processed: true },
             });
-            BadRequestError.throwIf(
+            ConflictError.throwIf(
                 count === 0,
                 `Transaction with [id=${transactionId}] is already processed. Cannot be processed again.`,
+                TRANSACTION_PROCESSED,
             );
 
             const accounts = new Map<number, AccountJson>();
@@ -192,9 +205,10 @@ export class TransactionService extends BaseService {
         await runPosting(async (tx) => {
             await lockForPosting(tx, { transactionId: id });
             const stored = await tx.transaction.findUniqueOrThrow({ where: { id } });
-            BadRequestError.throwIf(
+            ConflictError.throwIf(
                 stored.processed,
                 `Transaction is processed. Cannot be deleted.`,
+                TRANSACTION_PROCESSED,
             );
             await this.transactionItemService.deleteByTransactionId(id, tx);
             await tx.transaction.delete({ where: { id } });

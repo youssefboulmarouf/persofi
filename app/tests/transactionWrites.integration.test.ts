@@ -119,7 +119,8 @@ describe("Update – processed state comes from the database", () => {
                 }),
             );
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe("TRANSACTION_PROCESSED");
         expect(res.body.message).toMatch(/processed/i);
         expect(await snapshot(id)).toEqual(before);
         expect(await prisma.balance.count({ where: { accountId } })).toBe(balancesBefore);
@@ -130,6 +131,54 @@ describe("Update – processed state comes from the database", () => {
             .put(`/api/transactions/${MISSING_ID}`)
             .send(expenseBody({ id: MISSING_ID }));
         expect(res.status).toBe(404);
+        expect(res.body.code).toBe("NOT_FOUND");
+    });
+
+    it("rejects delete and repeat process of a processed transaction without changing it", async () => {
+        const id = await createExpense();
+        expect((await request(app).post(`/api/transactions/${id}/process`)).status).toBe(201);
+        const before = await snapshot(id);
+        const balanceCount = await prisma.balance.count({ where: { transactionId: id } });
+
+        for (const response of [
+            await request(app).delete(`/api/transactions/${id}`),
+            await request(app).post(`/api/transactions/${id}/process`),
+        ]) {
+            expect(response.status).toBe(409);
+            expect(response.body.code).toBe("TRANSACTION_PROCESSED");
+            expect(await snapshot(id)).toEqual(before);
+            expect(await prisma.balance.count({ where: { transactionId: id } })).toBe(balanceCount);
+        }
+    });
+});
+
+describe("Transaction validation error contract", () => {
+    it.each([
+        ["grandTotal", { grandTotal: 11 }],
+        [
+            "items[1].lineTotal",
+            {
+                items: [
+                    { description: "first", quantity: 1, unitPrice: 4, lineTotal: 4 },
+                    { description: "second", quantity: 2, unitPrice: 3, lineTotal: 6.001 },
+                ],
+            },
+        ],
+        ["type", { type: "Unknown" }],
+        ["date", { date: null }],
+    ])("rejects invalid %s over HTTP without writing", async (field, overrides) => {
+        const transactionCount = await prisma.transaction.count();
+        const itemCount = await prisma.transactionItem.count();
+        const balanceCount = await prisma.balance.count({ where: { accountId } });
+
+        const response = await request(app).post("/api/transactions").send(expenseBody(overrides));
+
+        expect(response.status).toBe(400);
+        expect(response.body.code).toBe("VALIDATION_ERROR");
+        expect(response.body.field).toBe(field);
+        expect(await prisma.transaction.count()).toBe(transactionCount);
+        expect(await prisma.transactionItem.count()).toBe(itemCount);
+        expect(await prisma.balance.count({ where: { accountId } })).toBe(balanceCount);
     });
 });
 
@@ -153,7 +202,8 @@ describe("Update – race with processing", () => {
             .put(`/api/transactions/${id}`)
             .send(expenseBody({ id, notes: "racing edit", subtotal: 20, grandTotal: 20 }));
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe("TRANSACTION_PROCESSED");
         expect(res.body.message).toMatch(/processed/i);
         const stored = await snapshot(id);
         expect(stored.processed).toBe(true);
@@ -188,6 +238,7 @@ describe("Update – atomic item replacement", () => {
             );
 
         expect(res.status).toBe(500);
+        expect(res.body.code).toBe("INTERNAL_ERROR");
         expect(await snapshot(id)).toEqual(before);
     });
 
@@ -213,6 +264,30 @@ describe("Update – atomic item replacement", () => {
         expect(after.notes).toBe("updated");
         expect(after.grandTotal).toBe("20");
         expect(after.items.map((it) => it.description)).toEqual(["replacement"]);
+    });
+});
+
+describe("Stored transaction data", () => {
+    it("reports a corrupt stored type as an internal error, not request validation", async () => {
+        const id = await createExpense();
+        await prisma.transaction.update({ where: { id }, data: { type: "Unknown" } });
+        try {
+            for (const path of ["/api/transactions", `/api/transactions/${id}`]) {
+                const res = await request(app).get(path);
+                expect(res.status).toBe(500);
+                expect(res.body.code).toBe("INTERNAL_ERROR");
+                expect(res.body.field).toBeUndefined();
+            }
+            const processing = await request(app).post(`/api/transactions/${id}/process`);
+            expect(processing.status).toBe(500);
+            expect(processing.body.code).toBe("INTERNAL_ERROR");
+            expect((await prisma.transaction.findUniqueOrThrow({ where: { id } })).processed).toBe(
+                false,
+            );
+            expect(await prisma.balance.count({ where: { transactionId: id } })).toBe(0);
+        } finally {
+            await prisma.transaction.update({ where: { id }, data: { type: "Expense" } });
+        }
     });
 });
 

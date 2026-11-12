@@ -23,8 +23,8 @@ export enum PostingErrorCode {
 class PostingRuleError extends AppError {
     public readonly code: PostingErrorCode;
 
-    constructor(code: PostingErrorCode, message: string, status = 400) {
-        super(PostingRuleError.name, status, message);
+    constructor(code: PostingErrorCode, message: string, status = 400, field?: string) {
+        super(PostingRuleError.name, status, message, field, code);
         this.code = code;
         Object.setPrototypeOf(this, PostingRuleError.prototype);
     }

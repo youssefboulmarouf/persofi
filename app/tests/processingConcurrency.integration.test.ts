@@ -132,7 +132,12 @@ describe("atomic and concurrent posting", () => {
             ),
         );
         expect(results.filter((result) => result.status === 201)).toHaveLength(1);
-        expect(results.filter((result) => result.status === 400)).toHaveLength(5);
+        expect(results.filter((result) => result.status === 409)).toHaveLength(5);
+        expect(
+            results
+                .filter((result) => result.status === 409)
+                .every((result) => result.body.code === "TRANSACTION_PROCESSED"),
+        ).toBe(true);
         expect(await prisma.balance.count({ where: { transactionId: transaction.id } })).toBe(1);
         expect(await latest(firstAccount)).toBe((before - 11).toFixed(2));
     });
@@ -239,7 +244,7 @@ describe("atomic and concurrent posting", () => {
             releaseWrite();
         }
         expect((await process).status).toBe(201);
-        expect((await deletion).status).toBe(400);
+        expect((await deletion).status).toBe(409);
         expect(
             await prisma.transactionItem.count({ where: { transactionId: transaction.id } }),
         ).toBe(1);
@@ -271,6 +276,7 @@ describe("atomic and concurrent posting", () => {
             await waitForLockWait();
             const result = await processing;
             expect(result.status).toBe(409);
+            expect(result.body.code).toBe("POSTING_CONFLICT");
             expect(result.body.message).toMatch(/retry/i);
             expect(await prisma.balance.count({ where: { transactionId: transaction.id } })).toBe(
                 0,

@@ -288,7 +288,8 @@ describe("Transactions API – Process", () => {
         await request(app).post(`/api/transactions/${txId}/process`);
         // Process again → should fail
         const secondProcess = await request(app).post(`/api/transactions/${txId}/process`);
-        expect(secondProcess.status).toBe(400);
+        expect(secondProcess.status).toBe(409);
+        expect(secondProcess.body.code).toBe("TRANSACTION_PROCESSED");
 
         // Cleanup
         await prisma.balance.deleteMany({ where: { transactionId: txId } });
@@ -400,7 +401,7 @@ describe("Transactions API – Update & Delete", () => {
         await prisma.transaction.delete({ where: { id: txId } });
     });
 
-    it("PUT /api/transactions/:id → returns 400 when updating processed transaction", async () => {
+    it("PUT /api/transactions/:id → returns 409 when updating processed transaction", async () => {
         const createRes = await request(app).post("/api/transactions").send({
             date: new Date().toISOString(),
             type: "Expense",
@@ -438,7 +439,8 @@ describe("Transactions API – Update & Delete", () => {
             items: [],
         });
 
-        expect(updateRes.status).toBe(400);
+        expect(updateRes.status).toBe(409);
+        expect(updateRes.body.code).toBe("TRANSACTION_PROCESSED");
 
         await prisma.balance.deleteMany({ where: { transactionId: txId } });
         await prisma.transaction.delete({ where: { id: txId } });

@@ -88,6 +88,8 @@ export async function runPosting<T>(
                 "PostingConflict",
                 409,
                 "Posting was interrupted by another transaction. Please retry.",
+                undefined,
+                "POSTING_CONFLICT",
             );
         }
         throw error;

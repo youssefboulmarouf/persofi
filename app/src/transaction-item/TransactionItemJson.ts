@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { Money } from "../utilities/Money";
+import { DataSource, invalidData } from "../utilities/DataSource";
 
 export class TransactionItemJson {
     private readonly id: number;
@@ -76,14 +77,25 @@ export class TransactionItemJson {
         return this.brandId;
     }
 
-    public static from(body: any): TransactionItemJson {
+    public static from(
+        body: any,
+        index?: number,
+        source: DataSource = "request",
+    ): TransactionItemJson {
+        const path = (field: string) => (index === undefined ? field : `items[${index}].${field}`);
+        if (body == null || typeof body !== "object") {
+            invalidData(source)(
+                "Item must be an object",
+                index === undefined ? "items" : `items[${index}]`,
+            );
+        }
         return new TransactionItemJson(
             Number(body.id),
             Number(body.transactionId),
             body.description,
             Number(body.quantity),
-            Money.parse(body.unitPrice === null ? 0 : body.unitPrice, "unitPrice"),
-            Money.parse(body.lineTotal === null ? 0 : body.lineTotal, "lineTotal"),
+            Money.parse(body.unitPrice === null ? 0 : body.unitPrice, path("unitPrice")),
+            Money.parse(body.lineTotal === null ? 0 : body.lineTotal, path("lineTotal")),
             body.variantId == null ? null : Number(body.variantId),
             body.brandId == null ? null : Number(body.brandId),
             body.categoryId == null ? null : Number(body.categoryId),

@@ -48,6 +48,8 @@ export async function assertRefundAllowed(db: DbClient, refund: TransactionJson)
         throw new PostingRuleError(
             PostingErrorCode.REFUND_ORIGINAL_REQUIRED,
             `A refund must reference the expense it refunds`,
+            400,
+            "refundOfId",
         );
     }
 
@@ -56,6 +58,8 @@ export async function assertRefundAllowed(db: DbClient, refund: TransactionJson)
         throw new PostingRuleError(
             PostingErrorCode.REFUND_ACCOUNT_MISMATCH,
             `A refund must go back to the original pay account [id=${original.payAccountId}] of transaction [id=${originalId}]`,
+            400,
+            "counterpartyAccountId",
         );
     }
 
@@ -65,6 +69,7 @@ export async function assertRefundAllowed(db: DbClient, refund: TransactionJson)
             PostingErrorCode.REFUND_EXCEEDS_REMAINING,
             `Refund of ${Money.serialize(refund.getGrandTotal())} exceeds the remaining refundable amount ${Money.serialize(remaining)} of transaction [id=${originalId}]`,
             409,
+            "grandTotal",
         );
     }
 }
@@ -79,6 +84,8 @@ async function loadRefundableOriginal(db: DbClient, originalId: number): Promise
         throw new PostingRuleError(
             PostingErrorCode.REFUND_ORIGINAL_NOT_EXPENSE,
             `Only an expense can be refunded, but transaction [id=${originalId}] is a ${original!.type}`,
+            400,
+            "refundOfId",
         );
     }
     if (!original!.processed) {
@@ -86,6 +93,7 @@ async function loadRefundableOriginal(db: DbClient, originalId: number): Promise
             PostingErrorCode.REFUND_ORIGINAL_NOT_PROCESSED,
             `Transaction [id=${originalId}] must be processed before it can be refunded`,
             409,
+            "refundOfId",
         );
     }
     return original!;

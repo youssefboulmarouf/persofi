@@ -1,4 +1,4 @@
-import AppError from "../utilities/errors/AppError";
+import { DataSource, invalidData } from "../utilities/DataSource";
 
 export enum TransactionTypeEnum {
     EXPENSE = "Expense",
@@ -9,13 +9,12 @@ export enum TransactionTypeEnum {
     INIT_BALANCE = "Init_Balance",
 }
 
-export function TransactionTypeFromString(type: string): TransactionTypeEnum {
+export function TransactionTypeFromString(
+    type: string,
+    source: DataSource = "request",
+): TransactionTypeEnum {
     if (Object.values(TransactionTypeEnum).includes(type as TransactionTypeEnum)) {
         return type as TransactionTypeEnum;
     }
-    throw new AppError(
-        "Runtime Error",
-        500,
-        `Invalid TransactionTypeEnum value: ${type}. Expected 'Expense', 'Income', 'Credit_Payment', 'Refund'.`,
-    );
+    return invalidData(source)(`Invalid transaction type: ${type}`, "type");
 }

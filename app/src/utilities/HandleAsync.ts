@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import AppError from "./errors/AppError";
-import PostingRuleError from "./errors/PostingRuleError";
 import Logger from "./Logger";
 
 const logger = new Logger("HandleAsync");
@@ -16,14 +15,16 @@ const handleAsync =
                 res.status(e.status).json({
                     name: e.name,
                     message: e.message,
+                    ...(e.field ? { field: e.field } : {}),
                     // Stable machine-readable reason; clients branch on it, never on the message.
-                    ...(e instanceof PostingRuleError ? { code: e.code } : {}),
+                    code: e.code,
                 });
             } else {
                 logger.error("Unexpected error:", e);
                 res.status(500).json({
                     name: "UnknownError",
                     message: `An unexpected error occurred: ${e.message}`,
+                    code: "INTERNAL_ERROR",
                 });
             }
         }
